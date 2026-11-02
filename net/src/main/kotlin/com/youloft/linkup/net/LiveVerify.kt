@@ -3,18 +3,22 @@ package com.youloft.linkup.net
 import retrofit2.HttpException
 
 /**
- * Live proof that the recovered protocol is accepted by the real backend.
- * Run: gradle :net:liveVerify
+ * Live proof that the recovered protocol is accepted by a real backend.
+ * Run: gradle :net:liveVerify --args=<baseUrl>   (defaults to the 1.6.6 hardcoded test host)
  */
-suspend fun main() {
+suspend fun main(args: Array<String>) {
+    val baseUrl = args.firstOrNull() ?: LinkUpEndpoints.API
     val context = StaticDeviceContext(
         deviceId = "rebuild-local-0001",
         distinctId = "rebuild-distinct-0001",
         shushuDeviceId = "rebuild-shushu-0001",
     )
-    val api = LinkUpClient(context = context).api
+    val api = LinkUpClient(baseUrl = baseUrl, context = context).api
 
-    val config = api.clientConfig()
+    val config = runCatching { api.clientConfig() }.getOrElse {
+        println("$baseUrl -> unreachable/error: $it")
+        return
+    }
     val keys = config.data?.asJsonObject?.keySet()?.take(8)
     println("clientConfig   -> status=${config.status} msg=${config.msg} dataKeys=$keys")
 
@@ -30,6 +34,6 @@ private suspend fun probe(label: String, call: suspend () -> ApiResponse<*>) {
         val r = call()
         println("$label -> status=${r.status} msg=${r.msg}")
     } catch (e: HttpException) {
-        println("$label -> HTTP ${e.code()} ${e.message()} (signature accepted, auth still required)")
+        println("$label -> HTTP ${e.code()} ${e.message()} (reached business layer, auth required)")
     }
 }

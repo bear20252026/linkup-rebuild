@@ -8,7 +8,7 @@
 
 ## 一、一句话结论
 
-**协议已经真的找回来了，而且是被重建出来的代码在真实服务器上跑通的**——`D:\linkup-rebuild` 里的新 Kotlin 网络层向 `linkup-test.51wnl-cq.com` 发出签名请求，返回 `status=200 msg=success` 和真实业务配置。剩下的活是把 981 个可读业务文件重写成工程，这是排期问题，不是能不能的问题。
+**协议已经真的找回来了，而且是被重建出来的代码在真实服务器上跑通的**——`D:\linkup-rebuild` 里的新 Kotlin 网络层向 `linkup-test.51wnl-cq.com` 与生产网关 `link.tttick.com` 发出签名请求，都返回 `status=200 msg=success` 和真实业务配置。**后端不用重写**（第七节）。剩下的活是把 660 个手写业务文件重写成工程，这是排期问题，不是能不能的问题。
 
 ## 二、家底：现在磁盘上确定有的东西
 
@@ -64,6 +64,7 @@ tz, lang, userId, client, deviceId, channel, av, t, distinctId, shushuDeviceId, 
 | 项 | 状态 |
 |---|---|
 | GET + 签名被服务端接受 | ✅ 实机 200，拿到真实配置 JSON |
+| GET + 签名被**生产服**接受 | ✅ 实机 200（`link.tttick.com`，见第七节） |
 | 未签名被拒（`参数av必须` / `1001`） | ✅ 实机复现 |
 | 401 JWT 拦截说明签名关已过 | ✅ 实机复现 |
 | AES 加解密自逆 | ✅ 单元测试 |
@@ -72,6 +73,13 @@ tz, lang, userId, client, deviceId, channel, av, t, distinctId, shushuDeviceId, 
 | 登录/好友/IM 等 90 余条路由的实际行为 | ⚠️ 未验证（同样需要登录态） |
 
 `gradle :net:test` 5 tests / 0 failures；`gradle :net:liveVerify` 打印 `PROTOCOL_RECOVERED=1`。
+
+复跑（测试服与生产服都可指）：
+
+```bash
+sh tools/gradle.sh :net:liveVerify                                  # 默认测试服
+sh tools/gradle.sh :net:liveVerify --args=https://link.tttick.com/  # 生产服
+```
 
 ### 3.3 整包已能编出 APK
 
@@ -150,16 +158,33 @@ imGroupHuawei, imGroupIos, imGroupHonor, imGroupVivo, imGroupXiaomi, imGroupOppo
 4. Retrofit + OkHttp + Gson（原 1.6.6 即如此），不引 Room/Hilt 之前先把 `:net` 站稳。原包用了 Hilt 2.51.1、Room 2.6.1、MMKV，重建时在 `:app` 引入即可。
 5. **响应 bean 暂用 `JsonElement`**，先把 97 条路由全部接上；字段结构按 1.5.6 的 `bean`（113 个可读文件）逐个补成 data class。这样不会出现"为了编译通过而瞎猜字段"。
 6. 签名输入用 `encodedPath + "?" + encodedQuery`（原实现走 `java.net.URL.getPath()/getQuery()`，即已编码形态）。**重写时别改成解码形态**，否则签名静默失效。
+7. **baseUrl 走配置，默认指向生产 `https://link.tttick.com/`**。1.6.6 把测试服地址 `ag.a.f1732c` 硬编码进了正式包，等于整个线上客户端在打测试环境——这是一处独立的发布事故，重建时不要再复制。三个候选地址已固化在 `net/.../LinkUpClient.kt` 的 `LinkUpEndpoints`：`PRODUCTION` / `API`(测试) / `TRACKER_LEGACY`(定位上报)。
 
-## 七、APK 里根本没有、只能人去要
+## 七、后端现状：生产 API 其实还活着，后端不用重写
 
-1. **后端服务端源码**。测试服泄露的信息很具体：服务名 `always_guard.api`，CI 路径 `/var/jenkins_home/workspace/desyb_always_guard.api`，Go 中间件 `internal/middleware/signature.go` / `jwt.go`。**Jenkins 那台机器上大概率还留着服务端源码**，这是第一优先。
+2026-11-02 本轮实测（我方自有资产，只读探测，未碰任何写接口）：
+
+- 三个业务域名（`51wnl-cq.com` / `51wnl.com` / `tttick.com`）RDAP 查得注册商均为 Alibaba Cloud Computing (Beijing)，**全部续费到 2027–2029**——后端资产仍在付费维护，不是被放弃的产品。
+- **生产业务 API 活在 `link.tttick.com`**。这个域名在 1.6.6 里被当作 H5/深链 origin 使用（`ag.a.f1733d`、`f1750u = /index/#/`），所以 `report/03` 把它记成了"深链服务"，漏掉它同时路由 `/api`。实测：
+  - `GET /api/client/config` → **200 + 真实配置**，且 `notRelativesLockShow=false` 与测试服的 `true` 不同，说明是独立环境的真数据
+  - `GET /api/user/info`、`/api/vip/index`、`/api/version/check`、`/api/sensitive/server_timer` → **401 permission denied**（已过路由、卡在 JWT，符合预期）
+  - 重建的 `:net` 客户端把它当 baseUrl 直接跑通：`gradle :net:liveVerify --args=https://link.tttick.com/` → `PROTOCOL_RECOVERED=1`
+- `linkup.51wnl-cq.com`（原生产域名）确认只剩火山引擎 OSS 静态桶（`NoSuchKey`，`server: Byte-nginx`）；`dmp.51wnl-cq.com` 只跑定位上报（Go，`404 page not found`）；`score.51wnl-cq.com` 是 IIS 默认页。
+- Jenkins **没有暴露在公网**：`linkup-test.51wnl-cq.com/login`、`/jenkins/login` 都 404，`139.129.22.130:8080` 外部不可达。服务端源码只能在内网 CI 上找。
+
+**结论修正**：`report/00` 写的"最大不确定性在后端"可以划掉。**后端不需要重写**，重建客户端把 baseUrl 指到 `link.tttick.com` 就能对接真实数据，97 条路由的字段对齐可以在生产服逐条打出来，不用靠猜和抓包。
+
+**顺带要报给安全/运维的一条**：`link.tttick.com` 这台网关**没有启用 Signature 中间件**——不带 `Signature` 头的请求照样过（测试服会以 `参数异常1001` 拒）。线上 API 目前只有 JWT 一道闸，客户端密钥 `6R4aXTSK3OghHIgA` 在这台上形同虚设。客户端侧照已还原的算法继续签名不变，但**服务端要不要补齐签名校验需要单独拍板**：补齐才能挡住脚本直接打线上接口。
+
+## 八、APK 里根本没有、只能人去要
+
+1. **后端服务端源码**。好消息是**线上服务还活着、不必重写**（第七节），所以这份源码现在影响的是"维护与字段还原精度"，而不是"能不能上线"。线索很具体：服务名 `always_guard.api`，CI job `desyb_always_guard.api`，Go 中间件 `internal/middleware/signature.go` / `jwt.go`。**Jenkins 没暴露在公网，只能内网找**。
 2. **签名 keystore**。丢了就只能换签名重新上架，老用户覆盖安装会失败。
 3. **三方后台账号**：微信开放平台、QQ 互联、环信、百度地图、小米/华为/荣耀/OPPO/vivo/魅族/个推/Mob、穿山甲/广点通/百度联盟/快手/AnyThink、数数 ThinkingData、阿里云 SLS、友盟/Bugly。
    AppID 已从 APK 提取（`report/04` 第五节），可凭 AppID 直接向平台发起主体认领，不必等找到密码。
 4. 原注释、Gradle 打包配置、CI 脚本。
 
-## 八、我在这台机器上物理做不了的验收（交给你/团队）
+## 九、我在这台机器上物理做不了的验收（交给你/团队）
 
 | # | 待验项 | 为什么这里做不了 |
 |---|---|---|
@@ -167,12 +192,15 @@ imGroupHuawei, imGroupIos, imGroupHonor, imGroupVivo, imGroupXiaomi, imGroupOppo
 | 2 | 探针页在真机上显示 200 与配置键 | `app-debug.apk` 已编出，但这台机器没有连可装的设备；装包与看屏必须人来 |
 | 3 | 定位上报旧链路（`dmp.51wnl-cq.com` + 旧密钥）仍可用 | 属另一套协议，尚未接入重建工程 |
 | 4 | 97 条路由逐条字段对齐 | 需要登录态逐条打 |
-| 5 | 生产后端是否还活着、归属谁 | 只有公司运维/Jenkins 能回答 |
+| 5 | ~~生产后端是否还活着、归属谁~~ | **本轮已答**：归属我方，生产 API 活在 `link.tttick.com`（第七节） |
+| 6 | 服务端 Go 源码在内网哪台机 | 公网探不到 Jenkins（`8080` 不可达、`/login` 404），只能内网找 CI 与仓库 |
 
-## 九、下一步顺序（建议）
+## 十、下一步顺序（建议）
 
-1. **今天**：确认 Jenkins 与服务端源码归属（决定要不要重写后端，量级差别极大）
-2. 把 1.6.6 的 936 个布局 + strings.xml 按业务依赖迁入 `:app`（要先补齐 appcompat/material/lottie 等依赖，否则会引用不到）
-3. 按第五节文件数从大到小补 bean → repository → pages；每补一个模块，用 `:net:liveVerify` 加一条该模块的真实请求验证
-4. 找回 keystore；找不回就新签名 + 老用户重装方案
-5. 权限从 73 条砍到最小必要（`QUERY_ALL_PACKAGES`、`REQUEST_INSTALL_PACKAGES`、后台精确定位是上架审核与监管重点）
+1. **今天**：内网找 `desyb_always_guard.api` 这个 Jenkins job 与它的 git 仓库地址。后端**不用重写**（第七节），但服务端源码决定了字段与业务规则的还原精度，也决定了能不能继续给老用户发版。
+2. 把 baseUrl 从硬编码改成分环境配置，**默认指向生产 `link.tttick.com`**（1.6.6 把测试服地址打进了正式包，这本身就是一处发布事故）。
+3. 把 1.6.6 的 936 个布局（业务命名 327 个）+ 2169 条文案迁入 `:app`（要先补齐 appcompat/material/lottie 等依赖，否则会引用不到）。
+4. 按第五节文件数从大到小补 bean → repository → pages；**bean 的字段现在可以在生产服逐条打出来**，不必靠 1.5.6 猜；每补一个模块加一条 `:net:liveVerify` 的真实请求验证。
+5. 找回 keystore；找不回就新签名 + 老用户重装方案。
+6. 权限从 73 条砍到最小必要（`QUERY_ALL_PACKAGES`、`REQUEST_INSTALL_PACKAGES`、后台精确定位是上架审核与监管重点）。
+7. 与安全/运维定：生产网关要不要补齐 Signature 校验（第七节末）。
