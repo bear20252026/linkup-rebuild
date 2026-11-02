@@ -1,0 +1,1383 @@
+[
+ {
+  "verb": "GET",
+  "path": "api/relation/pre_confirm",
+  "method": "A",
+  "flags": [],
+  "response": "Friend",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "code",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"code\") long j10, kotlin.coroutines.d<? super ApiResponse<Friend>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/setting/all_devices",
+  "method": "A0",
+  "flags": [],
+  "response": "Map<String, String>",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<Map<String, String>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/talk/enshrine_list",
+  "method": "B",
+  "flags": [],
+  "response": "ChatCollectionData",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<ChatCollectionData>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/update/push/token",
+  "method": "B0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/phone/state/report",
+  "method": "C",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "PhoneStateInfo phoneStateInfo"
+   }
+  ],
+  "raw": "@hm.a PhoneStateInfo phoneStateInfo, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/version/check",
+  "method": "C0",
+  "flags": [],
+  "response": "HashMap<String, Object>",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "queryId",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"queryId\") String str, kotlin.coroutines.d<? super ApiResponse<HashMap<String, Object>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/sensitive/server_timer",
+  "method": "D",
+  "flags": [],
+  "response": "ListBean<SensBean>",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "eventTime",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"eventTime\") long j10, kotlin.coroutines.d<? super ApiResponse<ListBean<SensBean>>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/show/report",
+  "method": "D0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/feedback",
+  "method": "E",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/anniversary/choose",
+  "method": "E0",
+  "flags": [],
+  "response": "Anniversary",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "userId",
+    "type": "long j10"
+   },
+   {
+    "ann": "Query",
+    "arg": "friendId",
+    "type": "long j11"
+   },
+   {
+    "ann": "Query",
+    "arg": "friendAvatar",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"userId\") long j10, @t(\"friendId\") long j11, @t(\"friendAvatar\") String str, kotlin.coroutines.d<? super ApiResponse<Anniversary>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/four_quadrant_list/get_list",
+  "method": "F0",
+  "flags": [],
+  "response": "TodoRsp",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "listType",
+    "type": "int i10"
+   }
+  ],
+  "raw": "@t(\"listType\") int i10, kotlin.coroutines.d<? super ApiResponse<TodoRsp>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/lock",
+  "method": "G",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "/api/feedback/create",
+  "method": "G0",
+  "flags": [],
+  "response": "EvaluateRes",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<EvaluateRes>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/confirm",
+  "method": "H",
+  "flags": [],
+  "response": "ConfirmAdd",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "code",
+    "type": "long j10"
+   },
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@t(\"code\") long j10, @hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<ConfirmAdd>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/report/getui_cid",
+  "method": "H0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/setting/update",
+  "method": "I",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "PermissionUpdateBean permissionUpdateBean"
+   }
+  ],
+  "raw": "@hm.a PermissionUpdateBean permissionUpdateBean, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/lock/cover/del",
+  "method": "I0",
+  "flags": [],
+  "response": "o2",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/sensitive/user",
+  "method": "J",
+  "flags": [],
+  "response": "List<SensBean>",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "date",
+    "type": "String str"
+   },
+   {
+    "ann": "Query",
+    "arg": "mainUser",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"date\") String str, @t(\"mainUser\") long j10, kotlin.coroutines.d<? super ApiResponse<List<SensBean>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/setting/user_list_v2",
+  "method": "J0",
+  "flags": [],
+  "response": "PrivacyRes",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "pageSize",
+    "type": "int i10"
+   }
+  ],
+  "raw": "@t(\"pageSize\") int i10, kotlin.coroutines.d<? super ApiResponse<PrivacyRes>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/anniversary/createOrEdit",
+  "method": "K",
+  "flags": [],
+  "response": "Anniversary",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<Anniversary>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/client/config",
+  "method": "K0",
+  "flags": [],
+  "response": "ChannelConfig",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<ChannelConfig>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/index/realtime/voice/delete",
+  "method": "L",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/location/batch/report",
+  "method": "L0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/pop/homePage",
+  "method": "M0",
+  "flags": [],
+  "response": "PopListBean",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<PopListBean>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/talk/enshrine_delete",
+  "method": "N",
+  "flags": [],
+  "response": "ChatCollectionData",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<ChatCollectionData>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/sensitive/user/days",
+  "method": "N0",
+  "flags": [],
+  "response": "List<String>",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<List<String>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/feedback/checkPop",
+  "method": "O",
+  "flags": [],
+  "response": "EvaluateRes",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "userId",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"userId\") long j10, kotlin.coroutines.d<? super ApiResponse<EvaluateRes>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/relation/lock_list",
+  "method": "O0",
+  "flags": [],
+  "response": "ListBean<LockInfo>",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<ListBean<LockInfo>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/widget/track",
+  "method": "P",
+  "flags": [],
+  "response": "TrackWidget",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<TrackWidget>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/location/days",
+  "method": "P0",
+  "flags": [],
+  "response": "List<String>",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "queryId",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"queryId\") long j10, kotlin.coroutines.d<? super ApiResponse<List<String>>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/sms/click_to_login",
+  "method": "Q",
+  "flags": [],
+  "response": "User",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<User>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/risk/real_name_auth",
+  "method": "Q0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/update_remark",
+  "method": "R",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/address/tag_list",
+  "method": "R0",
+  "flags": [],
+  "response": "List<AddressTag>",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<List<AddressTag>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "/api/pay/check/order_status",
+  "method": "S",
+  "flags": [],
+  "response": "OrderStatus",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "orderId",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"orderId\") String str, kotlin.coroutines.d<? super ApiResponse<OrderStatus>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/volcano/token",
+  "method": "S0",
+  "flags": [],
+  "response": "TosToken",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<TosToken>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/relation/info",
+  "method": "T",
+  "flags": [],
+  "response": "FriendInfo",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "queryId",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"queryId\") long j10, kotlin.coroutines.d<? super ApiResponse<FriendInfo>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/logout",
+  "method": "T0",
+  "flags": [],
+  "response": "o2",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/setting/friend_sens",
+  "method": "U",
+  "flags": [],
+  "response": "PermissionUpdateBean",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "friendId",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"friendId\") String str, kotlin.coroutines.d<? super ApiResponse<PermissionUpdateBean>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/talk/init",
+  "method": "U0",
+  "flags": [],
+  "response": "TalkRiskInit",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<TalkRiskInit>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/tool/rsa/public_key",
+  "method": "V",
+  "flags": [],
+  "response": "PublicKey",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<PublicKey>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/phone/app_use/report",
+  "method": "W",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/login",
+  "method": "X",
+  "flags": [],
+  "response": "User",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<User>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/phone/app_use/v2/report",
+  "method": "Y",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/unlock",
+  "method": "Z",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/phone/sys_screen/report",
+  "method": "a",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/index",
+  "method": "a0",
+  "flags": [],
+  "response": "HomeData",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<HomeData>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/user/default_avatar",
+  "method": "b",
+  "flags": [],
+  "response": "AvatarList",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<AvatarList>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/talk/enshrine",
+  "method": "b0",
+  "flags": [],
+  "response": "ChatCollectionData",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "image",
+    "type": "String str"
+   },
+   {
+    "ann": "Query",
+    "arg": "userId",
+    "type": "long j10"
+   },
+   {
+    "ann": "Query",
+    "arg": "hash",
+    "type": "String str2"
+   }
+  ],
+  "raw": "@t(\"image\") String str, @t(\"userId\") long j10, @t(\"hash\") String str2, kotlin.coroutines.d<? super ApiResponse<ChatCollectionData>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/setting/user_list",
+  "method": "c",
+  "flags": [],
+  "response": "PrivacySettingList",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "pageSize",
+    "type": "int i10"
+   }
+  ],
+  "raw": "@t(\"pageSize\") int i10, kotlin.coroutines.d<? super ApiResponse<PrivacySettingList>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "/api/attribution/choice_channel",
+  "method": "c0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "/api/pay/available_types",
+  "method": "d",
+  "flags": [],
+  "response": "PayTypes",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<PayTypes>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/vip/index",
+  "method": "d0",
+  "flags": [],
+  "response": "VipData",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<VipData>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/index/realtime/voice/send",
+  "method": "e",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/pay/transaction",
+  "method": "e0",
+  "flags": [],
+  "response": "Pay",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "productId",
+    "type": "String str"
+   },
+   {
+    "ann": "Query",
+    "arg": "fromScene",
+    "type": "int i10"
+   },
+   {
+    "ann": "Query",
+    "arg": "payType",
+    "type": "int i11"
+   },
+   {
+    "ann": "Query",
+    "arg": "gid",
+    "type": "int i12"
+   },
+   {
+    "ann": "Query",
+    "arg": "giftUserId",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"productId\") String str, @t(\"fromScene\") int i10, @t(\"payType\") int i11, @t(\"gid\") int i12, @t(\"giftUserId\") long j10, kotlin.coroutines.d<? super ApiResponse<Pay>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/change_bind",
+  "method": "f",
+  "flags": [],
+  "response": "User",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<User>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/talk/gifs",
+  "method": "f0",
+  "flags": [],
+  "response": "ChatGifData",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "page",
+    "type": "int i10"
+   },
+   {
+    "ann": "Query",
+    "arg": "pageSize",
+    "type": "int i11"
+   }
+  ],
+  "raw": "@t(\"page\") int i10, @t(\"pageSize\") int i11, kotlin.coroutines.d<? super ApiResponse<ChatGifData>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/location/report",
+  "method": "g",
+  "flags": [],
+  "response": "Location",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Location location"
+   }
+  ],
+  "raw": "@hm.a Location location, kotlin.coroutines.d<? super ApiResponse<Location>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/risk/report",
+  "method": "g0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/talk/phone_state",
+  "method": "h",
+  "flags": [],
+  "response": "HashMap<String, Object>",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "mainUser",
+    "type": "long j10"
+   }
+  ],
+  "raw": "@t(\"mainUser\") long j10, kotlin.coroutines.d<? super ApiResponse<HashMap<String, Object>>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "/api/four_quadrant_list/del",
+  "method": "h0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "/api/relation/apply",
+  "method": "i",
+  "flags": [],
+  "response": "FriendApply",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<FriendApply>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "/api/vip/share_to_friend",
+  "method": "i0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/four_quadrant_list/edit",
+  "method": "j",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/attribution/activation",
+  "method": "j0",
+  "flags": [],
+  "response": "ActivationResult",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<ActivationResult>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/screenshot/done",
+  "method": "k",
+  "flags": [],
+  "response": "Boolean",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "friendId",
+    "type": "long j10"
+   },
+   {
+    "ann": "Query",
+    "arg": "SocializeConstants.KEY_PIC",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"friendId\") long j10, @t(SocializeConstants.KEY_PIC) String str, kotlin.coroutines.d<? super ApiResponse<Boolean>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/address/tag",
+  "method": "k0",
+  "flags": [],
+  "response": "Object",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "AddressTag addressTag"
+   }
+  ],
+  "raw": "@hm.a AddressTag addressTag, kotlin.coroutines.d<? super ApiResponse<Object>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/user/info",
+  "method": "l",
+  "flags": [],
+  "response": "User",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<User>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/widget/location",
+  "method": "l0",
+  "flags": [],
+  "response": "LocationWidget",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<LocationWidget>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/setting/update",
+  "method": "m",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "/api/relation/apply_list",
+  "method": "m0",
+  "flags": [],
+  "response": "FriendRequestList",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "page",
+    "type": "int i10"
+   },
+   {
+    "ann": "Query",
+    "arg": "pageSize",
+    "type": "int i11"
+   }
+  ],
+  "raw": "@t(\"page\") int i10, @t(\"pageSize\") int i11, kotlin.coroutines.d<? super ApiResponse<FriendRequestList>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/talk/enshrine_top",
+  "method": "n",
+  "flags": [],
+  "response": "ChatCollectionData",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<ChatCollectionData>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/feedback/check",
+  "method": "n0",
+  "flags": [],
+  "response": "FeedbackPopBean",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "userId",
+    "type": "long j10"
+   },
+   {
+    "ann": "Query",
+    "arg": "deviceId",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"userId\") long j10, @t(\"deviceId\") String str, kotlin.coroutines.d<? super ApiResponse<FeedbackPopBean>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/relation/lock/question_list",
+  "method": "o",
+  "flags": [],
+  "response": "ListBean<QuestionBean>",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<ListBean<QuestionBean>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/ad_config/list",
+  "method": "o0",
+  "flags": [],
+  "response": "AdConfigRes",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<AdConfigRes>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/setting/im",
+  "method": "p",
+  "flags": [],
+  "response": "AutoReport",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<AutoReport>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/android/install_app",
+  "method": "p0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/weather/baiduWeather",
+  "method": "q",
+  "flags": [],
+  "response": "WeatherBean",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "data_type",
+    "type": "String str"
+   },
+   {
+    "ann": "Query",
+    "arg": "district_id",
+    "type": "String str2"
+   },
+   {
+    "ann": "Query",
+    "arg": "force",
+    "type": "int i10"
+   }
+  ],
+  "raw": "@t(\"data_type\") String str, @t(\"district_id\") String str2, @t(\"force\") int i10, kotlin.coroutines.d<? super ApiResponse<WeatherBean>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/update/info",
+  "method": "q0",
+  "flags": [],
+  "response": "User",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<User>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/relation/lock/cover/list",
+  "method": "r",
+  "flags": [],
+  "response": "ListBean<LockImage>",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<ListBean<LockImage>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/screenshot/list",
+  "method": "r0",
+  "flags": [],
+  "response": "ListBean<ScreenshotData>",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<ListBean<ScreenshotData>>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/sms/login/cut",
+  "method": "s",
+  "flags": [],
+  "response": "Cut",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<Cut>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/index/realtime/voice/friend/list",
+  "method": "s0",
+  "flags": [],
+  "response": "VoiceRsp",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<VoiceRsp>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/user/cut/list",
+  "method": "t",
+  "flags": [],
+  "response": "CutConfigBean",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<CutConfigBean>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/location/v2/tracks",
+  "method": "t0",
+  "flags": [],
+  "response": "TrackRecordBean",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "queryId",
+    "type": "long j10"
+   },
+   {
+    "ann": "Query",
+    "arg": "date",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"queryId\") long j10, @t(\"date\") String str, kotlin.coroutines.d<? super ApiResponse<TrackRecordBean>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/del",
+  "method": "u",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/relation/list",
+  "method": "u0",
+  "flags": [],
+  "response": "FriendList",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "page",
+    "type": "int i10"
+   },
+   {
+    "ann": "Query",
+    "arg": "pageSize",
+    "type": "int i11"
+   },
+   {
+    "ann": "Query",
+    "arg": "key",
+    "type": "String str"
+   }
+  ],
+  "raw": "@t(\"page\") int i10, @t(\"pageSize\") int i11, @t(\"key\") String str, kotlin.coroutines.d<? super ApiResponse<FriendList>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/phone/call_record/report",
+  "method": "v",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/sms/send",
+  "method": "v0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Query",
+    "arg": "phone",
+    "type": "String str"
+   },
+   {
+    "ann": "Query",
+    "arg": "region",
+    "type": "String str2"
+   }
+  ],
+  "raw": "@t(\"phone\") String str, @t(\"region\") String str2, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/update",
+  "method": "w",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/tool/uploadLog",
+  "method": "w0",
+  "flags": [],
+  "response": "String",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<String>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/relation/main_user",
+  "method": "x",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "GET",
+  "path": "api/index/realtime/voice/list",
+  "method": "x0",
+  "flags": [],
+  "response": "VoiceRsp",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<VoiceRsp>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "/api/relation/match_by_phone",
+  "method": "y",
+  "flags": [],
+  "response": "SearchFriend",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<SearchFriend>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/sensitive/report",
+  "method": "y0",
+  "flags": [],
+  "response": "SensReportResult",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "SensBean sensBean"
+   }
+  ],
+  "raw": "@hm.a SensBean sensBean, kotlin.coroutines.d<? super ApiResponse<SensReportResult>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/user/unregister",
+  "method": "z",
+  "flags": [],
+  "response": "o2",
+  "params": [],
+  "raw": "kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ },
+ {
+  "verb": "POST",
+  "path": "api/index/realtime/voice/upload",
+  "method": "z0",
+  "flags": [],
+  "response": "o2",
+  "params": [
+   {
+    "ann": "Body",
+    "arg": "",
+    "type": "Map<String, Object> map"
+   }
+  ],
+  "raw": "@hm.a Map<String, Object> map, kotlin.coroutines.d<? super ApiResponse<o2>> dVar"
+ }
+]

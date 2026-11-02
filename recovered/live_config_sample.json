@@ -1,0 +1,18 @@
+{
+ "status": 200,
+ "msg": "success",
+ "data": {
+  "notRelativesLockShow": true,
+  "halfScreenVipPageShow": false,
+  "vipMarketingCopy": "周年",
+  "ifCheckRegin": false,
+  "profileSkipButton": false,
+  "autoReportAddressShow": 0,
+  "imGroupHuawei": "1021",
+  "imGroupIos": "12345678",
+  "imGroupHonor": "1084682617",
+  "imGroupVivo": "1084683752",
+  "imGroupXiaomi": "982583160",
+  "imGroupOppo": "1090292112"
+ }
+}

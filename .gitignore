@@ -1,0 +1,8 @@
+_raw/
+**/build/
+.gradle/
+local.properties
+*.apk
+*.zip
+*.log
+__pycache__/
