@@ -186,6 +186,20 @@ imGroupHuawei, imGroupIos, imGroupHonor, imGroupVivo, imGroupXiaomi, imGroupOppo
 6. 签名输入用 `encodedPath + "?" + encodedQuery`（原实现走 `java.net.URL.getPath()/getQuery()`，即已编码形态）。**重写时别改成解码形态**，否则签名静默失效。
 7. **baseUrl 走配置，默认指向生产 `https://link.tttick.com/`**。1.6.6 把测试服地址 `ag.a.f1732c` 硬编码进了正式包，等于整个线上客户端在打测试环境——这是一处独立的发布事故，重建时不要再复制。三个候选地址已固化在 `net/.../LinkUpClient.kt` 的 `LinkUpEndpoints`：`PRODUCTION` / `API`(测试) / `TRACKER_LEGACY`(定位上报)。
 
+## 六点五、API 面已强类型（2026-11-02）
+
+`tools/gen_beans.py` 从 1.6.6 的 bean 生成 **79 个 Kotlin data class**（`api/dto/Dtos.kt`），
+并重出 `LinkUpApi.kt`：**96/97 条路由强类型**。唯一那条 `JsonElement` 是忠实还原——
+原代码把 `POST api/address/tag` 声明成 `ApiResponse<Object>`。请求体类型化 4 条，其余 40 条保持
+`Map<String, Any?>`（原实现就发动态 map，不硬凑字段）。
+
+依据：两个 APK 的 `@SerializedName` 都被 R8 抹掉，Gson 仍工作 ⇒ **JSON key == 字段名**；
+`ChannelConfig` 的 9 个字段与生产实时回包一一对上，`RecoveredModelTest` 用抓包留证锁住解析。
+
+三方 SDK 的类型（如腾讯 TuringFD 的 `Date<T>`）**不生成**，一律 `JsonElement`：那不是本产品的 API 面。
+所有引用字段生成成可空默认 null——原 app 声明非空，但 Gson 缺字段会塞 null，照抄会 NPE。
+详见 `report/08_typed_models_CN.md`。
+
 ## 七、后端现状：生产 API 其实还活着，后端不用重写
 
 2026-11-02 本轮实测（我方自有资产，只读探测，未碰任何写接口）：

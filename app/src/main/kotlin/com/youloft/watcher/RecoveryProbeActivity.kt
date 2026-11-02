@@ -28,7 +28,12 @@ class RecoveryProbeActivity : Activity() {
                 buildString {
                     appendLine("status=${response.status} msg=${response.msg}")
                     appendLine("signature accepted by backend: ${response.isSuccess}")
-                    response.data?.asJsonObject?.keySet()?.take(20)?.forEach { appendLine("  $it") }
+                    response.data?.let {
+                        appendLine("notRelativesLockShow=${it.notRelativesLockShow}")
+                        appendLine("autoReportAddressShow=${it.autoReportAddressShow}")
+                        appendLine("vipMarketingCopy=${it.vipMarketingCopy}")
+                        appendLine("imGroup huawei=${it.imGroupHuawei} oppo=${it.imGroupOppo}")
+                    }
                 }
             }.getOrElse { "FAILED: $it" }
         }
