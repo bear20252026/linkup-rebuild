@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="16.0dp">
+        <com.mc.fastkit.view.shape.ShapedImageView android:id="@id/iv_avatar" android:layout_width="56.0dp" android:layout_height="56.0dp" android:layout_marginStart="16.0dp" app:mc_cornerSize="12.0dp" app:mc_strokeColor="@color/colorDivider" app:mc_strokeWidth="0.5dp" />
+        <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:ellipsize="end" android:id="@id/tv_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:layout_marginStart="8.0dp" />
+    </LinearLayout>
+    <View android:background="@color/colorDivider" android:layout_width="match_parent" android:layout_height="0.5dp" />
+    <LinearLayout android:id="@id/appleLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp">
+        <FrameLayout android:layout_width="0.0dp" android:layout_height="36.0dp" android:layout_weight="1.0">
+            <androidx.recyclerview.widget.RecyclerView android:id="@id/appView" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="36.0dp" />
+            <com.mc.fastkit.view.shape.ShapedTextView android:layout_gravity="end" android:layout_width="64.0dp" android:layout_height="match_parent" app:mc_gradientEndColor="#03ffffff" app:mc_gradientOrientation="right_left" app:mc_gradientStartColor="@color/colorWhite" />
+        </FrameLayout>
+        <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:gravity="center" android:id="@id/tv_lock_explain" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/app_lock_explain" android:drawablePadding="2.0dp" android:layout_marginEnd="12.0dp" app:drawableEndCompat="@drawable/ic_help_secondary_16_16" />
+    </LinearLayout>
+    <TextView android:textSize="14.0sp" android:textColor="@color/colorWarning" android:gravity="center" android:id="@id/tv_support_ios" android:paddingTop="12.0dp" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/lock_no_support_ios" />
+    <LinearLayout android:gravity="center_vertical" android:id="@id/lockLayout" android:padding="16.0dp" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center_vertical" android:id="@id/tv_state" android:layout_width="0.0dp" android:layout_height="wrap_content" android:drawablePadding="4.0dp" android:layout_weight="1.0" />
+        <FrameLayout android:clipChildren="false" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <com.mc.fastkit.view.shape.ShapedLabelView android:gravity="center" android:id="@id/tv_lock" android:layout_width="wrap_content" android:layout_height="40.0dp" android:includeFontPadding="false" android:paddingHorizontal="16.0dp" app:mc_contentColor="@color/colorVipPrimary" app:mc_contentColor_disable="#08000000" app:mc_contentColor_state="@color/colorBrand" app:mc_font="@font/alibaba_puhuiti_bold" app:mc_image="@drawable/ic_lock_list_lock" app:mc_imageDisable="@drawable/ic_lock_list_lock_disable" app:mc_imageSpacing="2.0dp" app:mc_imageState="@drawable/ic_lock_list_lock" app:mc_radius="12.0dp" app:mc_stateType="selected" app:mc_text="@string/lock_now" app:mc_textColorDisable="#c7c9ce" app:mc_textSize="12.0sp" />
+            <com.mc.fastkit.view.shape.ShapedLabelView android:gravity="center" android:id="@id/tv_unlock" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="40.0dp" android:includeFontPadding="false" android:paddingHorizontal="16.0dp" app:mc_contentColor="#08000000" app:mc_font="@font/alibaba_puhuiti_bold" app:mc_image="@drawable/ic_lock_list_unlock" app:mc_radius="12.0dp" app:mc_stateType="selected" app:mc_text="@string/unlock" app:mc_textColor="@color/appPrimary" app:mc_textSize="12.0sp" />
+            <ImageView android:layout_gravity="end|top" android:id="@id/iv_vip_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-6.0dp" android:src="@drawable/ic_mine_vip_label" android:rotation="30.0" android:layout_marginEnd="-10.0dp" />
+        </FrameLayout>
+    </LinearLayout>
+    <LinearLayout android:id="@id/permissionLayout" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <TextView android:textSize="12.0sp" android:textColor="@color/colorWarning" android:id="@id/tv_permission_tip" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_remind" android:padding="12.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/notify_ta" app:mc_contentColor="@color/colorBrand" app:mc_radius="12.0dp" style="@style/baseButtonStyle" />
+    </LinearLayout>
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

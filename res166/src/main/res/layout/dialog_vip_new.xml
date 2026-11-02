@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.host.StatusBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <com.mc.fastkit.view.shape.ShapedConstraintLayout android:layout_gravity="bottom" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.mc.fastkit.view.shape.ShapedFrameLayout android:id="@id/fl_bg" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent">
+            <FrameLayout android:id="@id/fragment_container" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </com.mc.fastkit.view.shape.ShapedFrameLayout>
+        <ImageView android:id="@id/iv_back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="16.0dp" android:foreground="@drawable/common_click_effect" android:src="@drawable/ic_common_arrow_down_black" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    </com.mc.fastkit.view.shape.ShapedConstraintLayout>
+</LinearLayout>

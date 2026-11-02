@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.hyphenate.easeui.modules.chat.EaseChatMessageListLayout android:id="@id/layout_chat_message" android:paddingBottom="5.0dp" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/layout_menu" />
+    <com.hyphenate.easeui.modules.chat.EaseChatInputMenu android:id="@id/layout_menu" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" />
+    <FrameLayout android:id="@id/inputMenuExtend" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_above="@id/layout_menu" />
+    <com.hyphenate.easeui.widget.EaseVoiceRecorderView android:id="@id/voice_recorder" android:focusableInTouchMode="true" android:visibility="invisible" android:clickable="true" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_centerHorizontal="true" />
+</RelativeLayout>

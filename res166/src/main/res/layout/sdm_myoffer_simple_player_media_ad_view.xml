@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.smartdigimkt.sdk.basead.ui.PlayerView android:id="@id/sdm_myoffer_player_view_id" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <com.smartdigimkt.sdk.basead.ui.web.WebProgressBarView android:layout_gravity="bottom" android:id="@id/sdm_myoffer_player_view_progress_bar_id" android:visibility="gone" android:layout_width="match_parent" android:layout_height="2.0dp" />
+    <ImageView android:id="@id/sdm_myoffer_player_view_cover_img_id" android:background="#fafafa" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+    <ImageView android:layout_gravity="center" android:id="@id/sdm_myoffer_player_view_cover_icon_id" android:layout_width="72.0dp" android:layout_height="72.0dp" android:src="@drawable/sdm_player_view_placeholder_icon" />
+    <ImageView android:layout_gravity="center" android:id="@id/sdm_myoffer_player_view_resume_img_id" android:background="@drawable/sdm_myoffer_bg_btn_player_action_36" android:visibility="gone" android:layout_width="72.0dp" android:layout_height="72.0dp" android:src="@drawable/sdm_myoffer_player_resume" android:scaleType="fitCenter" />
+    <include android:layout_gravity="center" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" layout="@layout/sdm_myoffer_include_video_play_fail" />
+    <ImageView android:layout_gravity="center" android:id="@id/sdm_myoffer_player_view_replay_img_id" android:background="@drawable/sdm_myoffer_bg_btn_player_action_36" android:visibility="gone" android:layout_width="72.0dp" android:layout_height="72.0dp" android:src="@drawable/sdm_myoffer_player_replay" android:scaleType="fitCenter" />
+    <com.smartdigimkt.sdk.basead.ui.MuteImageView android:layout_gravity="left|bottom" android:id="@id/sdm_myoffer_btn_mute_id" android:background="@drawable/sdm_myoffer_video_mute_icon_s" android:padding="3.0dp" android:layout_width="18.0dp" android:layout_height="18.0dp" />
+    <include layout="@layout/sdm_myoffer_include_guide2click_mask" />
+    <include layout="@layout/sdm_myoffer_include_guide2click_container" />
+</merge>

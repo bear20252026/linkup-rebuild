@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:background="@android:color/white" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.github.chrisbanes.photoview.PhotoView android:id="@id/pv_image" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <com.opensource.svgaplayer.SVGAImageView android:layout_gravity="center" android:id="@id/iv_loading" android:layout_width="32.0dp" android:layout_height="20.0dp" android:src="@drawable/ic_loading" app:autoPlay="true" app:loopCount="-1" app:source="loading.svga" />
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.mc.fastkit.view.host.StatusBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <ImageView android:layout_gravity="end" android:id="@id/iv_close" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_preview_close" />
+    </LinearLayout>
+</FrameLayout>

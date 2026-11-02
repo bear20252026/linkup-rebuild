@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:id="@id/sdm_myoffer_banner_root" android:background="@drawable/sdm_myoffer_bg_banner" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:id="@id/sdm_myoffer_banner_web" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    <include android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true" layout="@layout/sdm_myoffer_include_4_element_with_feedback" />
+    <include layout="@layout/sdm_myoffer_include_guide2click_mask" />
+    <include layout="@layout/sdm_myoffer_include_guide2click_container" />
+    <com.smartdigimkt.sdk.basead.ui.CloseImageView android:id="@id/sdm_myoffer_banner_close" style="@style/sdm_myoffer_banner_close_view" />
+</RelativeLayout>

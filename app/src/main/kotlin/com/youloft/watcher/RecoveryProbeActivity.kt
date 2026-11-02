@@ -1,14 +1,19 @@
 package com.youloft.watcher
 
+import android.app.Activity
 import android.os.Bundle
 import android.widget.TextView
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
 import com.youloft.linkup.net.LinkUpClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlin.coroutines.EmptyCoroutineContext
 
 /** Temporary entry point: proves the recovered signing stack works on a real device, not just on the JVM. */
-class RecoveryProbeActivity : AppCompatActivity() {
+class RecoveryProbeActivity : Activity() {
+
+    private val ui = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + EmptyCoroutineContext)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -16,10 +21,10 @@ class RecoveryProbeActivity : AppCompatActivity() {
         val result = findViewById<TextView>(R.id.probe_result)
         result.text = "probing $LINKUP_HOST ..."
 
-        lifecycleScope.launch {
+        val context = AndroidDeviceContext(this)
+        ui.launch {
             result.text = runCatching {
-                val api = LinkUpClient(context = AndroidDeviceContext(this@RecoveryProbeActivity)).api
-                val response = api.clientConfig()
+                val response = LinkUpClient(context = context).api.clientConfig()
                 buildString {
                     appendLine("status=${response.status} msg=${response.msg}")
                     appendLine("signature accepted by backend: ${response.isSuccess}")
@@ -30,6 +35,6 @@ class RecoveryProbeActivity : AppCompatActivity() {
     }
 
     companion object {
-        private const val LINKUP_HOST = "linkup-test.51wnl-cq.com"
+        private const val LINKUP_HOST = "link.tttick.com"
     }
 }

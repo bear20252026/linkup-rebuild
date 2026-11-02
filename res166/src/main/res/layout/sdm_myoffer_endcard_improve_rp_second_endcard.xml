@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <RelativeLayout android:id="@id/sdm_myoffer_second_ec_container" android:layout_width="320.0dp" android:layout_height="300.0dp" android:layout_centerInParent="true">
+        <RelativeLayout android:layout_width="match_parent" android:layout_height="132.0dp" android:layout_alignParentBottom="true">
+            <ImageView android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/sdm_myoffer_red_packet_ec_bottom" android:scaleType="fitXY" />
+            <com.smartdigimkt.sdk.basead.ui.ScanningAnimButton android:textSize="16.0dp" android:textColor="#000000" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_second_ec_cta" android:background="@drawable/sdm_myoffer_splash_bg_rectangle_btn_cta_asseblem" android:paddingLeft="@dimen/sdm_myoffer_splash_cta_padding_horizontal_v2" android:paddingRight="@dimen/sdm_myoffer_splash_cta_padding_horizontal_v2" android:layout_width="240.0dp" android:layout_height="48.0dp" android:layout_marginBottom="32.0dp" android:text="@string/sdm_myoffer_rp_second_hint_linkother_text" android:maxLines="1" android:layout_weight="1.0" android:layout_alignParentBottom="true" android:layout_centerHorizontal="true" android:backgroundTint="#fce72c" style="@style/sdm_myoffer_single_line" />
+        </RelativeLayout>
+        <RelativeLayout android:background="@drawable/sdm_myoffer_rp_second_endcard_bg" android:padding="10.0dp" android:layout_width="290.0dp" android:layout_height="204.0dp" android:layout_centerHorizontal="true">
+            <com.smartdigimkt.sdk.basead.ui.component.RoundImageView android:id="@id/sdm_myoffer_second_ec_ad_icon" android:layout_width="24.0dp" android:layout_height="24.0dp" android:src="@drawable/sdm_myoffer_red_packet_ec_icon" android:scaleType="fitXY" />
+            <TextView android:textSize="14.0dp" android:textColor="#000000" android:gravity="center_vertical" android:id="@id/sdm_myoffer_second_ec_ad_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="6.0dp" android:text="@string/sdm_myoffer_rp_second_endcard_title" android:layout_toRightOf="@id/sdm_myoffer_second_ec_ad_icon" android:layout_alignTop="@id/sdm_myoffer_second_ec_ad_icon" android:layout_alignBottom="@id/sdm_myoffer_second_ec_ad_icon" style="@style/sdm_myoffer_single_line.nofontpadding" />
+            <ImageView android:id="@id/sdm_myoffer_second_ec_ad_poster" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="6.0dp" android:scaleType="fitXY" android:layout_below="@id/sdm_myoffer_second_ec_ad_icon" />
+        </RelativeLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="48.0dp" android:layout_marginLeft="36.0dp" android:layout_marginRight="36.0dp" android:layout_marginBottom="32.0dp" android:layout_alignParentBottom="true" />
+    </RelativeLayout>
+</RelativeLayout>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorCard" app:mc_radius="16.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:orientation="vertical" android:id="@id/contentLayout" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.mc.fastkit.view.shape.ShapedLabelView android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_image="@drawable/ic_arrow_right_variant_20_20" app:mc_imageGravity="end" app:mc_text="@string/app_usage_statistics" app:mc_textColor="@color/appPrimary" app:mc_textSize="16.0sp" app:mc_textStyle="bold" app:mc_textWidth="match_parent" />
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp">
+            <LinearLayout android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+                <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/today_use" />
+                <TextView android:textSize="24.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="start" android:id="@id/tv_today_use" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout android:gravity="end" android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+                <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/yesterday_use" />
+                <TextView android:textSize="24.0sp" android:textStyle="bold" android:textColor="@color/appSecondary" android:gravity="end" android:id="@id/tv_yesterday_use" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+        </LinearLayout>
+        <com.mc.fastkit.view.shape.ShapedFrameLayout android:padding="4.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" app:layout_constraintTop_toBottomOf="@id/tv_storage_usage" app:mc_contentColor="@color/colorCardVariant" app:mc_radius="16.0dp">
+            <ProgressBar android:id="@id/pb_usage" android:layout_width="match_parent" android:layout_height="6.0dp" android:max="100" android:progress="50" android:progressDrawable="@drawable/layer_list_progress_radius_3_6dde51" android:progressTint="@color/colorBrand" style="@style/Widget.AppCompat.ProgressBar.Horizontal" />
+        </com.mc.fastkit.view.shape.ShapedFrameLayout>
+        <LinearLayout android:id="@id/appLayout" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:baselineAligned="false">
+            <include android:id="@id/newUse" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" layout="@layout/item_home_usage" />
+            <include android:id="@id/timeMax" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" android:layout_marginHorizontal="6.0dp" layout="@layout/item_home_usage" />
+            <include android:id="@id/countMax" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" layout="@layout/item_home_usage" />
+        </LinearLayout>
+        <com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center_vertical" android:id="@id/dataErrorLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="33.0dp" android:layout_marginTop="16.0dp" app:layout_constraintTop_toBottomOf="@id/recyclerView" app:mc_contentColor="@color/colorCardVariant" app:mc_radius="8.0dp">
+            <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="1.0dp" android:src="@drawable/ic_warning_primary_8_8" android:layout_marginStart="8.0dp" />
+            <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:ellipsize="end" android:id="@id/tv_data_error_title" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/tip_disable_usage_permission" android:maxLines="1" android:layout_weight="1.0" android:layout_marginStart="2.0dp" android:layout_marginEnd="4.0dp" />
+            <TextView android:background="@color/colorDivider" android:layout_width="1.0dp" android:layout_height="match_parent" android:layout_marginVertical="8.0dp" />
+            <TextView android:textSize="12.0sp" android:textStyle="bold" android:textColor="@color/colorSpanClick" android:gravity="center" android:id="@id/tv_notify_data_error" android:layout_width="wrap_content" android:layout_height="match_parent" android:text="@string/notify_ta" android:paddingHorizontal="8.0dp" />
+        </com.mc.fastkit.view.shape.ShapedLinearLayout>
+    </LinearLayout>
+    <LinearLayout android:orientation="vertical" android:id="@id/noPrivacyLayout" android:padding="16.0dp" android:visibility="gone" android:layout_width="match_parent" android:layout_height="194.0dp">
+        <com.mc.fastkit.view.shape.ShapedLabelView android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_image="@drawable/ic_arrow_right_variant_20_20" app:mc_imageGravity="end" app:mc_text="@string/app_usage_statistics" app:mc_textColor="@color/appPrimary" app:mc_textSize="16.0sp" app:mc_textStyle="bold" app:mc_textWidth="match_parent" />
+        <LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_marginTop="24.0dp">
+            <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_notify" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/no_permission_to_view_app_use_report" />
+            <com.mc.fastkit.view.shape.ShapedLabelView android:id="@id/tv_notify_enable" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" style="@style/sensPermissionRemind" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/noDataLayout" android:padding="16.0dp" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.mc.fastkit.view.shape.ShapedLabelView android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_image="@drawable/ic_arrow_right_variant_20_20" app:mc_imageGravity="end" app:mc_text="@string/app_usage_statistics" app:mc_textColor="@color/appPrimary" app:mc_textSize="16.0sp" app:mc_textStyle="bold" app:mc_textWidth="match_parent" />
+        <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/img_card_app_usage_ios" />
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:text="该功能仅支持iOS16系统及以上设备~" />
+    </LinearLayout>
+    <ImageView android:id="@id/iv_loading" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:adjustViewBounds="true" android:minHeight="52.0dp" />
+    <ImageView android:id="@id/iv_vip" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:adjustViewBounds="true" />
+</com.mc.fastkit.view.shape.ShapedFrameLayout>

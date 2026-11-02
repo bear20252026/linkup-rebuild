@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.kwad.components.core.innerEc.live.widget.OverScrollLayout android:id="@id/ksad_live_comments_container" android:layout_width="match_parent" android:layout_height="204.0dp">
+        <com.kwad.components.core.innerEc.live.widget.LiveCommentsView android:id="@id/ksad_live_comments_recyclerview" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_above="@id/live_comment_bottom_container" android:layout_alignParentTop="true" android:layout_alignWithParentIfMissing="true" />
+        <FrameLayout android:id="@id/ksad_live_history_comment_tip_container_view" android:visibility="gone" android:layout_width="match_parent" android:layout_height="74.0dp">
+            <com.kwad.components.core.innerEc.live.widget.LiveGradientBackgroundView android:id="@id/ksad_live_history_comment_tip_background_view" android:layout_width="match_parent" android:layout_height="match_parent" />
+            <TextView android:textSize="14.0dp" android:textColor="@android:color/white" android:id="@id/ksad_live_history_comment_tip_text_view" android:paddingLeft="8.0dp" android:paddingTop="6.0dp" android:layout_width="match_parent" android:layout_height="match_parent" android:text="没有更多评论了~" />
+        </FrameLayout>
+    </com.kwad.components.core.innerEc.live.widget.OverScrollLayout>
+</FrameLayout>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+        <ImageView android:layout_gravity="start|center" android:id="@id/iv_back" android:padding="16.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_back" />
+        <TextView android:textSize="15.0sp" android:textColor="@color/black" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="测试" android:layout_centerInParent="true" />
+    </RelativeLayout>
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="wrap_content">
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16.0dp">
+            <Button android:id="@id/btn_loc_update" android:layout_width="match_parent" android:layout_height="50.0dp" android:text="定位修改" />
+            <Button android:id="@id/btn_loc_mock" android:layout_width="match_parent" android:layout_height="50.0dp" android:text="定位模拟" />
+            <Button android:id="@id/btn_loc_status" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="定位状态" />
+            <Button android:id="@id/btn_config" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="当前配置" />
+            <Button android:id="@id/btn_queue_test" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="弹窗任务队列" />
+            <Button android:id="@id/btn_motion_state" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="运动状态" />
+            <Button android:id="@id/btn_call_log" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="通话记录测试" />
+            <Button android:id="@id/btn_accessibility_screenshot" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="无障碍截屏" />
+            <Button android:id="@id/btn_location_new" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="发送新的停留点" />
+            <Button android:id="@id/btn_close_dialog_intercept" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="关闭弹窗本地拦截" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

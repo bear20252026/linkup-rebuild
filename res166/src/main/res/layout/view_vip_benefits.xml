@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedConstraintLayout android:padding="12.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_radius="24.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/ll_header" android:layout_width="0.0dp" android:layout_height="52.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" app:mc_contentColor="@color/color_f8f8f8" app:mc_topLeftRadius="8.0dp" app:mc_topRightRadius="8.0dp">
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="0.0dp" android:layout_height="match_parent" android:text="@string/vip_benefit_detail" android:layout_weight="1.0" />
+        <com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" app:mc_contentColor="@color/colorVipPrimary" app:mc_topLeftRadius="8.0dp" app:mc_topRightRadius="8.0dp">
+            <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="match_parent" android:layout_height="match_parent" android:text="@string/vip_user_title" android:fontFamily="@font/sf_pro_rounded_heavy_subset" />
+            <ImageView android:layout_gravity="end|bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_bennefits_vip" />
+        </com.mc.fastkit.view.shape.ShapedFrameLayout>
+        <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:gravity="center" android:layout_width="0.0dp" android:layout_height="match_parent" android:text="@string/normal_user" android:layout_weight="1.0" />
+    </com.mc.fastkit.view.shape.ShapedLinearLayout>
+    <com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="0.0dp" android:layout_height="0.0dp" app:layout_constraintBottom_toBottomOf="@id/rv_benefits" app:layout_constraintEnd_toEndOf="@id/rv_benefits" app:layout_constraintStart_toStartOf="@id/rv_benefits" app:layout_constraintTop_toTopOf="@id/rv_benefits" app:mc_bottomLeftRadius="8.0dp" app:mc_bottomRightRadius="8.0dp" app:mc_contentColor="@color/color_fdfdfd" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@id/rv_benefits" android:scrollbars="none" android:layout_width="0.0dp" android:layout_height="wrap_content" android:overScrollMode="never" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/ll_header" />
+</com.mc.fastkit.view.shape.ShapedConstraintLayout>

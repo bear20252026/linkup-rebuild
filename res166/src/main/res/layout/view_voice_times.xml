@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:id="@id/fl_left" android:layout_width="75.0dp" android:layout_height="14.0dp" android:layout_marginStart="24.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/tv_times" app:layout_constraintHorizontal_chainStyle="packed" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <com.airbnb.lottie.LottieAnimationView android:layout_gravity="center" android:id="@id/lottie_left" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" app:lottie_fileName="voice_countdown.json" app:lottie_loop="true" />
+        <ImageView android:layout_gravity="center" android:id="@id/iv_left" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_voice_countdown" />
+    </FrameLayout>
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_gravity="center_horizontal" android:id="@id/tv_times" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/sf_pro_rounded_bold_subset" android:layout_marginHorizontal="8.0dp" android:paddingHorizontal="8.0dp" android:paddingVertical="2.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/fl_right" app:layout_constraintStart_toEndOf="@id/fl_left" app:layout_constraintTop_toTopOf="parent" app:mc_contentColor="@color/transparent" app:mc_radius="8.0dp" />
+    <FrameLayout android:id="@id/fl_right" android:layout_width="75.0dp" android:layout_height="14.0dp" android:layout_marginEnd="24.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toEndOf="@id/tv_times" app:layout_constraintTop_toTopOf="parent">
+        <com.airbnb.lottie.LottieAnimationView android:id="@id/lottie_right" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" app:lottie_fileName="voice_countdown.json" app:lottie_loop="true" />
+        <ImageView android:layout_gravity="center" android:id="@id/iv_right" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_voice_countdown" />
+    </FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

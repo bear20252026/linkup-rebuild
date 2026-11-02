@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLabelView android:id="@id/lv_editCard" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="32.0dp" android:paddingVertical="16.0dp" app:mc_contentColor="@color/colorWhite" app:mc_image="@drawable/ic_home_card_edit" app:mc_imageSpacing="5.0dp" app:mc_radius="16.0dp" app:mc_text="@string/edit_card" app:mc_textColor="@color/colorSpanClick" app:mc_textSize="14.0sp" app:mc_textStyle="bold"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" />

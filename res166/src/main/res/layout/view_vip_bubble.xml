@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.host.StatusBarHost android:id="@id/status_bar" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent" />
+    <com.mc.fastkit.view.shape.ShapedConstraintLayout android:layout_gravity="center_horizontal" android:id="@id/cl_content" android:padding="6.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" app:mc_contentColor="@color/color_ccffffff" app:mc_radius="100.0dp" app:mc_strokeColor="@color/colorWhite" app:mc_strokeWidth="0.5dp">
+        <com.youloft.watcher.view.AvatarView android:id="@id/avatar_view" android:layout_width="wrap_content" android:layout_height="wrap_content" app:avatarSize="small" app:stroke_visible="true" />
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="2.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toEndOf="@id/avatar_view" app:layout_constraintTop_toTopOf="parent" />
+        <com.youloft.watcher.view.StrokeTextView android:textSize="12.0sp" android:textColor="@color/colorVipPrimary" android:id="@id/tv_vip" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/alibaba_puhuiti_heavy" android:layout_marginStart="2.0dp" android:paddingHorizontal="3.0dp" app:layout_constraintBottom_toBottomOf="@id/tv_name" app:layout_constraintStart_toEndOf="@id/tv_name" app:layout_constraintTop_toTopOf="@id/tv_name" app:yl_strokeColor="@color/appPrimary" app:yl_strokeWidth="3.0dp" />
+    </com.mc.fastkit.view.shape.ShapedConstraintLayout>
+</LinearLayout>

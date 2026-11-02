@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:background="#f8f8f8" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.scwang.smart.refresh.layout.SmartRefreshLayout android:id="@id/layout_refresh" android:layout_width="match_parent" android:layout_height="match_parent">
+        <androidx.recyclerview.widget.RecyclerView android:id="@id/rv_gif" android:layout_width="match_parent" android:layout_height="match_parent" android:overScrollMode="never" />
+        <com.scwang.smart.refresh.footer.ClassicsFooter android:layout_width="match_parent" android:layout_height="wrap_content" app:srlTextFinish="@string/loading_complete" app:srlTextLoading="@string/loading" />
+    </com.scwang.smart.refresh.layout.SmartRefreshLayout>
+    <FrameLayout android:id="@id/layout_error" android:background="#f6f4e7" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent">
+        <ImageView android:layout_gravity="center" android:id="@id/iv_reload" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_gif_reload" />
+    </FrameLayout>
+</FrameLayout>

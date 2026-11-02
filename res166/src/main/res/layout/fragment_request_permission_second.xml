@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.core.widget.NestedScrollView android:paddingBottom="16.0dp" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0">
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent" android:paddingHorizontal="24.0dp">
+            <TextView android:textSize="24.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/alibaba_puhuiti_heavy" />
+            <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_gravity="start" android:id="@id/tv_sub_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:text="@string/request_permission_sub_title" />
+            <ImageView android:id="@id/iv_image" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp" android:scaleType="centerInside" android:adjustViewBounds="true" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_setup" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="@string/go_setup" android:layout_marginHorizontal="24.0dp" style="@style/normalButtonStyle" />
+</LinearLayout>

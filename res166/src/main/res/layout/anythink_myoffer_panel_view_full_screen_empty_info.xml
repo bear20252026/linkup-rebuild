@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/anythink_myoffer_splash_ad_bottom_container" android:background="@drawable/anythink_myoffer_splash_bg_info" android:layout_width="match_parent" android:layout_height="240.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.anythink.core.common.inner.ui.ScanningAnimButton android:id="@id/anythink_myoffer_panel_cta_layout" android:background="@drawable/anythink_myoffer_splash_bg_rectangle_btn_cta_asseblem" android:layout_width="match_parent" android:layout_height="48.0dp" android:layout_marginLeft="24.0dp" android:layout_marginRight="24.0dp" android:layout_marginBottom="48.0dp" android:layout_alignParentBottom="true" />
+    <include android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="24.0dp" android:layout_marginRight="24.0dp" android:layout_marginBottom="35.0dp" android:layout_alignParentBottom="true" layout="@layout/anythink_myoffer_include_invalid_button" />
+</RelativeLayout>

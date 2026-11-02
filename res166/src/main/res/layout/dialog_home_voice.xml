@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:animateLayoutChanges="true" app:mc_contentColor="@color/white" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="64.0dp">
+        <ImageView android:id="@id/iv_back" android:padding="16.0dp" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_back" />
+        <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/titleLayout" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="21.0dp" android:animateLayoutChanges="true">
+            <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@id/tv_title" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/sens_real_time_voice" />
+            <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:gravity="center" android:id="@id/tv_desc" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        </LinearLayout>
+        <ImageView android:layout_gravity="end" android:id="@id/iv_close" android:padding="16.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_close_round_32_32_primary" />
+    </FrameLayout>
+    <include android:id="@id/voiceIntroLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="-16.0dp" layout="@layout/view_voice_intro" />
+    <include android:orientation="vertical" android:id="@id/sendLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" layout="@layout/view_voice_send" />
+    <include android:orientation="vertical" android:id="@id/selectLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" layout="@layout/view_voice_select" />
+    <include android:orientation="vertical" android:id="@id/recordLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="240.0dp" layout="@layout/view_voice_record" />
+    <include android:orientation="vertical" android:id="@id/editLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" layout="@layout/view_voice_edit" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="center" android:orientation="vertical" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="26.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/confirm_cancel_lock_friend" android:paddingVertical="16.0dp" />
+    <LinearLayout android:orientation="vertical" android:id="@id/appLayout" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="48.0dp">
+            <androidx.recyclerview.widget.RecyclerView android:id="@id/appView" android:layout_width="wrap_content" android:layout_height="48.0dp" app:layout_constrainedWidth="true" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+            <com.mc.fastkit.view.shape.ShapedTextView android:layout_width="48.0dp" android:layout_height="match_parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" app:mc_gradientEndColor="#03ffffff" app:mc_gradientOrientation="left_right" app:mc_gradientStartColor="@color/colorWhite" />
+            <com.mc.fastkit.view.shape.ShapedTextView android:layout_gravity="end" android:layout_width="48.0dp" android:layout_height="match_parent" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" app:mc_gradientEndColor="#03ffffff" app:mc_gradientOrientation="right_left" app:mc_gradientStartColor="@color/colorWhite" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:layout_gravity="center_horizontal" android:id="@id/tv_desc_ios" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:layout_marginBottom="8.0dp" android:text="@string/format_unlock_desc_ios" />
+    </LinearLayout>
+    <LinearLayout android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="16.0dp">
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_cancel" android:layout_width="0.0dp" android:layout_height="match_parent" android:text="@string/cancel" android:layout_weight="1.0" style="@style/secondaryButtonStyle" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_confirm" android:layout_width="0.0dp" android:layout_height="match_parent" android:text="@string/confirm" android:layout_weight="1.0" android:layout_marginStart="16.0dp" style="@style/normalButtonStyle" />
+    </LinearLayout>
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

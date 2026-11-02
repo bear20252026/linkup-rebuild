@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/today_location_stay" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_address_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="18.0dp" android:text="*" android:layout_marginHorizontal="2.0dp" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/number_place" android:layout_weight="1.0" />
+    <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_arrow_right_variant_20_20" />
+</LinearLayout>

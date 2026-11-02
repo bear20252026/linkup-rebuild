@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="40.0dp" app:layout_constraintBottom_toTopOf="@id/shapedTextView3" app:layout_constraintTop_toTopOf="parent">
+        <ImageView android:id="@id/iv_image" android:layout_width="110.0dp" android:layout_height="110.0dp" android:src="@drawable/img_locked_preview_lock_ios" />
+        <TextView android:textSize="24.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_sys_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:fontFamily="@font/alibaba_puhuiti_heavy" />
+        <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_user_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:text="@string/lock_default_string" />
+    </LinearLayout>
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/shapedTextView3" android:layout_width="0.0dp" android:layout_height="54.0dp" android:text="@string/go_to_linkup_unlock" android:layout_marginHorizontal="40.0dp" app:layout_constraintBottom_toTopOf="@id/textView" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" style="@style/normalButtonStyle" />
+    <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:gravity="center" android:id="@id/textView" android:layout_width="wrap_content" android:layout_height="54.0dp" android:layout_marginBottom="17.0dp" android:text="LinkUp·一键锁机" app:layout_constraintBottom_toTopOf="@id/navigationBar" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" />
+    <com.mc.fastkit.view.host.NavigationBarHost android:id="@id/navigationBar" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintBottom_toBottomOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

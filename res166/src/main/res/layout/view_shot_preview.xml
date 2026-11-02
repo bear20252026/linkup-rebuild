@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_gravity="center_horizontal" android:layout_width="228.0dp" android:layout_height="match_parent" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp" app:mc_strokeColor="@color/appPrimary" app:mc_strokeWidth="6.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="22.0dp" android:src="@drawable/ic_screen_shot_preview_decor" android:layout_marginStart="22.0dp" />
+    <ImageView android:layout_gravity="end|bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="22.0dp" android:src="@drawable/ic_screen_shot_preview_decor" android:rotation="180.0" android:layout_marginEnd="22.0dp" />
+    <LinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:id="@id/iv_image" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <TextView android:textSize="18.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/alibaba_puhuiti_heavy" android:layout_marginHorizontal="22.0dp" android:layout_marginVertical="6.0dp" />
+        <LinearLayout android:gravity="center_vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginHorizontal="22.0dp">
+            <ImageView android:id="@id/iv_use_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginEnd="2.0dp" />
+            <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_use" android:layout_width="wrap_content" android:layout_height="wrap_content" android:drawablePadding="4.0dp" />
+        </LinearLayout>
+    </LinearLayout>
+</com.mc.fastkit.view.shape.ShapedFrameLayout>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/sdm_myoffer_feedback_ll_id" android:background="@drawable/sdm_myoffer_bg_feedback_button" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:layout_width="14.0dp" android:layout_height="14.0dp" android:layout_margin="5.0dp" android:src="@drawable/sdm_myoffer_feedback_icon" />
+</LinearLayout>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.kwad.sdk.core.view.AdBaseFrameLayout android:orientation="vertical" android:id="@id/ksad_root_container" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="26.0sp" android:textColor="#ff0000" android:layout_gravity="center" android:id="@id/ksad_test" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="测试表情文案" />
+</com.kwad.sdk.core.view.AdBaseFrameLayout>

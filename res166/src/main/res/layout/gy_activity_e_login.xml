@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/gy_e_login_bg_layout" android:fitsSystemWindows="false" android:clipToPadding="true" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.g.gysdk.view.AnimateSurfaceFrame android:id="@id/gy_e_login_animate_surface_view" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <FrameLayout android:id="@id/gy_e_login_fr_nav" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <include android:id="@id/gy_e_login_nav_layout" layout="@layout/gy_e_login_nav" />
+    </FrameLayout>
+    <ImageView android:id="@id/gy_e_login_logo" android:layout_width="wrap_content" android:layout_height="wrap_content" android:scaleType="fitXY" android:layout_centerHorizontal="true" />
+    <RelativeLayout android:id="@id/gy_e_login_main_layout" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_below="@id/gy_e_login_nav_layout">
+        <TextView android:textSize="18.0sp" android:id="@id/gy_e_login_number_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerHorizontal="true" />
+        <TextView android:textSize="10.0sp" android:id="@id/gy_e_login_brand" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerHorizontal="true" />
+        <RelativeLayout android:id="@id/gy_e_login_submit_layout" android:layout_width="wrap_content" android:layout_height="36.0dp">
+            <TextView android:textSize="15.0sp" android:id="@id/gy_e_login_submit_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true" />
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_alignParentRight="true">
+                <com.g.gysdk.view.LoadingImageView android:id="@id/gy_e_login_submit_iv" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="12.0dp" />
+                <com.g.gysdk.view.GTGifView android:id="@id/gy_e_login_submit_gif" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="12.0dp" />
+            </LinearLayout>
+        </RelativeLayout>
+        <TextView android:textSize="14.0sp" android:id="@id/gy_e_login_switch_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="切换账号" android:layout_centerHorizontal="true" />
+        <LinearLayout android:gravity="center_horizontal" android:orientation="horizontal" android:id="@id/gy_e_login_privacy_ll" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <LinearLayout android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                <CheckBox android:id="@id/gy_e_login_check" android:layout_width="9.0dp" android:layout_height="9.0dp" android:layout_marginTop="2.0dp" android:button="@null" />
+            </LinearLayout>
+            <TextView android:textSize="10.0sp" android:id="@id/gy_e_login_param_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dp" android:layout_marginBottom="5.0dp" />
+        </LinearLayout>
+    </RelativeLayout>
+</RelativeLayout>

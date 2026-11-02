@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center_horizontal" android:layout_gravity="bottom" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="#f9f9f9" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="64.0dp">
+        <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="#324058" android:gravity="center" android:layout_width="match_parent" android:layout_height="match_parent" android:text="实时截屏使用须知" />
+        <ImageView android:layout_gravity="end|center" android:id="@id/iv_close" android:padding="16.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_close_black" />
+    </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:paddingTop="16.0dp" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="32.0dp" android:paddingEnd="32.0dp">
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="#324058" android:gravity="center" android:layout_gravity="top" android:layout_width="22.0dp" android:layout_height="22.0dp" android:layout_marginTop="2.0dp" android:text="1" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+            <TextView android:textSize="16.0sp" android:textColor="#324058" android:id="@id/tv_item1" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/ios_screenshot_hint_item1" android:layout_weight="1.0" android:layout_marginStart="4.0dp" />
+        </LinearLayout>
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp">
+            <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="#324058" android:gravity="center" android:layout_gravity="top" android:layout_width="22.0dp" android:layout_height="22.0dp" android:layout_marginTop="2.0dp" android:text="2" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+            <TextView android:textSize="16.0sp" android:textColor="#324058" android:id="@id/tv_item2" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/ios_screenshot_hint_item2" android:layout_weight="1.0" android:layout_marginStart="4.0dp" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:orientation="vertical" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="32.0dp" android:paddingEnd="32.0dp">
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/colorBrand" android:gravity="center" android:id="@id/tv_ok" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="我知道了，去发送短信" android:fontFamily="@font/alibaba_puhuiti_bold" app:mc_radius="16.0dp" style="@style/normalButtonStyle" />
+    </LinearLayout>
+    <com.mc.fastkit.view.host.NavigationBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

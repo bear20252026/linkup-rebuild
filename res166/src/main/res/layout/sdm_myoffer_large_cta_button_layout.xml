@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.smartdigimkt.sdk.basead.ui.ScanningAnimButton android:textSize="20.0dp" android:textColor="#ffffffff" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_cta_button_major" android:background="@drawable/sdm_myoffer_bg_single_pic_splash_shake" android:paddingLeft="70.0dp" android:paddingRight="70.0dp" android:layout_width="match_parent" android:layout_height="match_parent" android:text="@string/sdm_myoffer_cta_learn_more" android:maxLines="3" />
+</merge>

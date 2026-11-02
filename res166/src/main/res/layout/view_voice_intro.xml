@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="24.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/dialog_voice_intro_title" android:fontFamily="@font/alibaba_puhuiti_heavy" />
+    <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" android:text="@string/dialog_voice_intro_desc" android:layout_marginHorizontal="32.0dp" />
+    <com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="match_parent" android:layout_height="438.0dp" android:layout_marginTop="16.0dp" android:layout_weight="0.5" android:layout_marginHorizontal="32.0dp" app:mc_contentColor="@color/color_f2f2f2" app:mc_radius="24.0dp" app:mc_strokeColor="@color/color_e9e9e9" app:mc_strokeWidth="2.0dp">
+        <com.airbnb.lottie.LottieAnimationView android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" app:lottie_autoPlay="true" app:lottie_fileName="voice_help_dialog.json" app:lottie_loop="true" />
+    </com.mc.fastkit.view.shape.ShapedFrameLayout>
+    <com.mc.fastkit.view.shape.ShapedTextView android:gravity="center" android:id="@id/tv_ok" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_margin="32.0dp" android:text="@string/i_known" style="@style/normalButtonStyle" />
+</LinearLayout>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/btn_add_task" android:layout_width="40.0dp" android:layout_height="40.0dp" android:src="@drawable/ic_avatar_add" />
+    <ScrollView android:id="@id/task_actions" android:visibility="gone" android:layout_width="160.0dp" android:layout_height="400.0dp">
+        <LinearLayout android:orientation="vertical" android:background="#ffffff" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <Button android:id="@id/btn_complete_current" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="完成当前任务" />
+            <Button android:id="@id/btn_cancel_current" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="取消当前任务" />
+            <Button android:id="@id/btn_clear_queue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="清空队列" />
+            <Button android:id="@id/btn_friend_remind_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="好友提醒" />
+            <Button android:id="@id/btn_normal_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="普通 Dialog" />
+            <Button android:id="@id/btn_feed_back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="意见反馈" />
+            <Button android:id="@id/btn_good" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="好评" />
+            <Button android:id="@id/btn_vip_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP Dialog" />
+            <Button android:id="@id/btn_vip_lowest_price_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP 最低价" />
+            <Button android:id="@id/btn_vip_rec_month_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP 续月" />
+            <Button android:id="@id/btn_vip_renewal_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP 续费" />
+            <Button android:id="@id/btn_vip_4_day" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP 4天不付费" />
+            <Button android:id="@id/btn_vip_upgrade_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP 升级" />
+            <Button android:id="@id/btn_vip_upgrade_second_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP 二次升级" />
+            <Button android:id="@id/btn_vip_immediate_dialog" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VIP Dialog(立即显示)" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

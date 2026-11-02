@@ -16,4 +16,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "linkup-rebuild"
 include(":net")
+include(":res166")
 include(":app")

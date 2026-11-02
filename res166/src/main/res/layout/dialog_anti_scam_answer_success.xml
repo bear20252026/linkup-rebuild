@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:padding="32.0dp" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="26.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/img_dialog_anti_scam_answer_success" />
+    <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:text="@string/dialog_anti_scam_answer_success_content" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_ok" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="24.0dp" android:text="@string/i_known" style="@style/normalButtonStyle" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

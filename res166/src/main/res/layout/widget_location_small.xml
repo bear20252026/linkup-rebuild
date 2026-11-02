@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/rl_root" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:layout_gravity="center" android:id="@id/iv_bg" android:layout_width="160.0dp" android:layout_height="160.0dp" android:src="@drawable/ic_widget_location_small_holder_bg" android:adjustViewBounds="true" android:layout_centerInParent="true" />
+    <RelativeLayout android:id="@id/rl_content" android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_alignTop="@id/iv_bg" android:layout_alignBottom="@id/iv_bg" android:layout_alignStart="@id/iv_bg" android:layout_alignEnd="@id/iv_bg">
+        <ImageView android:id="@id/iv_map_mask" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="33.0dp" android:src="@drawable/ic_widget_location_small_mask" android:adjustViewBounds="true" android:layout_alignParentBottom="true" android:layout_alignParentStart="true" android:layout_alignParentEnd="true" />
+        <LinearLayout android:gravity="center" android:id="@id/ll_battery" android:background="@drawable/shape_corner_6_white_stroke_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="19.0dp" android:layout_centerHorizontal="true" android:paddingHorizontal="4.0dp" android:paddingVertical="2.0dp">
+            <ImageView android:id="@id/iv_battery" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_widget_battery" android:adjustViewBounds="true" />
+            <ProgressBar android:id="@id/pb_battery" android:background="@drawable/ic_phone_status_battery" android:layout_width="14.0dp" android:layout_height="14.0dp" android:max="100" android:progress="100" android:progressDrawable="@drawable/layer_list_progress_radius_3_primary_new" style="@style/Widget.AppCompat.ProgressBar.Horizontal" />
+            <TextView android:textSize="10.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_battery" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="__" />
+        </LinearLayout>
+        <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/ll_avatar" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6.0dp" android:layout_below="@id/ll_battery" android:layout_centerHorizontal="true">
+            <FrameLayout android:background="@drawable/shape_corner_16_white_stroke_3" android:layout_width="50.0dp" android:layout_height="50.0dp">
+                <ImageView android:layout_gravity="center" android:id="@id/iv_avatar" android:layout_width="44.0dp" android:layout_height="44.0dp" android:src="@drawable/ic_avatar_male" android:adjustViewBounds="true" />
+            </FrameLayout>
+            <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-1.0dp" android:src="@drawable/ic_marker_indicator" android:adjustViewBounds="true" />
+            <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6.0dp" android:src="@drawable/ic_widget_track_point" android:adjustViewBounds="true" />
+        </LinearLayout>
+        <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:layout_gravity="center" android:id="@id/tv_date" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8.0dp" android:layout_alignParentBottom="true" android:layout_centerHorizontal="true" />
+        <TextView android:textSize="12.0sp" android:textColor="@color/colorWarning" android:id="@id/tv_no_permission" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8.0dp" android:layout_alignParentBottom="true" android:layout_centerHorizontal="true" />
+    </RelativeLayout>
+    <ImageView android:id="@id/iv_mask" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="0.0dp" android:src="@drawable/ic_widget_location_small_not_vip" android:adjustViewBounds="true" android:layout_alignTop="@id/rl_content" android:layout_alignBottom="@id/rl_content" android:layout_alignStart="@id/rl_content" android:layout_alignEnd="@id/rl_content" />
+</RelativeLayout>

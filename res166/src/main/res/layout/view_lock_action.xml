@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedFrameLayout android:padding="4.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/appPrimary" app:mc_contentColor_disable="#dbdbdb" app:mc_radius="16.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/colorBrand" android:layout_gravity="center" android:id="@id/tv_content" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/move_confirm_locked" android:fontFamily="@font/alibaba_puhuiti_bold" app:mc_textColorDisable="#40354056" />
+    <ImageView android:id="@id/iv_thumb" android:layout_width="wrap_content" android:layout_height="match_parent" android:src="@drawable/img_lock_thumb" android:layout_centerVertical="true" />
+</com.mc.fastkit.view.shape.ShapedFrameLayout>

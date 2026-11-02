@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.smartdigimkt.sdk.basead.ui.ScanningAnimButton android:textSize="@dimen/sdm_myoffer_splash_cta_text_size" android:textColor="#8e8e8e" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_cta_button_minor" android:background="@drawable/sdm_myoffer_splash_bg_rectangle_btn_cta_close_minor" android:paddingLeft="6.0dp" android:paddingRight="6.0dp" android:visibility="gone" android:layout_width="120.0dp" android:layout_height="match_parent" android:layout_marginRight="12.0dp" android:text="@string/sdm_myoffer_sub_close_default_text" android:maxLines="1" style="@style/sdm_myoffer_single_line" />
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_weight="1.0">
+        <com.smartdigimkt.sdk.basead.ui.ScanningAnimButton android:textSize="@dimen/sdm_myoffer_splash_cta_text_size" android:textColor="#d9ffffff" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_cta_button_major" android:background="@drawable/sdm_myoffer_splash_bg_rectangle_btn_cta_asseblem" android:paddingLeft="6.0dp" android:paddingRight="6.0dp" android:layout_width="match_parent" android:layout_height="match_parent" android:maxLines="1" style="@style/sdm_myoffer_single_line" />
+    </RelativeLayout>
+</merge>

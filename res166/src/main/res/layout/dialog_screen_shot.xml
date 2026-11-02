@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center" android:layout_gravity="center" android:orientation="vertical" android:layout_width="240.0dp" android:layout_height="240.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="140.0dp" android:layout_height="140.0dp">
+        <com.airbnb.lottie.LottieAnimationView android:id="@id/lottie_step1" android:layout_width="140.0dp" android:layout_height="140.0dp" android:scaleType="fitCenter" android:alpha="1.0" app:lottie_autoPlay="false" app:lottie_fileName="screenshot/sending.json" app:lottie_loop="true" />
+        <com.airbnb.lottie.LottieAnimationView android:id="@id/lottie_step2" android:layout_width="140.0dp" android:layout_height="140.0dp" android:scaleType="fitCenter" android:alpha="0.0" app:lottie_autoPlay="false" app:lottie_fileName="screenshot/shoting.json" app:lottie_loop="true" />
+        <com.airbnb.lottie.LottieAnimationView android:id="@id/lottie_step3" android:layout_width="140.0dp" android:layout_height="140.0dp" android:scaleType="fitCenter" android:alpha="0.0" app:lottie_autoPlay="false" app:lottie_fileName="screenshot/load_image.json" app:lottie_loop="true" />
+    </FrameLayout>
+    <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp" android:text="@string/screenshot_sending" android:fontFamily="@font/alibaba_puhuiti_heavy" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

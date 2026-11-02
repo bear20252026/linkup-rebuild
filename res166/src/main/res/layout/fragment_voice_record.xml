@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_gravity="bottom" android:paddingTop="24.0dp" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appSecondary" android:gravity="center_horizontal" android:id="@id/tv_title" android:visibility="visible" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="26.0dp" android:text="@string/click_start_record" app:layout_constraintTop_toTopOf="parent" />
+    <com.youloft.watcher.view.voice.VoiceTimesView android:id="@id/voice_times" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="26.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    <androidx.constraintlayout.widget.Barrier android:id="@id/barrier" android:layout_width="wrap_content" android:layout_height="wrap_content" app:barrierDirection="bottom" app:constraint_referenced_ids="tv_title,voice_times" />
+    <com.youloft.watcher.view.voice.VoiceButton android:id="@id/voice_button" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/barrier" />
+</androidx.constraintlayout.widget.ConstraintLayout>

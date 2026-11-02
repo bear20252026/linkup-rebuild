@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:paddingTop="13.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/timestamp" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/chat_text_date_style" />
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/bubble" android:background="@drawable/ease_chat_location_bubble_send_bg" android:padding="12.0dp" android:layout_width="265.0dp" android:layout_height="wrap_content" android:layout_marginTop="10.0dp" android:layout_marginStart="3.0dp">
+        <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="#324058" android:id="@id/tv_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:letterSpacing="0.02" />
+        <TextView android:textSize="12.0sp" android:textColor="#324058" android:ellipsize="end" android:id="@id/tv_content" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:maxLines="2" />
+        <TextView android:background="#1a354056" android:layout_width="match_parent" android:layout_height="0.5dp" android:layout_marginTop="12.0dp" />
+        <TextView android:textSize="12.0sp" android:textStyle="bold" android:textColor="#3d5894" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:text="查看全部" android:drawablePadding="4.0dp" app:drawableEndCompat="@drawable/ic_arrow_right_008df3" app:drawableTint="#3d5894" />
+    </LinearLayout>
+    <com.hyphenate.easeui.widget.EaseChatQuoteView android:layout_gravity="center" android:id="@id/chat_quote_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+</LinearLayout>

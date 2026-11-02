@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.cardview.widget.CardView android:id="@id/cardview" android:background="@color/white" android:layout_width="72.0dp" android:layout_height="72.0dp" android:alpha="0.0" app:cardCornerRadius="12.799988dp" app:cardElevation="5.5999756dp">
+        <com.mc.fastkit.view.shape.ShapedImageView android:id="@id/imageview" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_margin="4.0dp" android:src="@drawable/ic_voice_default_cover" app:mc_cornerSize="9.599976dp" />
+    </androidx.cardview.widget.CardView>
+</FrameLayout>

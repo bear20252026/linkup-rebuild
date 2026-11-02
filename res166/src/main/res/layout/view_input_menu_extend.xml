@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center" android:id="@id/updateLayout" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8.0dp" android:paddingHorizontal="8.0dp" android:paddingVertical="5.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:mc_contentColor="@color/white" app:mc_radius="12.0dp">
+        <ImageView android:id="@id/iv_close" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_close_update" />
+        <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/friend_version_too_low" android:layout_marginHorizontal="12.0dp" />
+        <TextView android:background="#40324058" android:layout_width="1.5dp" android:layout_height="17.0dp" />
+        <TextView android:textSize="12.0sp" android:textStyle="bold" android:textColor="#345999" android:id="@id/iv_update" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/remind_ta_update" android:layout_marginStart="8.0dp" />
+    </com.mc.fastkit.view.shape.ShapedLinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

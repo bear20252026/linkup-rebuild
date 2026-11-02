@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/sdm_myoffer_rl_root" android:background="@android:color/black" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.smartdigimkt.sdk.basead.ui.PanelView android:id="@id/sdm_myoffer_banner_view_id" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentRight="true" android:layout_alignParentBottom="true" />
+    <include android:layout_width="match_parent" android:layout_height="22.0dp" android:layout_alignParentBottom="true" layout="@layout/sdm_myoffer_include_4_element" />
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:padding="12.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentRight="true">
+        <com.smartdigimkt.sdk.basead.ui.CountDownView android:id="@id/sdm_myoffer_count_down_view_id" android:layout_width="@dimen/sdm_myoffer_half_screen_button_size" android:layout_height="@dimen/sdm_myoffer_half_screen_button_size" />
+        <com.smartdigimkt.sdk.basead.ui.CloseImageView android:id="@id/sdm_myoffer_btn_close_id" android:background="@drawable/sdm_myoffer_base_close_icon" android:layout_width="@dimen/sdm_myoffer_half_screen_button_size" android:layout_height="@dimen/sdm_myoffer_half_screen_button_size" android:layout_marginLeft="12.0dp" />
+    </LinearLayout>
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2.0dp">
+        <TextView android:textSize="11.0dp" android:textColor="#ffffff" android:gravity="center" android:id="@id/sdm_myoffer_ad_lable" android:background="@drawable/sdm_myoffer_splash_ad_label_bg" android:paddingLeft="5.0dp" android:paddingTop="2.0dp" android:paddingRight="5.0dp" android:paddingBottom="2.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dp" android:text="@string/sdm_basead_ad_text" />
+        <com.smartdigimkt.sdk.basead.ui.MuteImageView android:id="@id/sdm_myoffer_btn_mute_id" android:background="@drawable/sdm_myoffer_video_mute_icon" android:layout_width="@dimen/sdm_myoffer_half_screen_button_size" android:layout_height="@dimen/sdm_myoffer_half_screen_button_size" android:layout_marginLeft="8.0dp" android:layout_toRightOf="@id/sdm_myoffer_ad_lable" android:layout_alignTop="@id/sdm_myoffer_ad_lable" />
+    </LinearLayout>
+</RelativeLayout>

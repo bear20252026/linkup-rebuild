@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:id="@id/llContent" android:padding="12.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <com.mc.fastkit.view.shape.ShapedImageView android:id="@id/iv_avatar" android:layout_width="56.0dp" android:layout_height="56.0dp" android:src="@drawable/ic_avatar_male" app:mc_cornerSize="16.0dp" app:mc_strokeColor="@color/colorDivider" app:mc_strokeWidth="1.0dp" />
+        <LinearLayout android:gravity="center_vertical" android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" android:layout_marginStart="8.0dp" android:layout_marginEnd="16.0dp">
+            <androidx.constraintlayout.widget.ConstraintLayout android:gravity="center_vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:ellipsize="end" android:id="@id/tv_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" app:layout_constrainedWidth="true" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/iv_gender" app:layout_constraintHorizontal_bias="0.0" app:layout_constraintHorizontal_chainStyle="packed" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                <ImageView android:id="@id/iv_gender" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4.0dp" app:layout_constraintBottom_toBottomOf="@id/tv_name" app:layout_constraintStart_toEndOf="@id/tv_name" app:layout_constraintTop_toTopOf="@id/tv_name" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+            <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:id="@id/tv_match_code" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" />
+        </LinearLayout>
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/iv_add" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_phone_contact" />
+    </LinearLayout>
+    <View android:id="@id/lineBottom" android:background="@color/colorDivider" android:layout_width="match_parent" android:layout_height="1.0dp" android:layout_marginStart="80.0dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/llContent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

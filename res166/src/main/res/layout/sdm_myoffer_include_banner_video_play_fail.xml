@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/sdm_myoffer_player_view_fail_id" android:background="@drawable/sdm_myoffer_invalid_button_shape_radius_24" android:paddingLeft="2.0dp" android:paddingTop="2.0dp" android:paddingRight="3.0dp" android:paddingBottom="2.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:backgroundTint="#99000000"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:layout_width="12.0dp" android:layout_height="12.0dp" android:src="@drawable/sdm_myoffer_player_fail" />
+    <TextView android:textSize="8.0dp" android:textColor="#ffffff" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="1.0dp" android:text="@string/sdm_myoffer_video_paly_fail_tips" />
+</LinearLayout>

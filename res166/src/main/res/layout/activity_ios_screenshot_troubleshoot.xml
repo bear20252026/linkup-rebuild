@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedConstraintLayout android:background="@color/colorWindow" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.host.StatusBarHost android:id="@id/status_bar_host" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent" />
+    <FrameLayout android:id="@id/titleBar" android:layout_width="match_parent" android:layout_height="44.0dp" app:layout_constraintTop_toBottomOf="@id/status_bar_host">
+        <ImageView android:layout_gravity="start|center" android:id="@id/iv_back" android:padding="6.0dp" android:layout_width="44.0dp" android:layout_height="44.0dp" android:src="@drawable/ic_common_back" />
+        <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/ios_troubleshoot_title" android:fontFamily="@font/alibaba_puhuiti_medium_lite" />
+    </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:id="@id/linearLayout5" android:paddingTop="24.0dp" android:paddingBottom="12.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="24.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/titleBar">
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="22.0dp" android:layout_height="22.0dp" android:text="1" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+            <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/ios_troubleshoot_reason_1" android:layout_weight="1.0" android:lineSpacingExtra="4.0dp" android:layout_marginStart="4.0dp" />
+        </LinearLayout>
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp">
+            <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="22.0dp" android:layout_height="22.0dp" android:text="2" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+                <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/ios_troubleshoot_reason_2" android:layout_weight="1.0" android:lineSpacingExtra="4.0dp" android:layout_marginStart="4.0dp" />
+            </LinearLayout>
+            <com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" app:mc_contentColor="@color/color_f2f2f2" app:mc_radius="16.0dp" app:mc_strokeColor="@color/color_e9e9e9" app:mc_strokeWidth="1.0dp">
+                <ImageView android:id="@id/iv_shortcut_sample" android:layout_width="match_parent" android:layout_height="wrap_content" android:src="@drawable/ic_ios_shortcut_contact_sample" android:scaleType="fitXY" android:adjustViewBounds="true" android:contentDescription="@string/ios_troubleshoot_img_desc" />
+            </com.mc.fastkit.view.shape.ShapedFrameLayout>
+        </LinearLayout>
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp">
+            <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="22.0dp" android:layout_height="22.0dp" android:text="3" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+            <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="@string/ios_troubleshoot_reason_3" android:layout_weight="1.0" android:lineSpacingExtra="4.0dp" android:layout_marginStart="4.0dp" />
+        </LinearLayout>
+    </LinearLayout>
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/colorBrand" android:gravity="center" android:id="@id/btn_view_tutorial" android:layout_width="0.0dp" android:layout_height="54.0dp" android:text="@string/ios_troubleshoot_btn_view_tutorial" android:fontFamily="@font/alibaba_puhuiti_bold" android:layout_marginHorizontal="32.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/linearLayout5" app:mc_contentColor="@color/appPrimary" app:mc_radius="16.0dp" style="@style/normalButtonStyle" />
+</com.mc.fastkit.view.shape.ShapedConstraintLayout>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="64.0dp" android:paddingHorizontal="16.0dp">
+        <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:layout_gravity="center_vertical" android:id="@id/tv_title" android:layout_width="match_parent" android:layout_height="match_parent" android:text="@string/add_desk_widget" />
+        <ImageView android:layout_gravity="end|center" android:id="@id/iv_down" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_arrow_down_black" />
+    </FrameLayout>
+    <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:gravity="center_horizontal" android:id="@id/tv_tips" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="32.0dp" />
+    <FrameLayout android:layout_gravity="center_horizontal" android:background="@drawable/shape_corner_32" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:foreground="@drawable/shape_corner_32_stroke_6" android:clipToOutline="true">
+        <VideoView android:layout_gravity="center" android:id="@id/video_view" android:layout_width="228.0dp" android:layout_height="440.0dp" />
+    </FrameLayout>
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_confirm" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="32.0dp" android:text="@string/press_the_video_operation_to_add" android:layout_marginHorizontal="32.0dp" style="@style/normalButtonStyle" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

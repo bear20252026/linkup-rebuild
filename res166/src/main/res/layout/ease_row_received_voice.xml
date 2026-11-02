@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:paddingTop="13.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/timestamp" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/chat_text_date_style" />
+    <RelativeLayout android:id="@id/rl_bubble_out" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/margin_chat_activity">
+        <com.hyphenate.easeui.widget.EaseImageView android:id="@id/iv_userhead" style="@style/ease_row_receive_iv_userhead_style" />
+        <RelativeLayout android:id="@id/bubble" android:background="@drawable/ease_chat_bubble_receive_bg" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" android:minHeight="38.0dp" android:layout_below="@id/tv_userid" android:layout_marginStart="@dimen/margin_chat_activity" android:layout_toEndOf="@id/iv_userhead" android:paddingHorizontal="@dimen/message_padding_horizontal" android:paddingVertical="@dimen/message_padding_vertical">
+            <ImageView android:id="@id/iv_voice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ease_chatfrom_voice_playing_f1" android:layout_centerVertical="true" />
+            <TextView android:textSize="14.0sp" android:textColor="#324058" android:gravity="center" android:id="@id/tv_length" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" android:layout_centerVertical="true" android:layout_marginStart="4.0dp" android:layout_toEndOf="@id/iv_voice" style="@style/chat_text_name_style" />
+        </RelativeLayout>
+        <ImageView android:id="@id/iv_unread_voice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ease_chat_voice_unread_icon" android:layout_centerVertical="true" android:layout_marginStart="4.0dp" android:layout_toEndOf="@id/bubble" />
+        <ProgressBar android:id="@id/progress_bar" android:visibility="invisible" android:layout_width="30.0dp" android:layout_height="30.0dp" android:layout_marginTop="5.0dp" android:indeterminateDrawable="@drawable/ease_chat_loading_progress_bar" android:layout_toRightOf="@id/iv_unread_voice" style="?android:progressBarStyleSmall" />
+        <TextView android:textSize="@dimen/chat_nick_text_size" android:id="@id/tv_userid" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/chat_nick_margin_left" android:layout_toRightOf="@id/iv_userhead" style="@style/chat_text_name_style" />
+    </RelativeLayout>
+    <com.hyphenate.easeui.widget.EaseChatQuoteView android:layout_gravity="start" android:id="@id/chat_quote_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="70.0dp" app:ease_chat_item_sender="false" />
+</LinearLayout>

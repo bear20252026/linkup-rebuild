@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:id="@id/ivBg" android:layout_width="0.0dp" android:layout_height="0.0dp" android:src="@drawable/bg_lock_screen" android:scaleType="centerCrop" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    <include android:id="@id/lockedAppLayout" layout="@layout/view_lock_screen_by_app" />
+    <include android:id="@id/lockedWindowLayout" android:visibility="gone" layout="@layout/view_lock_screen_by_phone" />
+    <include android:id="@id/lockedIosLayout" android:visibility="gone" layout="@layout/layout_locked_preview_ios" />
+</androidx.constraintlayout.widget.ConstraintLayout>

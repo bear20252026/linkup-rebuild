@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/white" app:mc_radius="28.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout android:gravity="center_vertical" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.mc.fastkit.view.shape.ShapedImageView android:id="@id/iv_avatar" android:layout_width="56.0dp" android:layout_height="56.0dp" android:scaleType="centerCrop" app:mc_cornerSize="12.0dp" app:mc_strokeColor="@color/colorDivider" app:mc_strokeWidth="1.0dp" />
+        <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:ellipsize="end" android:id="@id/tv_name" android:layout_width="0.0dp" android:layout_height="wrap_content" android:maxLines="1" android:layout_weight="1.0" android:layout_marginStart="8.0dp" android:layout_marginEnd="16.0dp" />
+        <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:id="@id/tv_remaining" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <View android:background="@color/colorDivider" android:layout_width="match_parent" android:layout_height="0.5dp" />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp">
+        <androidx.recyclerview.widget.RecyclerView android:id="@id/voiceView" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="96.0dp" android:paddingHorizontal="12.0dp" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:layout_gravity="end" android:layout_width="64.0dp" android:layout_height="match_parent" app:mc_gradientEndColor="@color/white" app:mc_gradientOrientation="left_right" app:mc_gradientStartColor="#03ffffff" />
+    </FrameLayout>
+    <FrameLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_send" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_margin="16.0dp" android:text="@string/send_now" style="@style/normalButtonStyle" />
+        <com.mc.fastkit.view.shape.ShapedLabelView android:id="@id/tv_send_vip" android:visibility="gone" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_margin="16.0dp" app:mc_text="@string/open_vip_send_real_time_voice" style="@style/vipButtonStyle" />
+        <com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center_vertical" android:id="@id/remindLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="56.0dp" android:layout_margin="16.0dp" app:mc_contentColor="@color/colorCardVariant" app:mc_radius="20.0dp">
+            <TextView android:textSize="14.0sp" android:textColor="@color/colorWarning" android:id="@id/tv_remind_title" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" android:layout_marginStart="12.0dp" />
+            <com.mc.fastkit.view.shape.ShapedTextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_remind" android:layout_width="wrap_content" android:layout_height="match_parent" android:layout_margin="8.0dp" android:text="@string/notify_ta" android:fontFamily="@font/alibaba_puhuiti_bold" android:paddingHorizontal="12.0dp" app:mc_contentColor="@color/colorBrand" app:mc_radius="12.0dp" />
+        </com.mc.fastkit.view.shape.ShapedLinearLayout>
+    </FrameLayout>
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:gravity="center" android:height="58.0dp" android:width="60.0dp" android:drawable="@drawable/ic_splash_icon" android:left="24.0dp" android:top="0.0dp" android:right="24.0dp" android:bottom="34.0dp" />
+</layer-list>

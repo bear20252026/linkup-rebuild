@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.viewpager2.widget.ViewPager2 android:id="@id/vp_content" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <androidx.constraintlayout.widget.ConstraintLayout android:background="@color/white" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="8.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent">
+        <HorizontalScrollView android:id="@id/layout_bottom" android:background="@color/white" android:scrollbars="none" android:layout_width="0.0dp" android:layout_height="46.0dp" android:paddingHorizontal="15.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/iv_emoji_delete" app:layout_constraintStart_toStartOf="parent">
+            <com.google.android.material.tabs.TabLayout android:id="@id/tab_sort" android:layout_width="wrap_content" android:layout_height="match_parent" app:tabGravity="start" app:tabIndicatorGravity="center" app:tabIndicatorHeight="0.0dp" app:tabMaxWidth="40.0dp" app:tabMode="fixed" app:tabPaddingEnd="0.0dp" app:tabPaddingStart="0.0dp" app:tabRippleColor="@color/transparent" />
+        </HorizontalScrollView>
+        <ImageView android:id="@id/iv_emoji_delete" android:background="@drawable/shape_corner_12_f8f8f8" android:layout_width="61.0dp" android:layout_height="44.0dp" android:src="@drawable/ic_chat_emoji_delete" android:layout_marginEnd="8.0dp" android:paddingHorizontal="17.0dp" android:paddingVertical="12.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/tv_emoji_send" />
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_emoji_send" android:background="@drawable/shape_ensure_button_selected_background" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="44.0dp" android:minWidth="61.0dp" android:text="@string/button_send" android:layout_marginEnd="15.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

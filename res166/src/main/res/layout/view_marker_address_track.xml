@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="vertical" android:clipChildren="false" android:clipToPadding="false" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:background="@drawable/img_track_record_address_marker_bg" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <TextView android:id="@id/tv_address" android:padding="8.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxWidth="160.0dp" />
+    </FrameLayout>
+    <ImageView android:id="@id/iv_point" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-8.0dp" android:src="@drawable/ic_track_record_point_stay_selected" />
+</LinearLayout>

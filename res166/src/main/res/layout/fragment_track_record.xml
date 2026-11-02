@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="match_parent" android:layout_height="match_parent" app:mc_contentColor="@color/colorCard" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.recyclerview.widget.RecyclerView android:id="@id/recyclerView" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="match_parent" android:paddingVertical="16.0dp" />
+    <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/emptyLayout" android:visibility="gone" android:layout_width="match_parent" android:layout_height="300.0dp">
+        <ImageView android:layout_width="140.0dp" android:layout_height="140.0dp" android:src="@drawable/ic_empty_sens" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/no_location_info" />
+    </LinearLayout>
+</com.mc.fastkit.view.shape.ShapedFrameLayout>

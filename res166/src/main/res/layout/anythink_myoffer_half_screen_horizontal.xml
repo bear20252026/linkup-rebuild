@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:background="@color/anythink_dailog_background_color" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <com.anythink.core.common.inner.ui.RoundCornerRelativeLayout android:id="@id/anythink_myoffer_rl_root" android:layout_width="match_parent" android:layout_height="310.0dp" android:layout_marginLeft="26.0dp" android:layout_marginRight="26.0dp" android:layout_centerVertical="true">
+        <FrameLayout android:id="@id/anythink_myoffer_player_view_id" android:background="@android:color/black" android:layout_width="match_parent" android:layout_height="160.0dp" />
+        <com.anythink.core.basead.ui.web.WebProgressBarView android:id="@id/anythink_myoffer_player_view_progress_bar_id" android:visibility="gone" android:layout_width="match_parent" android:layout_height="4.0dp" android:layout_alignBottom="@id/anythink_myoffer_player_view_id" />
+        <include layout="@layout/anythink_myoffer_include_guide2click_mask" />
+        <include layout="@layout/anythink_myoffer_include_guide2click_container" />
+        <LinearLayout android:orientation="horizontal" android:id="@id/anythink_myoffer_button_group" android:paddingLeft="12.0dp" android:paddingTop="12.0dp" android:paddingRight="12.0dp" android:paddingBottom="12.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentRight="true">
+            <com.anythink.core.common.inner.ui.CountDownView android:id="@id/anythink_myoffer_count_down_view_id" android:layout_width="@dimen/anythink_myoffer_half_screen_button_size" android:layout_height="@dimen/anythink_myoffer_half_screen_button_size" android:layout_marginLeft="12.0dp" />
+            <FrameLayout android:gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="12.0dp">
+                <com.anythink.core.common.inner.ui.CloseImageView android:id="@id/anythink_myoffer_btn_close_id" android:background="@drawable/anythink_myoffer_base_close_icon" android:layout_width="@dimen/anythink_myoffer_half_screen_button_size" android:layout_height="@dimen/anythink_myoffer_half_screen_button_size" />
+                <com.anythink.core.common.inner.ui.CloseShadeView android:layout_gravity="center" android:id="@id/anythink_myoffer_btn_close_shade_id" android:background="@android:color/transparent" android:visibility="gone" android:layout_width="@dimen/anythink_myoffer_half_screen_button_size" android:layout_height="@dimen/anythink_myoffer_half_screen_button_size" />
+            </FrameLayout>
+        </LinearLayout>
+        <com.anythink.core.common.inner.ui.PanelView android:id="@id/anythink_myoffer_banner_view_id" android:layout_width="match_parent" android:layout_height="162.0dp" android:layout_alignParentBottom="true" />
+        <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/anythink_myoffer_ll_ad_mute" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:layout_alignParentLeft="true" android:layout_alignParentTop="true">
+            <TextView android:textSize="11.0dp" android:textColor="#ffffff" android:gravity="center" android:id="@id/anythink_myoffer_ad_lable" android:background="@drawable/anythink_myoffer_splash_ad_label_bg" android:paddingLeft="5.0dp" android:paddingTop="2.0dp" android:paddingRight="5.0dp" android:paddingBottom="2.0dp" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="5.0dp" android:text="@string/anythink_basead_ad_text" />
+            <com.anythink.core.common.inner.ui.MuteImageView android:id="@id/anythink_myoffer_btn_mute_id" android:background="@drawable/anythink_myoffer_video_mute_icon" android:layout_width="@dimen/anythink_myoffer_half_screen_button_size" android:layout_height="@dimen/anythink_myoffer_half_screen_button_size" android:layout_marginLeft="12.0dp" />
+        </LinearLayout>
+        <include android:layout_gravity="center_vertical" android:layout_width="wrap_content" android:layout_height="24.0dp" android:layout_marginLeft="12.0dp" android:layout_marginTop="12.0dp" android:layout_toRightOf="@id/anythink_myoffer_ll_ad_mute" layout="@layout/anythink_myoffer_feedback_button" />
+    </com.anythink.core.common.inner.ui.RoundCornerRelativeLayout>
+    <include android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="26.0dp" android:layout_marginRight="26.0dp" android:layout_below="@id/anythink_myoffer_rl_root" layout="@layout/anythink_myoffer_include_invalid_button" />
+</RelativeLayout>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/iv_emoji" android:layout_width="88.0dp" android:layout_height="88.0dp" android:scaleType="centerInside" />
+    <ImageView android:layout_gravity="right" android:id="@id/iv_img_select" android:visibility="visible" android:layout_width="17.0dp" android:layout_height="17.0dp" android:layout_margin="2.0dp" android:src="@drawable/icon_emoji_manage_unselect" android:scaleType="centerCrop" />
+</FrameLayout>

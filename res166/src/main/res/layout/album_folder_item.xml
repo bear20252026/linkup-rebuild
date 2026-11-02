@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:orientation="vertical" android:background="@drawable/selector_album_folder_item" android:layout_width="match_parent" android:layout_height="64.0dp" android:paddingHorizontal="16.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.constraintlayout.utils.widget.ImageFilterView android:id="@id/first_image" android:layout_width="50.0dp" android:layout_height="50.0dp" android:layout_centerVertical="true" app:round="8.0dp" />
+    <TextView android:id="@id/tv_select_tag" android:background="@drawable/ps_orange_oval" android:visibility="invisible" android:layout_width="12.0dp" android:layout_height="12.0dp" android:layout_margin="4.0dp" android:layout_alignEnd="@id/first_image" />
+    <com.luck.picture.lib.widget.MediumBoldTextView android:textSize="14.0sp" android:textColor="@color/color_324058" android:gravity="center_vertical" android:id="@id/tv_folder_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/ps_camera_roll_num" android:layout_alignTop="@id/first_image" android:layout_alignBottom="@id/first_image" android:layout_marginStart="10.0dp" android:layout_toEndOf="@id/first_image" />
+    <View android:background="@color/color_1a324058" android:layout_width="match_parent" android:layout_height="1.0dp" android:layout_alignParentBottom="true" android:layout_alignStart="@id/tv_folder_name" />
+</RelativeLayout>

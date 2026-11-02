@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedRelativeLayout android:layout_width="match_parent" android:layout_height="54.0dp" android:paddingEnd="16.0dp" app:mc_contentColor="@color/colorCardVariant" app:mc_radius="16.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:id="@id/iv_select" android:layout_width="wrap_content" android:layout_height="match_parent" android:src="@drawable/selector_cb_lock_options" android:layout_centerVertical="true" android:paddingStart="16.0dp" android:paddingVertical="15.0dp" />
+    <EditText android:textSize="14.0sp" android:textColor="@color/appPrimary" android:textColorHint="@color/appSecondary" android:id="@id/et_option" android:background="@null" android:layout_width="match_parent" android:layout_height="match_parent" android:maxLength="10" android:layout_centerVertical="true" android:inputType="text" android:textCursorDrawable="@drawable/shape_cursor" android:layout_toStartOf="@id/tv_count" android:layout_toEndOf="@id/iv_select" android:paddingHorizontal="8.0dp" android:autofillHints="" />
+    <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appSecondaryVariant" android:id="@id/tv_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerVertical="true" android:layout_alignParentEnd="true" />
+</com.mc.fastkit.view.shape.ShapedRelativeLayout>

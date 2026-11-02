@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center_vertical" android:layout_gravity="bottom" android:orientation="horizontal" android:id="@id/bottom_container" android:layout_width="match_parent" android:layout_height="46.0dp">
+        <ImageView android:id="@id/iv_play" android:layout_width="20.0dp" android:layout_height="20.0dp" android:src="@drawable/player_selector_play_button" android:layout_marginStart="12.0dp" android:layout_marginEnd="12.0dp" />
+        <TextView android:textSize="14.0sp" android:textColor="@android:color/white" android:id="@id/curr_time" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        <SeekBar android:layout_gravity="center_vertical" android:id="@id/seekBar" android:background="@null" android:layout_width="0.0dp" android:layout_height="40.0dp" android:maxHeight="2.0dp" android:max="1000" android:progressDrawable="@drawable/player_layer_progress_bar" android:minHeight="2.0dp" android:thumb="@drawable/player_seekbar_thumb_normal" android:thumbOffset="0.0dp" android:layout_weight="1.0" android:paddingStart="7.0dp" android:paddingEnd="7.0dp" android:layout_marginStart="8.0dp" android:layout_marginEnd="8.0dp" />
+        <TextView android:textSize="14.0sp" android:textColor="@android:color/white" android:id="@id/total_time" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <ProgressBar android:layout_gravity="bottom" android:id="@id/bottom_progress" android:visibility="gone" android:layout_width="match_parent" android:layout_height="1.0dp" android:max="1000" android:progressDrawable="@drawable/player_layer_progress_bar" style="?android:progressBarStyleHorizontal" />
+</FrameLayout>

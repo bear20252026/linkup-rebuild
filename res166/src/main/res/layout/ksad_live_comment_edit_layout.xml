@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/comment_edit_root" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.kwad.sdk.widget.KSLinearLayout android:layout_gravity="bottom" android:orientation="horizontal" android:id="@id/ksad_comment_edit_layout" android:background="#ffffff" android:paddingTop="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true">
+        <FrameLayout android:id="@id/ksad_comment_edit_bg" android:background="@drawable/ksad_live_comment_edit_bg" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="8.0dp" android:layout_marginRight="8.0dp" android:layout_marginBottom="8.0dp" android:layout_weight="1.0">
+            <EditText android:textSize="15.0dp" android:textColor="#222222" android:textColorHint="#9c9c9c" android:id="@id/ksad_comment_edit" android:background="@null" android:paddingTop="6.5dp" android:paddingBottom="6.5dp" android:scrollbars="none" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="12.0dp" android:layout_marginRight="12.0dp" android:minHeight="36.0dp" android:hint="  发一条友好的评论吧" android:maxLines="3" android:scrollHorizontally="false" android:singleLine="false" android:textCursorDrawable="@drawable/ksad_live_comment_cursor" android:lineHeight="22.0dp" />
+            <TextView android:textSize="12.0dp" android:textColor="#c6c6c6" android:layout_gravity="right|bottom" android:id="@id/ksad_comment_edit_count" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="10.0dp" android:layout_marginBottom="10.0dp" android:text="5" />
+        </FrameLayout>
+        <LinearLayout android:gravity="center" android:layout_gravity="bottom" android:id="@id/ksad_comment_send" android:background="@drawable/ksad_live_comment_edit_send_btn_bg" android:layout_width="70.0dp" android:layout_height="36.0dp" android:layout_marginRight="16.0dp" android:layout_marginBottom="8.0dp">
+            <com.kwad.components.core.widget.KTextView android:textSize="14.0dp" android:textColor="#ffffff" android:id="@id/ksad_comment_send_tv" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="发送" />
+        </LinearLayout>
+    </com.kwad.sdk.widget.KSLinearLayout>
+</RelativeLayout>

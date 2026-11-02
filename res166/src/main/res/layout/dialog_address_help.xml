@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center_horizontal" android:layout_gravity="center" android:orientation="vertical" android:padding="16.0dp" android:layout_width="300.0dp" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5.0dp" android:text="当前位置信息" android:drawablePadding="2.0dp" app:drawableStartCompat="@drawable/ic_card_track_top_stay" />
+    <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:gravity="center" android:id="@id/tv_desc" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_margin="8.0dp" android:layout_marginHorizontal="8.0dp" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:gravity="center" android:id="@id/tv_ok" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="8.0dp" android:text="@string/i_known" android:fontFamily="@font/alibaba_puhuiti_bold" app:mc_radius="16.0dp" style="@style/secondaryButtonStyle" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

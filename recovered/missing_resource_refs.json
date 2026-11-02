@@ -1,0 +1,201 @@
+{
+ "anim/ecommerce_": {
+  "count": 2,
+  "files": [
+   "raw/zeus_keep_res_live.xml",
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "array/side_bar_array": {
+  "count": 1,
+  "files": [
+   "layout/ease_layout_contact.xml"
+  ]
+ },
+ "drawable/material_ic_keyboard_arrow_previous_black_24dp": {
+  "count": 1,
+  "files": [
+   "layout/mtrl_calendar_month_navigation.xml"
+  ]
+ },
+ "drawable/material_ic_keyboard_arrow_next_black_24dp": {
+  "count": 1,
+  "files": [
+   "layout/mtrl_calendar_month_navigation.xml"
+  ]
+ },
+ "layout/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "string/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "drawable/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "id/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "dimen/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "style/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "color/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "anim/anythink_": {
+  "count": 1,
+  "files": [
+   "raw/keep.xml"
+  ]
+ },
+ "anim/ttlive_": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/cj_pay_": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ec_": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/bullet_": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/shopping_": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "layout/ttlive_": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "style/ttlive_bottom_dialog_anim": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ttlive_slide_out_bottom": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ttlive_slide_in_bottom": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "style/ttlive_bottom_dialog_anim_normal": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "style/ttlive_comb_dialog_anim": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ttlive_slide_in_right": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "style/ec_plugin_progress_dialog": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ttlive_alpha_out": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ttlive_slide_out_right": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ttlive_slide_out_top": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "anim/ttlive_slide_in_top": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "style/ttlive_right_dialog_anim": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "style/ECommerceAppTheme": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "style/ttlive_bottom_dialog_anim_fast": {
+  "count": 1,
+  "files": [
+   "raw/zeus_keep_res_live.xml"
+  ]
+ },
+ "color/colorID": {
+  "count": 1,
+  "files": [
+   "values/strings.xml"
+  ]
+ }
+}

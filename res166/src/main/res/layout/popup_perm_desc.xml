@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:padding="12.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="16.0dp" app:mc_strokeColor="@color/color_1a354056" app:mc_strokeWidth="1.0dp">
+        <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:gravity="start" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/request_permission_desc" />
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="start" android:id="@id/tv_description" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" />
+    </com.mc.fastkit.view.shape.ShapedLinearLayout>
+</FrameLayout>

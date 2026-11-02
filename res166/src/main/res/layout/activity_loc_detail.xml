@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.host.StatusBarHost android:id="@id/status_host" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent" />
+    <com.baidu.mapapi.map.TextureMapView android:id="@id/map_view" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginBottom="-20.0dp" app:layout_constraintBottom_toTopOf="@id/cl_loc_detail_bottom" app:layout_constraintTop_toTopOf="parent" />
+    <ImageView android:id="@id/iv_close" android:layout_width="32.0dp" android:layout_height="32.0dp" android:src="@drawable/ic_common_close_black" android:layout_marginStart="16.0dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/status_host" />
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@id/cl_loc_detail_bottom" android:background="@drawable/shape_corner_20_fcfcfc_top" android:visibility="visible" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="24.0dp" android:paddingVertical="32.0dp" app:layout_constraintBottom_toBottomOf="parent">
+        <TextView android:textSize="20.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_detail_name" android:layout_width="wrap_content" android:layout_height="wrap_content" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+        <TextView android:textSize="12.0sp" android:textColor="#80324058" android:id="@id/tv_detail_address" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/tv_detail_name" />
+        <ImageView android:id="@id/iv_add_marker" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_add_marker" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<animation-list android:oneshot="false"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f1" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f2" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f3" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f4" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f5" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f6" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f7" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f8" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f9" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f10" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f11" />
+    <item android:duration="50" android:drawable="@drawable/ease_chatfrom_voice_playing_f12" />
+</animation-list>

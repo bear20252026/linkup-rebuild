@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="wrap_content" android:layout_height="6.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.shape.ShapedImageView android:layout_gravity="center" android:id="@id/iv_selected" android:visibility="gone" android:layout_width="12.0dp" android:layout_height="6.0dp" android:src="@color/appPrimary" app:mc_cornerSize="3.0dp" />
+    <com.mc.fastkit.view.shape.ShapedImageView android:layout_gravity="center" android:id="@id/iv_normal" android:layout_width="6.0dp" android:layout_height="6.0dp" android:src="@color/appSecondary" app:mc_isRounded="true" />
+    <com.mc.fastkit.view.shape.ShapedImageView android:layout_gravity="center" android:id="@id/iv_small" android:visibility="gone" android:layout_width="4.0dp" android:layout_height="4.0dp" android:src="@color/appSecondary" app:mc_isRounded="true" />
+</FrameLayout>

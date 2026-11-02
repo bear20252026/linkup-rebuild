@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:gravity="center_vertical" android:id="@id/root" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.appcompat.widget.Toolbar android:id="@id/toolbar" android:layout_width="match_parent" android:layout_height="match_parent" app:popupTheme="@style/Toolbar.PopupTheme" />
+    <RelativeLayout android:id="@id/left_layout" android:background="@drawable/ease_common_tab_bg" android:layout_width="wrap_content" android:layout_height="match_parent" android:minWidth="50.0dp">
+        <ImageView android:id="@id/left_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:scaleType="centerInside" android:layout_centerInParent="true" />
+    </RelativeLayout>
+    <TextView android:textSize="@dimen/em_toolbar_title_size" android:textColor="@color/em_toolbar_color_title" android:ellipsize="end" android:id="@id/title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="60.0dp" android:layout_marginRight="60.0dp" android:maxLines="1" android:layout_centerInParent="true" />
+    <RelativeLayout android:id="@id/right_layout" android:layout_width="wrap_content" android:layout_height="match_parent" android:foreground="@drawable/ease_ripple_click_gray" android:minWidth="50.0dp" android:layout_alignParentRight="true">
+        <ImageView android:id="@id/right_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:scaleType="centerInside" android:layout_centerInParent="true" />
+        <TextView android:textSize="@dimen/em_toolbar_title_right_size" android:textColor="@color/em_toolbar_color_title_right" android:id="@id/right_menu" android:paddingLeft="15.0dp" android:paddingRight="15.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" android:maxLength="10" android:layout_centerVertical="true" />
+    </RelativeLayout>
+</RelativeLayout>

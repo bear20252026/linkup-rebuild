@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:paddingTop="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="32.0dp" app:mc_contentColor="@color/colorWhite" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_edit" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="@string/edit_address" style="@style/secondaryButtonStyle" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/colorWarning" android:id="@id/tv_delete" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="8.0dp" android:text="@string/delete_address" style="@style/secondaryButtonStyle" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_cancel" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="24.0dp" android:text="@string/cancel" style="@style/secondaryButtonStyle" />
+    <com.mc.fastkit.view.host.NavigationBarHost android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:id="@id/root" android:background="@color/colorWindow" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:id="@id/layout_title" android:layout_width="match_parent" android:layout_height="44.0dp">
+        <ImageView android:layout_gravity="center_vertical" android:id="@id/iv_close" android:layout_width="wrap_content" android:layout_height="match_parent" android:src="@drawable/ic_arrow_left_32_32" android:scaleType="centerInside" android:paddingHorizontal="16.0dp" />
+        <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:layout_gravity="center" android:id="@id/tv_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/use_address_create_tag" />
+    </FrameLayout>
+    <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="@string/location_info" android:layout_marginHorizontal="16.0dp" android:paddingHorizontal="16.0dp" android:paddingVertical="8.0dp" />
+    <com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16.0dp" app:mc_contentColor="@color/colorCard" app:mc_radius="16.0dp">
+        <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:ellipsize="end" android:id="@id/tv_tag_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" />
+        <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:ellipsize="end" android:id="@id/tv_address" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2.0dp" android:maxLines="1" />
+    </com.mc.fastkit.view.shape.ShapedLinearLayout>
+    <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="@string/location_radius" android:layout_marginHorizontal="16.0dp" android:paddingHorizontal="16.0dp" android:paddingVertical="8.0dp" />
+    <com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="horizontal" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16.0dp" app:mc_contentColor="@color/colorCard" app:mc_radius="16.0dp">
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:layout_gravity="bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="50" android:paddingVertical="8.5dp" />
+        <FrameLayout android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0">
+            <ImageView android:layout_gravity="bottom" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12.5dp" android:src="@drawable/ic_tag_seekbar_bg" android:layout_marginHorizontal="10.0dp" />
+            <com.warkiz.widget.IndicatorStayLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.warkiz.widget.IndicatorSeekBar android:id="@id/seeker" android:layout_width="match_parent" android:layout_height="wrap_content" app:isb_indicator_color="@color/appPrimary" app:isb_indicator_text_color="@color/colorWhite" app:isb_indicator_text_size="14.0sp" app:isb_max="1000.0" app:isb_min="50.0" app:isb_seek_smoothly="false" app:isb_show_indicator="rounded_rectangle" app:isb_thumb_drawable="@drawable/ic_address_seekbar_thumb" app:isb_thumb_size="30.0dp" app:isb_tick_marks_size="0.0dp" app:isb_ticks_count="96" app:isb_track_background_color="@color/transparent" app:isb_track_background_size="10.0dp" app:isb_track_progress_color="@color/transparent" app:isb_track_progress_size="10.0dp" app:isb_track_rounded_corners="true" />
+            </com.warkiz.widget.IndicatorStayLayout>
+        </FrameLayout>
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:layout_gravity="bottom" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="1000" android:paddingVertical="8.5dp" />
+    </com.mc.fastkit.view.shape.ShapedLinearLayout>
+    <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:id="@id/tv_sel_tag" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="@string/sel_tag" android:layout_marginHorizontal="16.0dp" android:paddingHorizontal="16.0dp" android:paddingVertical="8.0dp" />
+    <com.mc.fastkit.view.shape.ShapedFrameLayout android:orientation="vertical" android:id="@id/layout_sel_tag" android:paddingTop="8.0dp" android:paddingBottom="16.0dp" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16.0dp" android:paddingHorizontal="16.0dp" app:mc_contentColor="@color/colorCard" app:mc_radius="16.0dp">
+        <com.zhy.view.flowlayout.TagFlowLayout android:id="@id/tag_flow" android:layout_width="match_parent" android:layout_height="wrap_content" app:max_select="1" />
+    </com.mc.fastkit.view.shape.ShapedFrameLayout>
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/btn_add" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="88.0dp" android:text="@string/confirm_add" android:layout_marginHorizontal="24.0dp" style="@style/normalButtonStyle" />
+    <LinearLayout android:gravity="center_vertical" android:layout_gravity="center_horizontal" android:orientation="horizontal" android:id="@id/layout_notify" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10.0dp">
+        <CheckBox android:id="@id/cb_notify" android:background="@drawable/selector_cb_common" android:padding="1.5dp" android:clickable="true" android:layout_width="20.0dp" android:layout_height="20.0dp" android:button="@null" />
+        <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/open_arrive_notify" android:layout_marginStart="8.0dp" />
+        <ImageView android:id="@id/iv_question_mark" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_notify_question_mark" android:layout_marginStart="8.0dp" />
+    </LinearLayout>
+</LinearLayout>

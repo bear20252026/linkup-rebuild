@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:paddingTop="13.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/timestamp" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/chat_text_date_style" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="12.0sp" android:textColor="#324058" android:gravity="center" android:id="@id/title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/margin_chat_activity" android:drawablePadding="2.0dp" android:paddingStart="8.0dp" android:paddingEnd="4.0dp" android:drawableTint="#ff5f5f" android:paddingVertical="4.0dp" app:drawableEndCompat="@drawable/ic_arrow_right_008df3" app:mc_contentColor="#ffe7da" app:mc_radius="12.0dp" />
+    <com.hyphenate.easeui.widget.EaseChatQuoteView android:layout_gravity="center" android:id="@id/chat_quote_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+</LinearLayout>

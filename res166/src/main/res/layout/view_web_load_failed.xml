@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="vertical" android:background="@color/white" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:id="@id/iv_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/img_web_load_failed" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24.0dp" android:text="@string/refresh" android:paddingHorizontal="24.0dp" android:paddingVertical="8.0dp" app:mc_contentColor="@color/colorBrand" app:mc_radius="35.0dp" />
+</LinearLayout>

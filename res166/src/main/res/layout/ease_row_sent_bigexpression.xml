@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:paddingTop="13.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/timestamp" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/chat_text_date_style" />
+    <RelativeLayout android:id="@id/rl_bubble_out" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/margin_chat_activity">
+        <com.hyphenate.easeui.widget.EaseImageView android:id="@id/iv_userhead" style="@style/ease_row_sent_iv_userhead_style" />
+        <RelativeLayout android:id="@id/bubble" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/ease_chat_bubble_margin_avatar" android:layout_toLeftOf="@id/iv_userhead" android:layout_below="@id/tv_userid">
+            <ImageView android:id="@id/image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxWidth="200.0dp" android:maxHeight="200.0dp" android:minWidth="90.0dp" android:minHeight="90.0dp" />
+        </RelativeLayout>
+        <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/ll_loading" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_toLeftOf="@id/bubble">
+            <ProgressBar android:id="@id/progress_bar" android:visibility="invisible" android:layout_width="25.0dp" android:layout_height="25.0dp" android:indeterminateDrawable="@drawable/ease_chat_loading_progress_bar" style="?android:progressBarStyle" />
+        </LinearLayout>
+        <ImageView android:id="@id/msg_status" android:layout_toLeftOf="@id/bubble" style="@style/ease_row_sent_iv_fail_style" />
+        <TextView android:textSize="12.0sp" android:id="@id/tv_ack" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/ease_chat_ack_margin_bubble" android:text="@string/text_ack_msg" android:layout_toLeftOf="@id/bubble" android:layout_centerVertical="true" style="@style/chat_text_name_style" />
+        <TextView android:textSize="12.0sp" android:id="@id/tv_delivered" android:visibility="invisible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/ease_chat_ack_margin_bubble" android:text="@string/text_delivered_msg" android:layout_toLeftOf="@id/bubble" android:layout_centerVertical="true" style="@style/chat_text_name_style" />
+        <TextView android:textSize="@dimen/chat_nick_text_size" android:id="@id/tv_userid" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginRight="@dimen/chat_nick_margin_left" android:layout_toLeftOf="@id/iv_userhead" style="@style/chat_text_name_style" />
+    </RelativeLayout>
+    <com.hyphenate.easeui.widget.EaseChatQuoteView android:layout_gravity="end" android:id="@id/chat_quote_view" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:layout_marginEnd="70.0dp" app:ease_chat_item_sender="true" />
+</LinearLayout>

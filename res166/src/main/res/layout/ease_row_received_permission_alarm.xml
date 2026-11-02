@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:paddingTop="13.0dp" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:id="@id/timestamp" android:layout_width="wrap_content" android:layout_height="wrap_content" style="@style/chat_text_date_style" />
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@id/rl_bubble_out" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="@dimen/margin_chat_activity">
+        <com.hyphenate.easeui.widget.EaseImageView android:id="@id/iv_userhead" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" style="@style/ease_row_receive_iv_userhead_style" />
+        <LinearLayout android:orientation="vertical" android:id="@id/bubble" android:background="@drawable/ease_chat_location_bubble_receive_bg" android:padding="8.0dp" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginStart="@dimen/margin_chat_activity" app:layout_constraintStart_toEndOf="@id/iv_userhead" app:layout_constraintTop_toBottomOf="@id/tv_userid" app:layout_constraintWidth_percent="0.654">
+            <TextView android:textSize="14.0sp" android:textColor="#324058" android:ellipsize="end" android:id="@id/tv_permission_name" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="2" />
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp">
+                <TextView android:textSize="12.0sp" android:textColor="#80324058" android:ellipsize="end" android:id="@id/tv_permission_desc" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="2" android:layout_toStartOf="@id/iv_permission_img" />
+                <ImageView android:id="@id/iv_permission_img" android:layout_width="40.0dp" android:layout_height="40.0dp" android:scaleType="centerCrop" android:layout_marginStart="12.0dp" android:layout_alignParentEnd="true" />
+            </RelativeLayout>
+            <View android:background="#1a324058" android:layout_width="match_parent" android:layout_height="0.5dp" android:layout_marginTop="8.0dp" />
+            <TextView android:textSize="10.0sp" android:id="@id/tv_permission_type" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" />
+        </LinearLayout>
+        <TextView android:textSize="@dimen/chat_nick_text_size" android:id="@id/tv_userid" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="@dimen/chat_nick_margin_left" app:layout_constraintStart_toEndOf="@id/iv_userhead" app:layout_constraintTop_toTopOf="@id/iv_userhead" style="@style/chat_text_name_style" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

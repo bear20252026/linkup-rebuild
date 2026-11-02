@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.core.widget.NestedScrollView android:id="@id/scrollView" android:paddingBottom="35.0dp" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="0.0dp" android:fillViewport="true" app:layout_constraintBottom_toTopOf="@id/lockActionView" app:layout_constraintTop_toTopOf="parent">
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="16.0dp">
+            <com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp">
+                <LinearLayout android:gravity="center_vertical" android:id="@id/linearLayout" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="28.0dp" android:layout_height="18.0dp" android:text="#2" android:includeFontPadding="false" android:fontFamily="@font/alibaba_puhuiti_bold" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+                    <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/setup_unlocked_question" android:fontFamily="@font/alibaba_puhuiti_medium_lite" android:layout_marginStart="4.0dp" />
+                    <TextView android:textSize="12.0sp" android:textColor="@color/colorFemale" android:id="@id/tv_option_tips" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/sys_question_not_support_modify" android:layout_marginStart="4.0dp" />
+                </LinearLayout>
+                <com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="16.0dp" android:paddingHorizontal="16.0dp" app:mc_contentColor="#08000000" app:mc_radius="16.0dp">
+                    <EditText android:textSize="14.0sp" android:textColor="@color/appPrimary" android:textColorHint="@color/appSecondary" android:id="@id/et_title" android:background="@null" android:layout_width="0.0dp" android:layout_height="match_parent" android:hint="@string/hint_input_question_title" android:maxLength="20" android:layout_weight="1.0" />
+                    <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:id="@id/tv_title_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLength="20" />
+                </com.mc.fastkit.view.shape.ShapedLinearLayout>
+            </com.mc.fastkit.view.shape.ShapedLinearLayout>
+            <com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp">
+                <LinearLayout android:gravity="center_vertical" android:id="@id/linearLayout2" android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="28.0dp" android:layout_height="18.0dp" android:text="#3" android:includeFontPadding="false" android:fontFamily="@font/alibaba_puhuiti_bold" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+                    <TextView android:textSize="16.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/setup_options" android:fontFamily="@font/alibaba_puhuiti_medium_lite" android:layout_marginStart="4.0dp" />
+                    <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:id="@id/tv_question_tips" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4.0dp" />
+                </LinearLayout>
+                <include android:id="@id/optionLayout1" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="16.0dp" layout="@layout/view_lock_options" />
+                <include android:id="@id/optionLayout2" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="12.0dp" layout="@layout/view_lock_options" />
+                <include android:id="@id/optionLayout3" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="12.0dp" layout="@layout/view_lock_options" />
+                <include android:id="@id/optionLayout4" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="12.0dp" layout="@layout/view_lock_options" />
+                <TextView android:textSize="14.0sp" android:textColor="@color/colorSpanClick" android:layout_gravity="center_horizontal" android:id="@id/tv_question_type" android:paddingTop="12.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:text="@string/use_sys_question" android:drawablePadding="4.0dp" android:drawableStart="@drawable/ic_lock_phone_switch" android:fontFamily="@font/alibaba_puhuiti_medium_lite" />
+            </com.mc.fastkit.view.shape.ShapedLinearLayout>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/shapedTextView2" android:layout_width="match_parent" android:layout_height="35.0dp" app:layout_constraintBottom_toTopOf="@id/lockActionView" app:mc_gradientEndColor="@color/colorWindow" app:mc_gradientStartColor="#03ffffff" />
+    <com.youloft.watcher.view.lock.LockActionView android:id="@id/lockActionView" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginBottom="32.0dp" android:layout_marginHorizontal="32.0dp" app:layout_constraintBottom_toBottomOf="parent" app:yl_content="@string/move_confirm_locked" app:yl_content_disable="@string/input_question_can_locked" />
+</androidx.constraintlayout.widget.ConstraintLayout>

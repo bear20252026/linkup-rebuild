@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+        <ImageView android:id="@id/iv_back" android:padding="16.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_back" android:contentDescription="返回" />
+        <TextView android:textSize="15.0sp" android:textColor="@color/black" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="通话记录测试" android:layout_centerInParent="true" />
+    </RelativeLayout>
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0">
+        <LinearLayout android:orientation="vertical" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <TextView android:textColor="@color/black" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="手机号（选填）" android:labelFor="@id/et_phone" />
+            <EditText android:id="@id/et_phone" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48.0dp" android:hint="可留空" android:singleLine="true" android:inputType="phone" />
+            <TextView android:textColor="@color/black" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="通话发生时间" />
+            <TextView android:textColor="@color/black" android:id="@id/tv_call_time" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:textIsSelectable="true" />
+            <Button android:id="@id/btn_select_time" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="选择日期和时间" />
+            <TextView android:textColor="@color/black" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="通话时长（必填，单位：秒）" android:labelFor="@id/et_duration" />
+            <EditText android:id="@id/et_duration" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48.0dp" android:text="0" android:hint="请输入非负整数" android:singleLine="true" android:inputType="number" />
+            <TextView android:textColor="@color/black" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="通话类型" />
+            <RadioGroup android:orientation="horizontal" android:id="@id/rg_call_type" android:layout_width="match_parent" android:layout_height="wrap_content" android:checkedButton="@id/rb_incoming">
+                <RadioButton android:id="@id/rb_incoming" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48.0dp" android:text="来电" />
+                <RadioButton android:id="@id/rb_outgoing" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48.0dp" android:text="去电" />
+            </RadioGroup>
+            <Button android:id="@id/btn_report" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="上报通话记录" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

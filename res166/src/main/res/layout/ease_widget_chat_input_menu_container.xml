@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:id="@id/chat_menu_container" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_alignParentBottom="true"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <FrameLayout android:id="@id/primary_menu_container" android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <FrameLayout android:id="@id/voice_menu_container" android:visibility="gone" android:layout_width="match_parent" android:layout_height="282.0dp" />
+        <FrameLayout android:id="@id/extend_menu_container" android:background="#fff8f8f8" android:visibility="gone" android:layout_width="match_parent" android:layout_height="282.0dp" />
+    </LinearLayout>
+    <TextView android:id="@id/tv_mask" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+</FrameLayout>

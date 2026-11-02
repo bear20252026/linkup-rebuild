@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="44.0dp" android:paddingHorizontal="16.0dp">
+        <ImageView android:layout_gravity="start|center" android:id="@id/iv_close" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_back" />
+        <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/auto_report_settings" />
+        <ImageView android:layout_gravity="end|center" android:id="@id/iv_sens_record" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_auto_report_settings_sens_entrance" />
+    </FrameLayout>
+    <androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout android:orientation="vertical" android:padding="16.0dp" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <com.youloft.watcher.view.AutoReportSettingsView android:id="@id/trackStayView" android:layout_width="match_parent" android:layout_height="wrap_content" app:yl_image="@drawable/ic_auto_report_settings_track" app:yl_title="@string/track_arrive_msg" />
+            <com.youloft.watcher.view.AutoReportSettingsView android:id="@id/screenUseView" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:yl_image="@drawable/ic_auto_report_settings_screen" app:yl_title="@string/phone_use_state_msg" />
+            <com.youloft.watcher.view.AutoReportSettingsView android:id="@id/appUseView" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:yl_image="@drawable/ic_auto_report_settings_app" app:yl_title="@string/app_use_statistics_msg" />
+            <com.youloft.watcher.view.AutoReportSettingsView android:id="@id/phoneStateView" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:yl_image="@drawable/ic_auto_report_settings_phone" app:yl_title="@string/phone_state_msg" />
+            <com.youloft.watcher.view.AutoReportSettingsView android:id="@id/callRecordView" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:yl_image="@drawable/ic_auto_report_settings_call" app:yl_title="@string/call_log_msg" />
+            <com.youloft.watcher.view.AutoReportSettingsView android:id="@id/linkUpView" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:yl_image="@drawable/ic_auto_report_settings_linkup" app:yl_title="@string/use_app_msg" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

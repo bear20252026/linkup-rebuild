@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.constraintlayout.widget.ConstraintLayout android:layout_gravity="center|bottom" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:id="@id/iv_close" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_map_activity_close" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+        <ImageView android:id="@id/iv_expired_soon_top" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:src="@drawable/img_vip_expired_soon_banner_top" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/iv_close" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="9.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@id/tv_expired_countdown" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="14.0dp" android:paddingHorizontal="7.0dp" android:paddingVertical="6.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="@id/iv_title" app:mc_gradientEndColor="#e0f870" app:mc_gradientOrientation="left_right" app:mc_gradientStartColor="#fce07a" app:mc_radius="12.0dp" app:mc_strokeColor="@color/colorWhite" app:mc_strokeWidth="2.0dp" />
+        <ImageView android:id="@id/iv_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="43.0dp" android:src="@drawable/img_vip_expired_soon_banner_title" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="@id/iv_expired_soon_top" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="64.0dp" android:paddingHorizontal="16.0dp">
+        <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:layout_gravity="center_vertical" android:id="@id/tv_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/select_friend" />
+        <ImageView android:layout_gravity="end|center" android:id="@id/iv_down" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_arrow_down_black" />
+    </FrameLayout>
+    <androidx.recyclerview.widget.RecyclerView android:id="@id/rv_friend_list" android:paddingBottom="10.0dp" android:scrollbars="none" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="-8.0dp" android:layout_marginBottom="5.0dp" android:layout_above="@id/tv_add_friend" android:layout_below="@id/tv_title" android:overScrollMode="never" android:layout_marginHorizontal="32.0dp" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

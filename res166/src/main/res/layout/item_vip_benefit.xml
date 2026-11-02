@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="52.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_name" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0" />
+    <FrameLayout android:background="@color/color_f2feb4" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_vip" android:background="@color/color_f2feb4" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <ImageView android:gravity="center" android:id="@id/iv_vip" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerInside" />
+    </FrameLayout>
+    <FrameLayout android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
+        <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:gravity="center" android:id="@id/tv_normal" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <ImageView android:gravity="center" android:id="@id/iv_normal" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerInside" />
+    </FrameLayout>
+</LinearLayout>

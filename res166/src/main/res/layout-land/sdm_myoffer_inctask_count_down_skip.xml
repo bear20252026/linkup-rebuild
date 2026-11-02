@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:background="#80000000" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/sdm_myoffer_inctask_container" android:layout_width="420.0dp" android:layout_height="match_parent" android:layout_marginTop="32.0dp" android:layout_centerHorizontal="true">
+        <TextView android:textSize="28.0dp" android:textColor="#ffffff" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sdm_myoffer_inctask_cts_title" />
+        <TextView android:textSize="14.0dp" android:textColor="#ffffff" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="6.0dp" android:text="@string/sdm_myoffer_inctask_cts_subtitle" />
+        <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:background="@drawable/sdm_myoffer_bg_button_radius_12" android:layout_width="276.0dp" android:layout_height="wrap_content" android:layout_marginTop="12.0dp">
+            <TextView android:textSize="17.0dp" android:textColor="#b56200" android:gravity="center" android:id="@id/sdm_myoffer_inctask_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="20.0dp" android:layout_marginTop="20.0dp" android:layout_marginRight="20.0dp" android:text="@string/sdm_myoffer_inctask_cts_hint" />
+            <com.smartdigimkt.sdk.basead.ui.component.RoundImageView android:id="@id/sdm_myoffer_inctask_icon" android:layout_width="72.0dp" android:layout_height="72.0dp" android:layout_marginTop="12.0dp" />
+            <TextView android:textSize="14.0dp" android:textColor="#3e2910" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_inctask_desc" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="20.0dp" android:layout_marginTop="8.0dp" android:layout_marginRight="20.0dp" android:maxLines="1" />
+            <RelativeLayout android:layout_width="match_parent" android:layout_height="72.0dp">
+                <TextView android:textSize="14.0dp" android:textColor="#ffffff" android:gravity="center" android:id="@id/sdm_myoffer_inctask_cta" android:background="@drawable/sdm_myoffer_splash_bg_rectangle_btn_cta_asseblem" android:layout_width="match_parent" android:layout_height="40.0dp" android:layout_marginLeft="20.0dp" android:layout_marginTop="12.0dp" android:layout_marginRight="20.0dp" android:text="@string/sdm_myoffer_inctask_cts_cta_text" android:backgroundTint="#ff2c42" />
+                <com.smartdigimkt.sdk.basead.ui.SimpleGuideToClickView android:id="@id/sdm_myoffer_g2c_item_g2c_fingerview" android:layout_width="65.0dp" android:layout_height="65.0dp" android:layout_alignRight="@id/sdm_myoffer_inctask_cta" />
+            </RelativeLayout>
+        </LinearLayout>
+    </LinearLayout>
+    <ImageView android:id="@id/sdm_myoffer_inctask_close_view" android:layout_width="26.0dp" android:layout_height="26.0dp" android:layout_marginLeft="12.0dp" android:layout_marginTop="32.0dp" android:src="@drawable/sdm_myoffer_icon_close_with_border" android:layout_toRightOf="@id/sdm_myoffer_inctask_container" />
+</RelativeLayout>

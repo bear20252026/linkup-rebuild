@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/sdm_myoffer_feedback_ll_nobg_id" android:paddingLeft="8.0dp" android:paddingRight="8.0dp" android:layout_width="wrap_content" android:layout_height="24.0dp" android:layout_marginLeft="4.0dp" android:layout_centerVertical="true">
+        <ImageView android:layout_width="16.0dp" android:layout_height="16.0dp" android:src="@drawable/sdm_myoffer_feedback_icon" />
+    </LinearLayout>
+    <TextView android:textSize="12.0dp" android:textColor="#99ffffff" android:id="@id/sdm_myoffer_tv_countdown_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="浏览 12 秒后可领取奖励" android:layout_weight="1.0" android:layout_centerInParent="true" />
+    <com.smartdigimkt.sdk.basead.ui.CloseImageView android:id="@id/sdm_myoffer_btn_close_ch_id" android:padding="4.0dp" android:layout_width="@dimen/sdm_myoffer_half_screen_button_size" android:layout_height="@dimen/sdm_myoffer_half_screen_button_size" android:layout_marginRight="12.0dp" android:src="@drawable/sdm_myoffer_close_icon" android:layout_alignParentRight="true" android:layout_centerVertical="true" />
+</merge>

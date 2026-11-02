@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/sdm_twist_bottom_guide_container" android:clickable="false" android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/sdm_twist_arrows_phone_row" android:clickable="false" android:clipChildren="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerHorizontal="true">
+        <ImageView android:id="@id/sdm_twist_left_arrow" android:clickable="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/sdm_interaction_twist_left_arrow" android:scaleType="fitCenter" android:contentDescription="@null" />
+        <ImageView android:id="@id/sdm_twist_phone_icon" android:clickable="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/sdm_interaction_twist_icon" android:scaleType="fitCenter" android:contentDescription="@null" />
+        <ImageView android:id="@id/sdm_twist_right_arrow" android:clickable="false" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/sdm_interaction_twist_right_arrow" android:scaleType="fitCenter" android:contentDescription="@null" />
+    </LinearLayout>
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/sdm_twist_title_subtitle_column" android:clickable="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/sdm_twist_arrows_phone_row" android:layout_centerHorizontal="true">
+        <TextView android:textSize="16.0sp" android:textColor="#bebebe" android:gravity="center" android:id="@id/sdm_twist_main_title" android:clickable="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sdm_g2c_twist_main_title" android:textAlignment="gravity" />
+        <TextView android:textSize="14.0sp" android:textColor="#bebebe" android:gravity="center" android:id="@id/sdm_twist_subtitle" android:paddingLeft="12.0dp" android:paddingRight="12.0dp" android:paddingBottom="6.0dp" android:clickable="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sdm_g2c_twist_subtitle" android:textAlignment="gravity" />
+    </LinearLayout>
+</RelativeLayout>

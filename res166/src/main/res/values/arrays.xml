@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="anti_scam_answer_question1_answer">
+        <item>有此等好机会，赶紧上车</item>
+        <item>和对方一起实现“财富自由”</item>
+        <item>先投点钱试试水，能赚就多投一点</item>
+        <item>这是典型的“杀猪盘”诈骗，立即停止联系并举报</item>
+    </string-array>
+    <string-array name="anti_scam_answer_question2_answer">
+        <item>直接转账给对方</item>
+        <item>我也没钱，帮Ta贷点</item>
+        <item>把信用卡或银行卡给对方，让对方取现</item>
+        <item>这是典型的“情感诈骗”的变现环节，果断拒绝</item>
+    </string-array>
+    <string-array name="anti_scam_answer_question3_answer">
+        <item>机会难得，做大做强</item>
+        <item>既增进感情又能赚钱，立即投资</item>
+        <item>先投一笔钱，看看收益如何</item>
+        <item>这和“刷单诈骗”的小额试水逻辑一样，是诱饵，果断拒绝</item>
+    </string-array>
+    <string-array name="ease_apk_file_suffix">
+        <item>.apk</item>
+    </string-array>
+    <string-array name="ease_audio_file_suffix">
+        <item>.mp3</item>
+        <item>.au</item>
+        <item>.awb</item>
+        <item>.snd</item>
+        <item>.mid</item>
+        <item>.rmi</item>
+        <item>.aif</item>
+        <item>.aifc</item>
+        <item>.aiff</item>
+        <item>.als</item>
+        <item>.m3u</item>
+        <item>.ra</item>
+        <item>.ram</item>
+        <item>.wav</item>
+        <item>.wma</item>
+        <item>.es</item>
+        <item>.esl</item>
+        <item>.it</item>
+        <item>.itz</item>
+        <item>.m15</item>
+        <item>.m3u</item>
+        <item>.m3url</item>
+        <item>.ma1</item>
+        <item>.ma2</item>
+        <item>.ma3</item>
+        <item>.ma5</item>
+    </string-array>
+    <string-array name="ease_excel_file_suffix">
+        <item>.xla</item>
+        <item>.xlc</item>
+        <item>.xlm</item>
+        <item>.xls</item>
+        <item>.xlt</item>
+        <item>.xlw</item>
+        <item>.xlsx</item>
+    </string-array>
+    <string-array name="ease_file_file_suffix">
+        <item>.txt</item>
+        <item>.log</item>
+        <item>.html</item>
+        <item>.stm</item>
+        <item>.uls</item>
+        <item>.bas</item>
+        <item>.c</item>
+        <item>.h</item>
+        <item>.rtx</item>
+        <item>.sct</item>
+        <item>.tsv</item>
+        <item>.htt</item>
+        <item>.htc</item>
+        <item>.etx</item>
+        <item>.vcf</item>
+    </string-array>
+    <string-array name="ease_image_file_suffix">
+        <item>.bmp</item>
+        <item>.cod</item>
+        <item>.gif</item>
+        <item>.ief</item>
+        <item>.jpe</item>
+        <item>.jpeg</item>
+        <item>.jpg</item>
+        <item>.jfif</item>
+        <item>.svg</item>
+        <item>.tif</item>
+        <item>.tiff</item>
+        <item>.ras</item>
+        <item>.ico</item>
+        <item>.pbm</item>
+        <item>.pgm</item>
+        <item>.png</item>
+        <item>.pnm</item>
+        <item>.ppm</item>
+        <item>.xbm</item>
+        <item>.xpm</item>
+        <item>.xwd</item>
+        <item>.rgb</item>
+    </string-array>
+    <string-array name="ease_key_file_suffix">
+        <item>.key</item>
+    </string-array>
+    <string-array name="ease_numbers_file_suffix">
+        <item>.numbers</item>
+    </string-array>
+    <string-array name="ease_other_file_suffix">
+        <item>.doc</item>
+        <item>.dot</item>
+        <item>.xla</item>
+        <item>.xlc</item>
+        <item>.xlm</item>
+        <item>.xls</item>
+        <item>.xlt</item>
+        <item>.xlw</item>
+        <item>.gif</item>
+        <item>.jpe</item>
+        <item>.jpeg</item>
+        <item>.jpg</item>
+    </string-array>
+    <string-array name="ease_pages_file_suffix">
+        <item>.pages</item>
+    </string-array>
+    <string-array name="ease_pdf_file_suffix">
+        <item>.pdf</item>
+    </string-array>
+    <string-array name="ease_ppt_file_suffix">
+        <item>.ppt</item>
+        <item>.pptx</item>
+    </string-array>
+    <string-array name="ease_video_file_suffix">
+        <item>.rmvb</item>
+        <item>.avi</item>
+        <item>.mp4</item>
+        <item>.mp2</item>
+        <item>.mpa</item>
+        <item>.mpe</item>
+        <item>.mpeg</item>
+        <item>.mpg</item>
+        <item>.mpv2</item>
+        <item>.mpg4</item>
+        <item>.mov</item>
+        <item>.mng</item>
+        <item>.movie</item>
+        <item>.qt</item>
+        <item>.lsf</item>
+        <item>.lsx</item>
+        <item>.asf</item>
+        <item>.asr</item>
+        <item>.asx</item>
+        <item>.avi</item>
+        <item>.wmv</item>
+        <item>.3gp</item>
+        <item>.fvi</item>
+        <item>.pvx</item>
+        <item>.rv</item>
+        <item>.vdo</item>
+        <item>.viv</item>
+        <item>.vivo</item>
+        <item>.wm</item>
+        <item>.wmx</item>
+        <item>.wv</item>
+        <item>.wvx</item>
+    </string-array>
+    <string-array name="ease_word_file_suffix">
+        <item>.doc</item>
+        <item>.dot</item>
+        <item>.docx</item>
+    </string-array>
+    <string-array name="lunar_month">
+        <item></item>
+        <item>正</item>
+        <item>二</item>
+        <item>三</item>
+        <item>四</item>
+        <item>五</item>
+        <item>六</item>
+        <item>七</item>
+        <item>八</item>
+        <item>九</item>
+        <item>十</item>
+        <item>冬</item>
+        <item>腊</item>
+    </string-array>
+    <string-array name="side_bar_array">
+        <item>@string/search_new</item>
+        <item>A</item>
+        <item>B</item>
+        <item>C</item>
+        <item>D</item>
+        <item>E</item>
+        <item>F</item>
+        <item>G</item>
+        <item>H</item>
+        <item>I</item>
+        <item>J</item>
+        <item>K</item>
+        <item>L</item>
+        <item>M</item>
+        <item>N</item>
+        <item>O</item>
+        <item>P</item>
+        <item>Q</item>
+        <item>R</item>
+        <item>S</item>
+        <item>T</item>
+        <item>U</item>
+        <item>V</item>
+        <item>W</item>
+        <item>X</item>
+        <item>Y</item>
+        <item>Z</item>
+        <item>#</item>
+    </string-array>
+</resources>

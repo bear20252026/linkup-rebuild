@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/sdm_myoffer_g2c_item_close_iv" android:layout_width="26.0dp" android:layout_height="26.0dp" android:layout_marginTop="110.0dp" android:layout_marginRight="24.0dp" android:src="@drawable/sdm_myoffer_icon_close_with_border" android:layout_alignParentTop="true" android:layout_alignParentRight="true" />
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:clipChildren="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="24.0dp" android:layout_marginTop="8.0dp" android:layout_marginRight="24.0dp" android:layout_below="@id/sdm_myoffer_g2c_item_close_iv">
+        <TextView android:textSize="28.0dp" android:textColor="#ffffff" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/sdm_myoffer_g2c_chop_once_title" />
+        <TextView android:textSize="14.0dp" android:textColor="#ffffff" android:gravity="center" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:text="@string/sdm_myoffer_g2c_chop_once_subtitle" />
+        <ImageView android:id="@id/sdm_myoffer_g2c_gift_group" android:layout_width="180.0dp" android:layout_height="180.0dp" android:layout_marginTop="46.0dp" android:scaleType="fitCenter" />
+        <ImageView android:id="@id/sdm_myoffer_g2c_gift_chop" android:layout_width="52.0dp" android:layout_height="104.0dp" android:layout_marginTop="40.0dp" android:src="@drawable/sdm_myoffer_g2c_gift_chop" />
+    </LinearLayout>
+</merge>

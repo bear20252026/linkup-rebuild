@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:gravity="center" android:orientation="vertical" android:background="@color/colorWindow" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:id="@id/fl_title_bar" android:layout_width="match_parent" android:layout_height="44.0dp" app:layout_constraintTop_toTopOf="parent">
+        <ImageView android:id="@id/iv_back" android:layout_width="wrap_content" android:layout_height="match_parent" android:src="@drawable/ic_common_back" android:paddingHorizontal="16.0dp" />
+        <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/sens_real_time_voice" />
+    </FrameLayout>
+    <androidx.recyclerview.widget.RecyclerView android:id="@id/rv_friend" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:layout_constraintTop_toBottomOf="@id/fl_title_bar" />
+    <androidx.core.widget.NestedScrollView android:id="@id/scrollView" android:layout_width="match_parent" android:layout_height="0.0dp" android:paddingHorizontal="16.0dp" app:layout_constraintBottom_toTopOf="@id/ll_send" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/rv_friend">
+        <FrameLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="24.0dp">
+            <com.mc.fastkit.view.shape.ShapedFrameLayout android:id="@id/fl_container" android:paddingBottom="12.0dp" android:descendantFocusability="blocksDescendants" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:paddingHorizontal="12.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp" />
+        </FrameLayout>
+    </androidx.core.widget.NestedScrollView>
+    <ImageView android:id="@id/iv_mask" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:src="@drawable/ic_permission_scroll_mask" android:scaleType="fitXY" app:layout_constraintTop_toTopOf="@id/scrollView" />
+    <View android:id="@id/view_mask" android:background="@color/colorWhite" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="0.0dp" android:alpha="0.5" app:layout_constraintBottom_toBottomOf="@id/scrollView" app:layout_constraintEnd_toEndOf="@id/scrollView" app:layout_constraintStart_toStartOf="@id/scrollView" app:layout_constraintTop_toTopOf="@id/scrollView" />
+    <ImageView android:layout_width="match_parent" android:layout_height="wrap_content" android:src="@drawable/ic_voice_list_mask" android:scaleType="fitXY" app:layout_constraintBottom_toTopOf="@id/ll_send" />
+    <LinearLayout android:id="@id/ll_send" android:background="@color/colorWhite" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="32.0dp" app:layout_constraintBottom_toBottomOf="parent">
+        <com.mc.fastkit.view.shape.ShapedLabelView android:id="@id/tv_add" android:layout_width="72.0dp" android:layout_height="54.0dp" android:text="@string/send_now" app:mc_contentColor="@color/colorBrand" app:mc_image="@drawable/ic_address_tag_custom_add" app:mc_imageState="@drawable/ic_address_tag_custom_add" style="@style/iconButtonStyle" />
+        <View android:layout_width="12.0dp" android:layout_height="54.0dp" />
+        <FrameLayout android:id="@id/rl_send" android:layout_width="match_parent" android:layout_height="54.0dp">
+            <com.mc.fastkit.view.shape.ShapedTextView android:enabled="false" android:id="@id/tv_send" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" android:text="@string/send_now" style="@style/normalButtonStyle" />
+            <com.mc.fastkit.view.shape.ShapedLabelView android:id="@id/tv_send_vip" android:layout_width="match_parent" android:layout_height="match_parent" android:paddingHorizontal="11.0dp" app:mc_ellipsize="end" app:mc_image="@drawable/ic_mine_vip_label" app:mc_imageState="@drawable/ic_mine_vip_label" app:mc_maxLines="1" app:mc_text="@string/open_vip_send_real_time_voice2" app:mc_textColor="@color/colorMotion" style="@style/iconButtonStyle" />
+        </FrameLayout>
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:id="@id/sdm_myoffer_splash_ambience_bg" android:background="#fff3ea" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitXY" />
+    <TextView android:textSize="28.0sp" android:textColor="#ff09132d" android:ellipsize="end" android:gravity="center" android:layout_width="320.0dp" android:layout_height="wrap_content" android:layout_marginTop="90.0dp" android:text="@string/sdm_myoffer_splash_asseblem_card_title" android:maxLines="1" android:layout_centerHorizontal="true" />
+    <com.smartdigimkt.sdk.basead.ui.RoundCornerRelativeLayout android:layout_width="320.0dp" android:layout_height="180.0dp" android:layout_marginTop="154.0dp" android:layout_centerHorizontal="true">
+        <com.smartdigimkt.sdk.basead.ui.component.RoundImageView android:id="@id/sdm_myoffer_splash_bg" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+        <FrameLayout android:id="@id/sdm_myoffer_splash_ad_content_image_area" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <com.smartdigimkt.sdk.basead.ui.PlayerView android:id="@id/sdm_myoffer_player_view_id" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <com.smartdigimkt.sdk.basead.ui.MuteImageView android:id="@id/sdm_myoffer_btn_mute_id" android:background="@drawable/sdm_myoffer_video_mute_icon" android:visibility="gone" android:layout_width="@dimen/sdm_myoffer_half_screen_button_size" android:layout_height="@dimen/sdm_myoffer_half_screen_button_size" android:layout_marginLeft="12.0dp" android:layout_marginTop="16.0dp" />
+        <ImageView android:id="@id/sdm_myoffer_player_view_cover_img_id" android:background="#fafafa" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+        <ImageView android:id="@id/sdm_myoffer_player_view_cover_icon_id" android:visibility="gone" android:layout_width="72.0dp" android:layout_height="72.0dp" android:src="@drawable/sdm_player_view_placeholder_icon" android:layout_centerInParent="true" />
+    </com.smartdigimkt.sdk.basead.ui.RoundCornerRelativeLayout>
+    <include android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignTop="@id/sdm_myoffer_splash_skip_area" android:layout_alignBottom="@id/sdm_myoffer_splash_skip_area" layout="@layout/sdm_myoffer_include_splash_ad_layout_ad_label" />
+    <include layout="@layout/sdm_myoffer_include_guide2click_mask" />
+    <com.smartdigimkt.sdk.basead.ui.component.RoundImageView android:id="@id/sdm_myoffer_splash_icon" android:layout_width="72.0dp" android:layout_height="72.0dp" android:layout_marginTop="364.0dp" android:scaleType="centerCrop" android:layout_centerHorizontal="true" />
+    <TextView android:textSize="17.0dp" android:textColor="#3e2910" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_splash_ad_title" android:layout_width="320.0dp" android:layout_height="wrap_content" android:layout_marginTop="6.0dp" android:maxLines="1" android:layout_below="@id/sdm_myoffer_splash_icon" android:layout_centerHorizontal="true" android:lineSpacingMultiplier="1.0" />
+    <TextView android:textSize="14.0dp" android:textColor="#3e2910" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_splash_desc" android:layout_width="320.0dp" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:maxLines="2" android:layout_below="@id/sdm_myoffer_splash_ad_title" android:layout_centerHorizontal="true" android:lineSpacingMultiplier="1.0" />
+    <LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/sdm_myoffer_splash_ad_cta_layout" android:background="@drawable/sdm_myoffer_bg_splash_card_cta" android:paddingLeft="12.0dp" android:paddingRight="12.0dp" android:layout_width="332.0dp" android:layout_height="62.0dp" android:layout_marginBottom="56.0dp" android:layout_alignParentBottom="true" android:layout_centerHorizontal="true">
+        <TextView android:textSize="17.0sp" android:textColor="#ffffffff" android:ellipsize="end" android:gravity="center" android:id="@id/sdm_myoffer_splash_cta_text" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:lineSpacingMultiplier="1.0" />
+        <com.smartdigimkt.sdk.basead.ui.SplashShakeTextHintView android:id="@id/sdm_myoffer_splash_cta_shake" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <include android:layout_width="match_parent" android:layout_height="22.0dp" android:layout_alignParentBottom="true" layout="@layout/sdm_myoffer_include_4_element" />
+    <include layout="@layout/sdm_myoffer_include_guide2click_container" />
+    <include layout="@layout/sdm_myoffer_include_splash_ad_layout_skip_area" />
+</merge>

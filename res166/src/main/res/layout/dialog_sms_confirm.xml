@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="center" android:orientation="vertical" android:layout_width="300.0dp" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_radius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="142.0dp">
+        <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/img_dialog_sms_confirm_top" />
+        <ImageView android:layout_gravity="end|top" android:id="@id/iv_close" android:layout_width="32.0dp" android:layout_height="32.0dp" android:layout_margin="16.0dp" android:src="@drawable/ic_close_black" />
+    </FrameLayout>
+    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:text="请问短信发了吗？" android:paddingHorizontal="24.0dp" android:lineHeight="21.0dp" />
+    <LinearLayout android:orientation="horizontal" android:padding="16.0dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_cancel" android:layout_width="0.0dp" android:layout_height="54.0dp" android:text="还没有" android:layout_weight="1.0" style="@style/secondaryButtonStyle" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_confirm" android:layout_width="0.0dp" android:layout_height="54.0dp" android:text="已发送" android:layout_weight="1.0" android:layout_marginStart="10.0dp" style="@style/normalButtonStyle" />
+    </LinearLayout>
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

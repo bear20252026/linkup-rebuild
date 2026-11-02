@@ -36,8 +36,6 @@ kotlin {
 
 dependencies {
     implementation(project(":net"))
-    implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.activity:activity-ktx:1.8.0")
-    implementation("androidx.core:core-ktx:1.13.0")
+    implementation(project(":res166"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 }

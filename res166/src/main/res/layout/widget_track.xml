@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:id="@id/rl_root" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:layout_gravity="center" android:id="@id/iv_bg" android:layout_width="345.0dp" android:layout_height="160.0dp" android:src="@drawable/ic_widget_track_holder_bg" android:adjustViewBounds="true" android:layout_centerInParent="true" />
+    <RelativeLayout android:id="@id/rl_content" android:paddingTop="24.0dp" android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_alignTop="@id/iv_bg" android:layout_alignBottom="@id/iv_bg" android:layout_alignStart="@id/iv_bg" android:layout_alignEnd="@id/iv_bg" android:paddingHorizontal="24.0dp">
+        <LinearLayout android:gravity="center_vertical" android:id="@id/ll_title" android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/today_location_stay" />
+            <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_stay_number" android:background="@drawable/shape_corner_6_white_stroke_2" android:layout_width="22.0dp" android:layout_height="22.0dp" android:text="*" />
+            <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/number_place" />
+        </LinearLayout>
+        <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:gravity="center_vertical" android:id="@id/tv_date" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignTop="@id/ll_title" android:layout_alignBottom="@id/ll_title" android:layout_alignParentEnd="true" />
+        <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent" android:layout_marginTop="12.0dp" android:layout_marginBottom="19.0dp" android:layout_below="@id/ll_title">
+            <TextView android:textSize="12.0sp" android:textColor="@color/colorWarning" android:id="@id/tv_no_permission" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true" />
+            <ImageView android:id="@id/iv_loading" android:visibility="visible" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_widget_track_loading" android:adjustViewBounds="true" />
+            <LinearLayout android:orientation="vertical" android:id="@id/ll_empty" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_centerInParent="true">
+                <ImageView android:layout_width="88.0dp" android:layout_height="56.0dp" android:src="@drawable/img_content_empty" android:adjustViewBounds="true" />
+                <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:text="@string/track_record_is_empty" />
+            </LinearLayout>
+            <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/ll_track_second" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="match_parent">
+                    <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_widget_stay_point" android:adjustViewBounds="true" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                    <FrameLayout android:id="@id/fl_track_second_line" android:background="#1a354056" android:layout_width="2.0dp" android:layout_height="0.0dp" android:layout_weight="1.0" />
+                </LinearLayout>
+                <LinearLayout android:gravity="start" android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_marginBottom="4.0dp" android:layout_weight="1.0" android:layout_marginHorizontal="6.0dp">
+                    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_address_second" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" />
+                    <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:id="@id/tv_stay_time_second" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:layout_gravity="end|top" android:id="@id/tv_arrive_time_second" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+            <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:id="@id/ll_track_first" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/ll_track_second">
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="match_parent">
+                    <ImageView android:id="@id/iv_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_widget_stay_point" android:adjustViewBounds="true" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+                </LinearLayout>
+                <LinearLayout android:gravity="start" android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" android:layout_marginHorizontal="6.0dp">
+                    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_address" android:layout_width="wrap_content" android:layout_height="wrap_content" android:maxLines="1" />
+                    <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:id="@id/tv_stay_time" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                </LinearLayout>
+                <TextView android:textSize="12.0sp" android:textColor="@color/appSecondary" android:layout_gravity="end|top" android:id="@id/tv_arrive_time" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            </LinearLayout>
+        </RelativeLayout>
+    </RelativeLayout>
+    <ImageView android:id="@id/iv_mask" android:visibility="gone" android:layout_width="0.0dp" android:layout_height="0.0dp" android:src="@drawable/ic_widget_location_middle_not_vip" android:adjustViewBounds="true" android:layout_alignTop="@id/rl_content" android:layout_alignBottom="@id/rl_content" android:layout_alignStart="@id/rl_content" android:layout_alignEnd="@id/rl_content" />
+</RelativeLayout>

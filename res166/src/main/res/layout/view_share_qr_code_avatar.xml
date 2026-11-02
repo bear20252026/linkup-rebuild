@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:background="@color/transparent" android:layout_width="50.0dp" android:layout_height="50.0dp" android:backgroundTint="@color/transparent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.google.android.material.imageview.ShapeableImageView android:id="@id/iv_avatar" android:background="@color/transparent" android:padding="0.5dp" android:layout_width="45.0dp" android:layout_height="45.0dp" app:mc_isRounded="true" app:mc_strokeColor="@color/white" app:mc_strokeWidth="4.0dp" app:shapeAppearance="@style/image_style_circle" />
+    <View android:background="@color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:foreground="@drawable/shape_share_match_code_view_avatar_stroke_new" android:layout_alignTop="@id/iv_avatar" android:layout_alignBottom="@id/iv_avatar" android:layout_alignStart="@id/iv_avatar" android:layout_alignEnd="@id/iv_avatar" />
+</RelativeLayout>

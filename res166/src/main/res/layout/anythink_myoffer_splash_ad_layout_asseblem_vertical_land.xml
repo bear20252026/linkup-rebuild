@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merge
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent">
+        <com.anythink.core.common.ui.component.RoundImageView android:id="@id/anythink_myoffer_splash_bg" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+        <FrameLayout android:id="@id/anythink_myoffer_splash_ad_content_image_area" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <FrameLayout android:id="@id/anythink_myoffer_player_view_id" android:background="@android:color/black" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <com.anythink.core.common.inner.ui.MuteImageView android:id="@id/anythink_myoffer_btn_mute_id" android:background="@drawable/anythink_myoffer_video_mute_icon" android:visibility="gone" android:layout_width="@dimen/anythink_myoffer_half_screen_button_size" android:layout_height="@dimen/anythink_myoffer_half_screen_button_size" android:layout_marginLeft="24.0dp" android:layout_marginTop="30.0dp" android:layout_marginRight="-12.0dp" />
+        <include android:visibility="visible" android:layout_width="wrap_content" android:layout_height="24.0dp" android:layout_marginLeft="24.0dp" android:layout_marginTop="30.0dp" android:layout_toRightOf="@id/anythink_myoffer_btn_mute_id" layout="@layout/anythink_myoffer_feedback_button" />
+        <ImageView android:id="@id/anythink_myoffer_player_view_cover_img_id" android:background="#fafafa" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+        <ImageView android:id="@id/anythink_myoffer_player_view_cover_icon_id" android:visibility="gone" android:layout_width="72.0dp" android:layout_height="72.0dp" android:src="@drawable/anythink_player_view_placeholder_icon" android:layout_centerInParent="true" />
+    </RelativeLayout>
+    <include android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignTop="@id/anythink_myoffer_splash_skip_area" android:layout_alignBottom="@id/anythink_myoffer_splash_skip_area" layout="@layout/anythink_myoffer_include_splash_ad_layout_ad_label" />
+    <include layout="@layout/anythink_myoffer_include_guide2click_mask" />
+    <RelativeLayout android:id="@id/anythink_myoffer_splash_ad_bottom_container" android:background="@drawable/anythink_myoffer_splash_bg_info" android:paddingTop="40.0dp" android:layout_width="match_parent" android:layout_height="116.0dp" android:layout_alignParentBottom="true">
+        <com.anythink.core.common.ui.component.RoundImageView android:id="@id/anythink_myoffer_splash_icon" android:layout_width="46.0dp" android:layout_height="46.0dp" android:layout_marginLeft="24.0dp" android:layout_marginRight="12.0dp" android:scaleType="centerCrop" />
+        <com.anythink.core.common.inner.ui.ScanningAnimButton android:id="@id/anythink_myoffer_splash_ad_cta_layout" android:background="@drawable/anythink_myoffer_splash_bg_rectangle_btn_cta_asseblem" android:layout_width="@dimen/anythink_myoffer_landscape_banner_cta_max_width" android:layout_height="46.0dp" android:layout_marginRight="24.0dp" android:layout_alignParentRight="true" />
+        <LinearLayout android:gravity="center_vertical" android:orientation="vertical" android:id="@id/anythink_myoffer_ll_title_desc_container" android:paddingRight="24.0dp" android:layout_width="0.0dp" android:layout_height="0.0dp" android:layout_marginTop="-3.0dp" android:layout_marginRight="24.0dp" android:layout_toLeftOf="@id/anythink_myoffer_splash_ad_cta_layout" android:layout_toRightOf="@id/anythink_myoffer_splash_icon" android:layout_alignTop="@id/anythink_myoffer_splash_icon" android:layout_alignBottom="@id/anythink_myoffer_splash_icon">
+            <TextView android:textSize="17.0dp" android:textColor="#ffffff" android:ellipsize="end" android:id="@id/anythink_myoffer_splash_ad_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="1" android:lineSpacingMultiplier="1.0" />
+            <TextView android:textSize="12.0dp" android:textColor="#ffffff" android:ellipsize="end" android:id="@id/anythink_myoffer_splash_desc" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:maxLines="1" android:lineSpacingMultiplier="1.0" />
+        </LinearLayout>
+        <include android:visibility="gone" android:layout_width="wrap_content" android:layout_height="46.0dp" android:layout_marginRight="20.0dp" android:layout_toLeftOf="@id/anythink_myoffer_splash_ad_cta_layout" layout="@layout/anythink_myoffer_include_invalid_button" />
+    </RelativeLayout>
+    <include android:layout_width="match_parent" android:layout_height="22.0dp" android:layout_alignParentBottom="true" layout="@layout/anythink_myoffer_include_4_element" />
+    <include layout="@layout/anythink_myoffer_include_guide2click_container" />
+    <include android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="14.0dp" android:layout_marginRight="12.0dp" android:layout_alignParentTop="true" android:layout_alignParentRight="true" layout="@layout/anythink_myoffer_include_splash_ad_layout_skip_area" />
+</merge>

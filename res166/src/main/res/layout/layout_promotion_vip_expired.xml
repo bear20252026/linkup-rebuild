@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.constraintlayout.widget.ConstraintLayout android:layout_gravity="center|bottom" android:layout_width="wrap_content" android:layout_height="wrap_content">
+        <ImageView android:id="@id/iv_close" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_map_activity_close" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+        <ImageView android:id="@id/iv_expired_top" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:src="@drawable/img_vip_expired_banner_top" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/iv_close" />
+        <com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center" android:layout_width="wrap_content" android:layout_height="27.0dp" android:layout_marginTop="16.0dp" android:paddingHorizontal="8.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="@id/iv_title" app:mc_gradientEndColor="#e0f870" app:mc_gradientOrientation="left_right" app:mc_gradientStartColor="#fce07a" app:mc_radius="12.0dp" app:mc_strokeColor="@color/colorWhite" app:mc_strokeWidth="2.0dp">
+            <TextView android:textSize="10.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="¥" android:includeFontPadding="false" android:fontFamily="@font/alibaba_puhuiti_heavy" />
+            <com.mc.fastkit.view.shape.ShapedTextView android:textSize="16.0sp" android:textStyle="italic" android:textColor="@color/appPrimary" android:id="@id/tv_price" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="128" android:includeFontPadding="false" android:fontFamily="@font/alibaba_puhuiti_heavy" app:mc_textGradientColor="#324058,#7F4848" app:mc_textGradientPosition="0.7,1" />
+            <TextView android:textSize="10.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_unit" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </com.mc.fastkit.view.shape.ShapedLinearLayout>
+        <ImageView android:id="@id/iv_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="37.0dp" android:src="@drawable/img_vip_expired_banner_title" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="@id/iv_expired_top" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</FrameLayout>

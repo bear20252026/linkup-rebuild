@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:background="@color/colorWindow" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.host.StatusBarHost android:id="@id/statusBar" android:layout_width="match_parent" android:layout_height="wrap_content" />
+    <FrameLayout android:id="@id/titleBar" android:layout_width="match_parent" android:layout_height="44.0dp" android:paddingHorizontal="16.0dp">
+        <ImageView android:layout_gravity="start|center" android:id="@id/iv_back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_back" />
+    </FrameLayout>
+    <TextView android:textSize="24.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:text="@string/friends_help_you_unlock_it_successfully" android:fontFamily="@font/alibaba_puhuiti_heavy" />
+    <LinearLayout android:gravity="center" android:id="@id/pswLayout" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp">
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="32.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv1" android:layout_width="65.0dp" android:layout_height="80.0dp" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorWhite" app:mc_radius="12.0dp" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="32.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv2" android:layout_width="65.0dp" android:layout_height="80.0dp" android:fontFamily="@font/sf_pro_rounded_heavy_subset" android:layout_marginStart="6.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="12.0dp" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="32.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv3" android:layout_width="65.0dp" android:layout_height="80.0dp" android:fontFamily="@font/sf_pro_rounded_heavy_subset" android:layout_marginStart="6.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="12.0dp" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="32.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv4" android:layout_width="65.0dp" android:layout_height="80.0dp" android:fontFamily="@font/sf_pro_rounded_heavy_subset" android:layout_marginStart="6.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="12.0dp" />
+    </LinearLayout>
+    <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="24.0dp" android:text="@string/please_keep_your_password_safe" />
+    <Space android:layout_width="wrap_content" android:layout_height="0.0dp" android:layout_weight="1.0" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_ok" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginBottom="32.0dp" android:text="@string/i_known" android:layout_marginHorizontal="32.0dp" style="@style/normalButtonStyle" />
+    <com.mc.fastkit.view.host.NavigationBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+</LinearLayout>

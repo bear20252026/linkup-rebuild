@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="horizontal" android:layout_width="wrap_content" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBox android:id="@id/cb_read_vip_policy" android:background="@color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:button="@null" android:drawableStart="@drawable/selector_cb_common" />
+    <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_read_vip_policy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/i_read_and_agree" android:layout_marginStart="8.0dp" />
+    <TextView android:textSize="12.0sp" android:textColor="@color/colorSpanClick" android:id="@id/tv_vip_agreement" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/vip_agreement_u2" android:layout_marginStart="2.0dp" />
+</LinearLayout>

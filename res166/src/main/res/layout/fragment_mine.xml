@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:layout_width="match_parent" android:layout_height="wrap_content" android:src="@drawable/img_map_sheet_bg" android:adjustViewBounds="true" app:layout_constraintTop_toTopOf="parent" />
+    <LinearLayout android:orientation="vertical" android:id="@id/rl_top_bar" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="16.0dp">
+        <com.mc.fastkit.view.host.StatusBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <ImageView android:layout_width="wrap_content" android:layout_height="44.0dp" android:src="@drawable/ic_mine_title" />
+    </LinearLayout>
+    <ScrollView android:paddingTop="16.0dp" android:scrollbars="none" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_below="@id/rl_top_bar" android:overScrollMode="never">
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="16.0dp">
+            <com.youloft.watcher.view.mine.UserInfoView android:id="@id/user_info_view" android:layout_width="match_parent" android:layout_height="wrap_content" />
+            <com.youloft.watcher.view.mine.VipCard android:id="@id/vip_info_view" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" />
+            <com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="16.0dp">
+                <androidx.recyclerview.widget.RecyclerView android:id="@id/rv_menu" android:paddingBottom="16.0dp" android:scrollbars="none" android:clipChildren="false" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:overScrollMode="never" app:layoutManager="androidx.recyclerview.widget.GridLayoutManager" app:spanCount="4" />
+            </com.mc.fastkit.view.shape.ShapedFrameLayout>
+            <com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="16.0dp">
+                <TextView android:id="@id/tv_widget" android:text="小组件" app:drawableStartCompat="@drawable/ic_mine_widget" style="@style/MineSettingItemStyle" />
+                <View android:id="@id/v_divider" style="@style/MineDividerStyle" />
+                <LinearLayout android:id="@id/ll_dy" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:foreground="@drawable/common_click_effect" android:paddingHorizontal="16.0dp">
+                    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center_vertical" android:id="@id/tv_dy" android:layout_width="wrap_content" android:layout_height="60.0dp" android:text="@string/get_douyin_coupon" android:drawablePadding="8.0dp" app:drawableStartCompat="@drawable/ic_menu_dy_activity" />
+                    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="10.0sp" android:textColor="@color/colorWarning" android:layout_gravity="center_vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/limited_time_wool" android:fontFamily="@font/alibaba_puhuiti_bold" android:layout_marginStart="4.0dp" android:paddingHorizontal="4.0dp" android:paddingVertical="2.0dp" app:mc_radius="4.0dp" app:mc_strokeColor="@color/colorWarning" app:mc_strokeWidth="1.0dp" />
+                    <View android:layout_width="0.0dp" android:layout_height="wrap_content" android:layout_weight="1.0" />
+                    <ImageView android:layout_gravity="center_vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_arrow_right_variant" />
+                </LinearLayout>
+            </com.mc.fastkit.view.shape.ShapedLinearLayout>
+            <com.mc.fastkit.view.shape.ShapedLinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:layout_marginBottom="32.0dp" app:mc_contentColor="@color/colorWhite" app:mc_radius="16.0dp">
+                <TextView android:id="@id/tv_security" android:text="@string/data_security" app:drawableStartCompat="@drawable/ic_mine_security" style="@style/MineSettingItemStyle" />
+                <View style="@style/MineDividerStyle" />
+                <TextView android:id="@id/tv_app_psw" android:text="@string/app_psw" app:drawableStartCompat="@drawable/ic_mine_app_psw" style="@style/MineSettingItemStyle" />
+                <View style="@style/MineDividerStyle" />
+                <TextView android:id="@id/tv_contact" android:text="@string/contact_us" app:drawableStartCompat="@drawable/ic_mine_contact" style="@style/MineSettingItemStyle" />
+                <View style="@style/MineDividerStyle" />
+                <TextView android:id="@id/tv_about" android:text="@string/about_us" app:drawableStartCompat="@drawable/ic_mine_about" style="@style/MineSettingItemStyle" />
+            </com.mc.fastkit.view.shape.ShapedLinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</RelativeLayout>

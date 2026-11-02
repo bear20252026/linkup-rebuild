@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.airbnb.lottie.LottieAnimationView android:id="@id/lottie_pay_btn" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginHorizontal="16.0dp" app:layout_constraintTop_toTopOf="parent" app:lottie_autoPlay="true" app:lottie_fileName="vip_pay_button.json" app:lottie_loop="true" />
+    <LinearLayout android:gravity="center" android:orientation="horizontal" android:id="@id/ll_policy" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:layout_marginHorizontal="16.0dp" app:layout_constraintTop_toBottomOf="@id/lottie_pay_btn">
+        <CheckBox android:id="@id/cb_read_vip_policy" android:background="@color/transparent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:button="@null" android:drawableStart="@drawable/selector_cb_common" />
+        <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_read_vip_policy" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/read_vip_agreement" android:layout_marginStart="8.0dp" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

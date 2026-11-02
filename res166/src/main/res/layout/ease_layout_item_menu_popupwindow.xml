@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minWidth="50.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ImageView android:id="@id/iv_action_icon" android:layout_width="18.0dp" android:layout_height="18.0dp" android:src="@drawable/ease_chat_item_menu_copy" />
+    <TextView android:textSize="13.0sp" android:textColor="@color/white" android:id="@id/tv_action_name" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5.0dp" />
+</LinearLayout>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_topLeftRadius="38.0dp" app:mc_topRightRadius="38.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <androidx.recyclerview.widget.RecyclerView android:id="@id/rv_actions" android:clipToPadding="false" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="32.0dp" android:overScrollMode="never" android:layout_marginHorizontal="24.0dp" />
+    <LinearLayout android:orientation="vertical" android:id="@id/navigation_options" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp" />
+    <LinearLayout android:gravity="center_horizontal" android:orientation="vertical" android:id="@id/navigation_empty" android:visibility="gone" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="28.0dp">
+        <ImageView android:layout_width="143.0dp" android:layout_height="96.0dp" android:src="@drawable/img_navigation_app_missing" android:scaleType="centerInside" android:contentDescription="@null" />
+        <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:text="@string/install_navigation_app_first" android:maxLines="1" android:includeFontPadding="false" />
+    </LinearLayout>
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_cancel" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="8.0dp" android:layout_marginBottom="32.0dp" android:text="@string/cancel" android:layout_marginHorizontal="32.0dp" style="@style/secondaryButtonStyle" />
+    <com.mc.fastkit.view.host.NavigationBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

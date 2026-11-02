@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:gravity="center" android:layout_gravity="center" android:id="@id/loading_layout" android:background="@color/common_bg" android:visibility="visible" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <ProgressBar android:id="@id/progressBar" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginLeft="20.0dp" android:layout_marginRight="20.0dp" android:max="100" android:layout_centerHorizontal="true" style="?android:progressBarStyleHorizontal" />
+    <TextView android:textColor="@android:color/black" android:gravity="center" android:id="@id/textView" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/downwaiting" android:layout_below="@id/progressBar" />
+</RelativeLayout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorCard" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="match_parent" android:layout_height="64.0dp" android:text="@string/share_to" />
+    <androidx.recyclerview.widget.RecyclerView android:id="@id/rlv_share_platform" android:scrollbars="none" android:layout_width="match_parent" android:layout_height="wrap_content" android:overScrollMode="never" android:layout_marginHorizontal="32.0dp" app:spanCount="4" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_cancel" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="8.0dp" android:text="@string/cancel" android:layout_marginHorizontal="32.0dp" style="@style/secondaryButtonStyle" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

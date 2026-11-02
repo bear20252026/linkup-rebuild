@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:orientation="vertical" android:background="@color/colorWindow" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.host.StatusBarHost android:id="@id/status_bar_host" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent" />
+    <FrameLayout android:id="@id/titleBar" android:layout_width="match_parent" android:layout_height="44.0dp" android:paddingHorizontal="16.0dp" app:layout_constraintTop_toBottomOf="@id/status_bar_host">
+        <ImageView android:layout_gravity="start|center" android:id="@id/iv_back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_back" />
+    </FrameLayout>
+    <TextView android:textSize="24.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_title" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12.0dp" android:text="@string/screenshot_guide_title_1" android:fontFamily="@font/alibaba_puhuiti_heavy" android:layout_marginHorizontal="32.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/titleBar" />
+    <com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="16.0dp" android:layout_marginHorizontal="40.0dp" app:layout_constrainedHeight="true" app:layout_constraintBottom_toTopOf="@id/btn_next" app:layout_constraintTop_toBottomOf="@id/tv_title" app:layout_constraintVertical_bias="0.0" app:mc_radius="24.0dp" app:mc_renderMode="foreground" app:mc_strokeColor="@color/colorDivider" app:mc_strokeWidth="2.0dp">
+        <com.airbnb.lottie.LottieAnimationView android:id="@id/lottie_guide" android:layout_width="match_parent" android:layout_height="wrap_content" android:scaleType="centerCrop" android:adjustViewBounds="true" app:lottie_autoPlay="true" app:lottie_fileName="screenshot/guide.json" app:lottie_loop="true" />
+    </com.mc.fastkit.view.shape.ShapedFrameLayout>
+    <Space android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_weight="1.0" />
+    <com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center" android:id="@id/btn_next" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginBottom="32.0dp" android:foreground="@drawable/common_click_effect" android:layout_marginHorizontal="32.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:mc_contentColor="@color/appPrimary" app:mc_radius="16.0dp">
+        <TextView android:textSize="14.0sp" android:textColor="@color/colorBrand" android:gravity="center" android:id="@id/tv_button" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/screenshot_guide_next_step" android:fontFamily="@font/alibaba_puhuiti_bold" />
+    </com.mc.fastkit.view.shape.ShapedLinearLayout>
+</LinearLayout>

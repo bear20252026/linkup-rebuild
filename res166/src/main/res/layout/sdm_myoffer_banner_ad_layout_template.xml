@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+  xmlns:android="http://schemas.android.com/apk/res/android">
+    <FrameLayout android:id="@id/sdm_myoffer_banner_template_view" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_centerInParent="true" />
+    <com.smartdigimkt.sdk.basead.ui.CloseImageView android:id="@id/sdm_myoffer_banner_close" android:background="#a0a0a0" android:padding="1.0dp" android:layout_width="10.0dp" android:layout_height="10.0dp" android:src="@drawable/sdm_browser_close_icon" android:tint="#ffffff" android:layout_alignParentRight="true" />
+</RelativeLayout>

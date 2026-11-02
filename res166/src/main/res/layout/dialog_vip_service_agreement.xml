@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="32.0dp" app:mc_contentColor="@color/colorCard" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="match_parent" android:layout_height="64.0dp" android:text="@string/dialog_privacy_policy_read_remind_title" />
+    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_content" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/read_vip_agreement" />
+    <LinearLayout android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="24.0dp">
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_cancel" android:layout_width="102.0dp" android:layout_height="54.0dp" android:text="@string/cancel" android:layout_marginEnd="16.0dp" style="@style/secondaryButtonStyle" />
+        <com.mc.fastkit.view.shape.ShapedLabelView android:textColor="@color/colorVipPrimary" android:id="@id/tv_confirm" android:layout_width="match_parent" android:layout_height="54.0dp" app:mc_image="@null" app:mc_imageState="@null" app:mc_text="@string/agree_and_continue" style="@style/vipButtonStyle" />
+    </LinearLayout>
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:gravity="center_horizontal" android:layout_gravity="bottom" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <FrameLayout android:layout_width="match_parent" android:layout_height="64.0dp">
+        <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="#324058" android:gravity="center" android:layout_width="match_parent" android:layout_height="match_parent" android:text="快捷指令相关说明" />
+        <ImageView android:layout_gravity="end|center" android:id="@id/iv_close" android:padding="16.0dp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_close_black" />
+    </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:paddingTop="16.0dp" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="32.0dp" android:paddingEnd="32.0dp">
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content">
+            <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="#324058" android:gravity="center" android:layout_width="22.0dp" android:layout_height="22.0dp" android:text="1" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+                <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="#324058" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="快捷指令是什么" android:layout_weight="1.0" android:layout_marginStart="4.0dp" />
+            </LinearLayout>
+            <TextView android:textSize="14.0sp" android:textColor="#324058" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:text="快捷指令是iOS官方提供的自动化工具，仅iOS设备才有" android:layout_marginStart="28.0dp" />
+        </LinearLayout>
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp">
+            <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="#324058" android:gravity="center" android:layout_width="22.0dp" android:layout_height="22.0dp" android:text="2" android:fontFamily="@font/sf_pro_rounded_heavy_subset" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+                <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="#324058" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="为什么需要Ta创建" android:layout_weight="1.0" android:layout_marginStart="4.0dp" />
+            </LinearLayout>
+            <TextView android:textSize="14.0sp" android:textColor="#324058" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:text="由于Ta是iOS设备，想要截图Ta的手机屏幕只能依靠快捷指令才可实现" android:layout_marginStart="28.0dp" />
+        </LinearLayout>
+        <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16.0dp">
+            <LinearLayout android:gravity="center_vertical" android:orientation="horizontal" android:layout_width="match_parent" android:layout_height="wrap_content">
+                <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="#324058" android:gravity="center" android:layout_width="22.0dp" android:layout_height="22.0dp" android:text="3" app:mc_contentColor="@color/colorBrand" app:mc_radius="6.0dp" />
+                <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="#324058" android:layout_width="0.0dp" android:layout_height="wrap_content" android:text="我需要创建吗" android:layout_weight="1.0" android:layout_marginStart="4.0dp" />
+            </LinearLayout>
+            <TextView android:textSize="14.0sp" android:textColor="#324058" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:text="安卓手机无需创建，开启无障碍权限后对方即可截图你的手机屏幕" android:layout_marginStart="28.0dp" />
+        </LinearLayout>
+    </LinearLayout>
+    <LinearLayout android:orientation="vertical" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingStart="32.0dp" android:paddingEnd="32.0dp">
+        <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/colorBrand" android:gravity="center" android:id="@id/tv_confirm" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="知道了" android:fontFamily="@font/alibaba_puhuiti_bold" app:mc_contentColor="#324058" app:mc_radius="16.0dp" style="@style/normalButtonStyle" />
+    </LinearLayout>
+    <com.mc.fastkit.view.host.NavigationBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

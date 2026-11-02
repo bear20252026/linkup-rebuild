@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:paddingBottom="24.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" app:mc_contentColor="@color/colorWhite" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:layout_width="match_parent" android:layout_height="wrap_content" android:src="@drawable/ic_address_tag_question_img" android:adjustViewBounds="true" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/btn_confirm" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="24.0dp" android:text="@string/know" android:layout_marginHorizontal="32.0dp" style="@style/normalButtonStyle" />
+</com.mc.fastkit.view.shape.ShapedLinearLayout>

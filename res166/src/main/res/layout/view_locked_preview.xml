@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.mc.fastkit.view.shape.ShapedConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent" app:mc_radius="32.0dp" app:mc_renderMode="foreground" app:mc_strokeColor="@color/appPrimary" app:mc_strokeWidth="6.0dp"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:id="@id/iv_bg" android:layout_width="match_parent" android:layout_height="match_parent" android:src="@drawable/bg_lock_screen" android:scaleType="centerCrop" />
+    <ImageView android:id="@id/imageView1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6.0dp" android:src="@drawable/img_locked_preview_statusbar" android:layout_marginHorizontal="6.0dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="parent" />
+    <TextView android:textSize="9.0sp" android:textColor="@color/colorWhite" android:id="@id/tv_time" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="@font/sf_pro_rounded_bold_subset" android:layout_marginStart="28.0dp" app:layout_constraintBottom_toBottomOf="@id/imageView1" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="@id/imageView1" />
+    <FrameLayout android:id="@id/container" android:layout_width="match_parent" android:layout_height="0.0dp" android:layout_marginBottom="6.0dp" android:layout_marginHorizontal="6.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toBottomOf="@id/imageView1" />
+</com.mc.fastkit.view.shape.ShapedConstraintLayout>

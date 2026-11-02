@@ -1,0 +1,7 @@
+{
+ "edited_files": [
+  "values/strings.xml#indicator_color_error"
+ ],
+ "what": "把库错误文案里的字面 @ 转义成 \\@，其余 3982 个文件与 APK 原文逐字节一致",
+ "not_needed": "side_bar_array / material_ic_keyboard_arrow_* 在 values/arrays.xml 与 values/drawables.xml 里本来就是空占位 item（id 表保留、值被 shrink），补定义反而会撞重复"
+}

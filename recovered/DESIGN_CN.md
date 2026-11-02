@@ -150,6 +150,32 @@ imGroupHuawei, imGroupIos, imGroupHonor, imGroupVivo, imGroupXiaomi, imGroupOppo
 
 > 原报告写"2~6 周（2-3 人）"。按上面的文件分布，我维持这个量级判断，但把 P1（网络层）划掉——它已经做完了。
 
+## 五点五、资源银行 `:res166`（2026-11-02 已迁入并可链接）
+
+1.6.6 的 `res/` 整棵搬进独立模块 `:res166`：**3982 个文件 / 37.8MB**，936 个布局、2169 条默认文案
+（业务文案占绝对多数，像三方库的只有约 115 条）、`values-zh` 363 条、`values-zh-rCN` 195 条。
+跳过 146 个纯语言目录（AppCompat/Material 翻译，接真 AAR 时自带）。`:app` 依赖它，
+`R.layout.activity_login` / `R.string.input_address_tag_hint` 这类引用现在**直接可解析**。
+
+三条硬约束，后来人别踩：
+
+1. **`:app` 不能再同时依赖 androidx UI 库**。APK 的 `res/` 是合并后产物，已含 AppCompat/Material 的
+   `attrs.xml`/`styles.xml` 副本；两边同时存在会触发 `attr/navigationMode` 等重复定义。
+   所以探针页用 `android.app.Activity`，主题挂还原出来的 `@style/Theme.Watcher`。
+   **将来要加回 AAR，必须先给 `:res166` 做库自有资源剥离**（按 `abc_/mtrl_/design_/material_` 等前缀分出去）。
+2. **AGP 在 Windows 上会吞掉 aapt2 的真实报错**（`InvalidPathException: Illegal char <:>`）。
+   要看原话，把 `merged.dir/values/values.xml` 拷成 `res/values/values.xml` 后直接
+   `aapt2 compile --dir … -o out.zip`。
+3. **`@array/side_bar_array` 与两个 `material_ic_keyboard_arrow_*` 不是缺失**，它们在
+   `values/arrays.xml`、`values/drawables.xml` 里是 `<item type=… name=…/>` **空占位**（id 表保留、值被 shrink），
+   对应布局没有任何代码路径 inflate。补定义反而撞重复——原样保留。
+
+全树唯一被编辑的一条：`values/strings.xml#indicator_color_error` 里库文案的字面 `@` 转义成 `\@`。
+其余 3981 个文件与 APK 逐字节一致，清单见 `recovered/res_migration_deltas.json`。
+
+复核：`:net:test` 5/0/0、`:net:liveVerify` `PROTOCOL_RECOVERED=1`、`:app:assembleDebug` 出 **50.6MB** APK
+（内含 937 个布局、2272 条 string、`resources.arsc` 1.56MB）。**该 APK 能否正常启动仍未验**（本机无设备）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
