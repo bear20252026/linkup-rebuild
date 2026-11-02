@@ -159,10 +159,10 @@ imGroupHuawei, imGroupIos, imGroupHonor, imGroupVivo, imGroupXiaomi, imGroupOppo
 
 三条硬约束，后来人别踩：
 
-1. **`:app` 不能再同时依赖 androidx UI 库**。APK 的 `res/` 是合并后产物，已含 AppCompat/Material 的
-   `attrs.xml`/`styles.xml` 副本；两边同时存在会触发 `attr/navigationMode` 等重复定义。
-   所以探针页用 `android.app.Activity`，主题挂还原出来的 `@style/Theme.Watcher`。
-   **将来要加回 AAR，必须先给 `:res166` 做库自有资源剥离**（按 `abc_/mtrl_/design_/material_` 等前缀分出去）。
+1. ~~`:app` 不能再同时依赖 androidx UI 库~~ **已解决**：`tools/strip_lib_res.py` 按各 AAR 里的真实资源清单
+   把库自有条目从 `:res166` 剥掉，AAR 已全部接回（见第五点六节）。这条原本是硬约束：APK 的 `res/` 是合并后
+   产物，已含 AppCompat/Material 的 `attrs.xml`/`styles.xml` 副本，两边同时在会触发 `attr/navigationMode`
+   等重复定义——而且**多数重复藏在 `<declare-styleable>` 的子 `<attr>` 里，只看顶层条目会漏**。
 2. **AGP 在 Windows 上会吞掉 aapt2 的真实报错**（`InvalidPathException: Illegal char <:>`）。
    要看原话，把 `merged.dir/values/values.xml` 拷成 `res/values/values.xml` 后直接
    `aapt2 compile --dir … -o out.zip`。
@@ -170,8 +170,38 @@ imGroupHuawei, imGroupIos, imGroupHonor, imGroupVivo, imGroupXiaomi, imGroupOppo
    `values/arrays.xml`、`values/drawables.xml` 里是 `<item type=… name=…/>` **空占位**（id 表保留、值被 shrink），
    对应布局没有任何代码路径 inflate。补定义反而撞重复——原样保留。
 
-全树唯一被编辑的一条：`values/strings.xml#indicator_color_error` 里库文案的字面 `@` 转义成 `\@`。
-其余 3981 个文件与 APK 逐字节一致，清单见 `recovered/res_migration_deltas.json`。
+未剥离前的唯一编辑：`values/strings.xml#indicator_color_error` 里库文案的字面 `@` 转义成 `\@`，
+清单见 `recovered/res_migration_deltas.json`。
+
+## 五点六、AAR 已接回，界面在 JVM 上真 inflate 过（2026-11-02）
+
+`tools/strip_lib_res.py` 用 Gradle 解析出的 `debugRuntimeClasspath` **真实 AAR 清单**做减法（不是前缀猜测，
+传递依赖一并覆盖）：读每个 `.aar` 的 `res/**` 与 `res/values*/values.xml`，把「同 type 同 name」的条目
+从 `:res166` 移除。关键细节：**多数 attr 重复藏在 `<declare-styleable>` 的子 `<attr>` 里**，只看顶层会漏；
+处理方式是把它们**降级成引用**（`<attr name="x"/>`）而非删掉整个 styleable，否则业务自己的 styleable 被误伤。
+
+剥离量：库标识 **5040** ⇒ 删 **770 个文件** + **3892 条 values 条目**
+（style 1080、dimen 863、color 485+213、**attr 1263**、id 116、integer 71、anim 44、layout 114、drawable 348…）。
+明细 `recovered/stripped_lib_resources.json`；未剥离的原始树仍在 `_raw/out_apktool_166/res`，可整棵重放。
+
+接回依赖：appcompat 1.7.0、material 1.10.0、constraintlayout 2.1.4、recyclerview 1.3.1、viewpager2、
+swiperefreshlayout、fragment/activity/lifecycle-ktx、core-ktx 1.13.0、lottie 6.4.0、
+BaseRecyclerViewAdapterHelper 3.0.10（需 jitpack 仓库）。
+`android.nonTransitiveRClass` 改回 **false**——`:app` 的 `R` 必须看得见 `:res166` 的资源。
+
+**跑起来的证据**（Robolectric，不需设备、不碰网络）：`app/src/test/.../RecoveredUiTest.kt` 在 `Theme.Watcher`
+下真 inflate 了还原出的 `activity_friend_request_list.xml`，断言 ConstraintLayout 根、
+`layout_title`/`iv_back`/`iv_add_friend`/`recyclerView`/`emptyView` 齐全，且标题文案解析成「好友申请」。
+这条比"XML 文本存在"强得多：**还原出的布局+样式+属性+图片引用在运行时能整体解开**。
+
+同时重建了第一个真业务屏 `FriendRequestListActivity`（AppCompatActivity + LinearLayoutManager +
+已类型化的 `apiRelationApplyList`）。全套 **9 tests / 0 failures**（5 协议 + 2 模型 + 2 界面 inflate），
+`:app:assembleDebug` 出 **57.9MB** APK。
+
+新发现的依赖缺口：`com.mc.fastkit`（**545 处引用**，`ShapedImageView` / `ShapedConstraintLayout` 等）
+不在 Maven Central 或任何公开仓，基本可确定是**公司内部组件库**，源码也在本次丢失范围内。
+好在 APK 里有：1.5.6 反编译出 91 个可读 `com/mc/fastkit/**` 文件（dialog/ext/log/ui/utils/view/widget）。
+建议单开一张卡抽成 `:fastkit`；在那之前**列表行** `item_friend_request.xml` 还 inflate 不了。
 
 复核：`:net:test` 5/0/0、`:net:liveVerify` `PROTOCOL_RECOVERED=1`、`:app:assembleDebug` 出 **50.6MB** APK
 （内含 937 个布局、2272 条 string、`resources.arsc` 1.56MB）。**该 APK 能否正常启动仍未验**（本机无设备）。

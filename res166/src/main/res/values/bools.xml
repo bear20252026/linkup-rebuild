@@ -1,8 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <bool name="abc_action_bar_embed_tabs">true</bool>
-    <bool name="abc_config_actionMenuItemAllCaps">true</bool>
     <bool name="ease_enable_send_channel_ack">false</bool>
     <bool name="ease_enable_send_origin_image">false</bool>
-    <bool name="mtrl_btn_textappearance_all_caps">true</bool>
-</resources>
+    </resources>

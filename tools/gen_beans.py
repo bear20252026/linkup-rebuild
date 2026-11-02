@@ -136,7 +136,8 @@ def map_type(raw, nullable, queue):
     if re.fullmatch(r"[A-Z]", head):        # a type variable (T/E) stays a type variable
         return head + ("?" if nullable else "")
     if head in TYPE_MAP:
-        return TYPE_MAP[head] + ("?" if nullable else "")
+        mapped = TYPE_MAP[head]
+        return mapped if mapped.endswith("?") or not nullable else mapped + "?"
 
     entry = IDX.get(head)
     if entry is None:

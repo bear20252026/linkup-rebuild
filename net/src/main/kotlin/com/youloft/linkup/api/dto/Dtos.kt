@@ -4,7 +4,7 @@ import com.google.gson.JsonElement
 
 /** recovered from com/youloft/watcher/bean/ActivationResult.java */
 data class ActivationResult(
-    val adChannel: Int?? = null,
+    val adChannel: Int? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/AdConfig.java */
@@ -42,11 +42,11 @@ data class Address(
 /** recovered from com/youloft/watcher/bean/Anniversary.java */
 data class Anniversary(
     val CREATOR: JsonElement? = null,
-    val anniversaryTime: Long?? = null,
+    val anniversaryTime: Long? = null,
     val avatar: String? = null,
-    val f63402id: Int?? = null,
+    val f63402id: Int? = null,
     val title: String? = null,
-    val userId: Long?? = null,
+    val userId: Long? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/AppUsage.java */
@@ -156,7 +156,7 @@ data class ChatEmojiCollectBean(
     val f63405id: Int = 0,
     val image: String? = null,
     val image_thumb: String? = null,
-    val res: Int?? = null,
+    val res: Int? = null,
     val selected: Boolean = false,
     val width: Int = 0,
 )
@@ -178,7 +178,7 @@ data class ChatGifData(
 /** recovered from com/youloft/watcher/bean/friend/ConfirmAdd.java */
 data class ConfirmAdd(
     val friendLimit: Int = 0,
-    val friendUserId: Long?? = null,
+    val friendUserId: Long? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/login/Cut.java */
@@ -202,7 +202,7 @@ data class CutConfigBean(
 /** recovered from com/youloft/watcher/bean/EvaluateRes.java */
 data class EvaluateRes(
     val isPop: Boolean = false,
-    val typeIds: List<Int??>? = null,
+    val typeIds: List<Int?>? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/FeedbackPopBean.java */
@@ -216,9 +216,9 @@ data class Friend(
     val isFriendLimit: Boolean = false,
     val nickname: String? = null,
     val otherFriendLimit: Boolean = false,
-    val otherRiskLevel: Int?? = null,
+    val otherRiskLevel: Int? = null,
     val permission: Permission? = null,
-    val riskLevel: Int?? = null,
+    val riskLevel: Int? = null,
     val sex: String? = null,
     val sslCertificateError: Boolean = false,
     val userId: Long = 0L,
@@ -268,7 +268,7 @@ data class FriendList(
     val remark: String? = null,
     val remarkToMe: String? = null,
     val riskLevel: Int = 0,
-    val riskTypes: List<Int??>? = null,
+    val riskTypes: List<Int?>? = null,
     val selected: Boolean = false,
     val sendFirstMsg: Boolean = false,
     val sex: Int = 0,
@@ -301,8 +301,8 @@ data class FriendRequest(
     val isUnregister: Boolean = false,
     val nickname: String? = null,
     val relation: Int = 0,
-    val riskLevel: Int?? = null,
-    val riskTypes: List<Int??>? = null,
+    val riskLevel: Int? = null,
+    val riskTypes: List<Int?>? = null,
     val sex: Int = 0,
     val status: Int = 0,
     val userId: Long = 0L,
@@ -313,7 +313,7 @@ data class FriendRequestList(
     val isFriendLimit: Boolean? = null,
     val lastApplyUser: LastApplyUser? = null,
     val list: List<FriendRequest?>? = null,
-    val unreadCount: Int?? = null,
+    val unreadCount: Int? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/FriendState.java */
@@ -441,7 +441,7 @@ data class PermissionUpdateBean(
     val CREATOR: JsonElement? = null,
     val androidLockApp: List<AppUsage?>? = null,
     val appleBindApp: List<AppUsage?>? = null,
-    val friendIds: List<Long??>? = null,
+    val friendIds: List<Long?>? = null,
     val otherShortcut: Boolean? = null,
     val selfShortcut: Boolean? = null,
     val sensAppUse: Boolean? = null,
@@ -459,7 +459,7 @@ data class PermissionUpdateBean(
     val sysCall: Boolean? = null,
     val sysCallLog: Boolean? = null,
     val sysFloatWindow: Boolean? = null,
-    val sysIAppUse: Int?? = null,
+    val sysIAppUse: Int? = null,
     val sysLocation: Boolean? = null,
     val sysLocationFront: Boolean? = null,
     val sysMotion: Boolean? = null,
@@ -470,7 +470,7 @@ data class PermissionUpdateBean(
 /** recovered from com/youloft/watcher/bean/PhoneStateInfo.java */
 data class PhoneStateInfo(
     val availableTime: Int = 0,
-    val battery: Int?? = null,
+    val battery: Int? = null,
     val batteryTemperature: Float = 0f,
     val bluetooth: Int = 0,
     val bootTime: Long = 0L,
@@ -663,28 +663,28 @@ data class Sender(
 data class SensBean(
     val CREATOR: JsonElement? = null,
     val address: Address? = null,
-    val answerCount: Int?? = null,
+    val answerCount: Int? = null,
     val appIcon: String? = null,
     val appName: String? = null,
-    val battery: Int?? = null,
-    val count: Int?? = null,
-    val createdAt: Long?? = null,
+    val battery: Int? = null,
+    val count: Int? = null,
+    val createdAt: Long? = null,
     val deviceName: String? = null,
-    val duration: Long?? = null,
+    val duration: Long? = null,
     val errorAnswer: String? = null,
     val eventTime: Long = 0L,
-    val friendIds: List<Long??>? = null,
+    val friendIds: List<Long?>? = null,
     val isCharging: Boolean = false,
     val lastDeviceName: String? = null,
-    val lat: Double?? = null,
-    val lng: Double?? = null,
+    val lat: Double? = null,
+    val lng: Double? = null,
     val lockDuration: Long = 0L,
-    val networkType: Int?? = null,
+    val networkType: Int? = null,
     val permission: List<String?>? = null,
     val phone: String? = null,
     val sender: Sender? = null,
     val `type`: Int = 0,
-    val updatedAt: Long?? = null,
+    val updatedAt: Long? = null,
     val userId: Long = 0L,
     val voiceCover: String? = null,
     val voiceTitle: String? = null,
@@ -711,11 +711,11 @@ data class SensSettings(
 data class ShareVip(
     val CREATOR: JsonElement? = null,
     val avatar: String? = null,
-    val expireTime: Long?? = null,
+    val expireTime: Long? = null,
     val nickname: String? = null,
-    val userId: Long?? = null,
-    val vipSubType: Int?? = null,
-    val vipType: Int?? = null,
+    val userId: Long? = null,
+    val vipSubType: Int? = null,
+    val vipType: Int? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/StayInfo.java */
@@ -736,7 +736,7 @@ data class TalkRiskInit(
     val realNameChecked: Boolean = false,
     val riskConfig: RiskConfig? = null,
     val riskLevel: Int = 0,
-    val riskTypes: List<Int??>? = null,
+    val riskTypes: List<Int?>? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/todo/TodoModel.java */
@@ -848,7 +848,7 @@ data class User(
 /** recovered from com/youloft/watcher/bean/vip/VipData.java */
 data class VipData(
     val Companion: JsonElement? = null,
-    val evaluateList: List<Int??>? = null,
+    val evaluateList: List<Int?>? = null,
     val expireTime: Long = 0L,
     val inductionType: Int = 0,
     val oneFold: Boolean = false,
@@ -865,7 +865,7 @@ data class VipData(
 data class Voice(
     val Companion: JsonElement? = null,
     val cover: String? = null,
-    val duration: Int?? = null,
+    val duration: Int? = null,
     val f63412id: Int = 0,
     val isCustom: Boolean = false,
     val localUri: String? = null,
