@@ -1,10 +1,12 @@
 package com.youloft.watcher.pages.friend
 
+import android.app.Activity
 import com.youloft.linkup.api.dto.FriendRequest
 
 /**
- * The screens this list hands control to. None of them is rebuilt yet, so the default object only
- * marks the intent; each method gets its real `startActivity` when that screen's card is done.
+ * The screens this flow hands control to. The detail screen is rebuilt, so it launches for real;
+ * the rest are still on the backlog and their methods stay empty until each screen lands, which
+ * keeps the recovered control flow readable instead of pretending the targets exist.
  */
 interface FriendRequestNavigation {
     fun openAddFriend()
@@ -20,12 +22,17 @@ interface FriendRequestNavigation {
     fun showPermissionSettings(friendUserId: Long)
 }
 
-/** `AddFriendActivity`, `FriendRequestDetailActivity`, `FriendInfoActivity`, `AgreeAddActivity`,
- * `FriendNumLimitDialog` and `FriendPermissionsSettingsDialog` are all still on the backlog. */
-object NoopFriendRequestNavigation : FriendRequestNavigation {
+/** Screens not rebuilt yet: `AddFriendActivity`, `FriendInfoActivity`, `AgreeAddActivity`,
+ * `FriendNumLimitDialog`, `FriendPermissionsSettingsDialog`. */
+class DefaultFriendRequestNavigation(
+    private val activity: Activity,
+) : FriendRequestNavigation {
+
     override fun openAddFriend() = Unit
 
-    override fun openFriendRequestDetail(request: FriendRequest, friendLimit: Boolean) = Unit
+    override fun openFriendRequestDetail(request: FriendRequest, friendLimit: Boolean) {
+        FriendRequestDetailActivity.start(activity, request, friendLimit)
+    }
 
     override fun openFriendInfo(userId: Long) = Unit
 

@@ -193,6 +193,30 @@ for r in routes:
             generate(base)
 
 os.makedirs(os.path.dirname(DTO_OUT), exist_ok=True)
+
+# The original beans implemented Parcelable, which is an Android type and cannot live in the
+# pure-JVM `:net` module. Screens still need to hand a whole bean to the next screen through an
+# Intent, so beans whose field graph is plain Java (no JsonElement, no generics) carry
+# java.io.Serializable instead. Anything holding raw JSON is left unmarked rather than promising
+# a serialization it cannot deliver.
+def bean_refs(spec):
+    text = " ".join(t for _, t, _ in spec["fields"])
+    return {n for n in generated if re.search(rf"\b{n}\b", text)}
+
+
+serializable = {n: True for n in generated}
+for n, spec in generated.items():
+    if any("JsonElement" in t for _, t, _ in spec["fields"]) or spec["generics"]:
+        serializable[n] = False
+for _ in range(len(generated)):
+    flipped = False
+    for n, spec in generated.items():
+        if serializable[n] and any(not serializable[d] for d in bean_refs(spec)):
+            serializable[n] = False
+            flipped = True
+    if not flipped:
+        break
+
 lines = ["package com.youloft.linkup.api.dto", "",
          "import com.google.gson.JsonElement", ""]
 for name, spec in sorted(generated.items()):
@@ -212,7 +236,7 @@ for name, spec in sorted(generated.items()):
             kn = f"`{kn}`"
         body.append(f"    val {kn}: {ftype}{default},")
     lines.extend(body)
-    lines.append(")")
+    lines.append(") : java.io.Serializable" if serializable[name] else ")")
     lines.append("")
 open(DTO_OUT, "w", encoding="utf-8", newline="\n").write("\n".join(lines))
 

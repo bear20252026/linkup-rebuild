@@ -306,6 +306,41 @@ RecyclerView 手动 measure/layout，不是反射也不是桩），以及行状�
 `PrivacyRepository.updatePermissions`（确认后逐项同步权限）与全局错误处理（登录态刷新）、
 IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还没接。
 
+## 五点十、第二屏：好友申请详情（2026-11-03）
+
+列表屏 6 个跳转目标里的**申请详情**已重建，`FriendRequestNavigation.openFriendRequestDetail` 从空实现
+换成真 `startActivity`——这一屏是"从上一屏跳进来"的第一个真实闭环，不是又一个孤立切片。
+
+**按 1.5.6 还原到的事实**：
+
+| 事实 | 出处 |
+|---|---|
+| Intent 契约：`getParcelableExtra("data")` + `getBooleanExtra("myFriendLimit", false)` | `M()` 前两行；调用方 `a(context, friendRequest, z10)` |
+| **只有一个"同意"键，没有拒绝键**（布局里根本没有那个 view） | `activity_friend_request_detail.xml` 全文 |
+| 三条前置闸门顺序：超 30 天 → 非 VIP 且**我**配额满（弹窗）→ **对方**配额满（toast） | `o0()` |
+| 这里**没有**注销用户判断（和列表屏不同） | `o0()` 无 `isUnregister` 分支 |
+| `status != 0` 时按钮 `setEnabled(false)` 且文案换成"与该用户已为非好友关系" | `M()` 末段 |
+| 关系文字/图标四分支：1 恋人、2 挚友、3 亲人、其他；性别 1 男 2 女，图标挂在文字**尾侧** | `p0()`、`M()` 的 `z.k(tvSex, GravityCompat.END, drawable)` |
+| 匹配码是 HTML：`匹配码：<font color=#324058>%d</font>` 经 `Html.fromHtml(..., LEGACY)` | `ext.l.d(getString(mine_match_code, userId))` |
+| 同意键的点击间隔是 **500ms**（原版走 `ext.r.c(view, 0L, …, 1, null)`，mask 位把默认值取成 500） | `ext/r.java` 的 `c`→`b`→`g0.x` |
+| 结果回包 `msg != null` 就 toast（**不判空串**；列表屏判长度） | `k0()` vs 列表屏 `C0()` |
+| 成功后：渠道开关打开→权限设置弹窗；否则→`AgreeAddActivity` + `finish()` | `k0()` |
+| 详情屏 ViewModel 用 `MutableLiveData.postValue`，列表屏用 `SharedFlow`——**原版两者就是不一样** | 两个 ViewModel 的字段类型 |
+| 详情屏**不**回填 `friendUserId`（列表屏回填） | 对比两处 `invokeSuspend` |
+
+**一处架构空白这轮必须定下来**：原版 bean 全实现 `Parcelable`，而我的 DTO 在**纯 JVM 的 `:net`** 里，
+`android.os.Parcelable` 根本不可用；但"把整个 bean 交给下一屏"是这个 app 的通用跨屏方式。
+现按 `tools/gen_beans.py` 的判定给**字段图全为普通 Java（不含 `JsonElement`、非泛型）的 61/79 个 bean**
+加 `java.io.Serializable`，跨屏 Intent 用 `putExtra("data", bean)`。剩下 18 个含原始 JSON 的 bean
+**不打标记**——宁可少给能力，也不给一个运行时 `NotSerializableException` 的假承诺。
+这条与 Hilt/Navigator 无关，将来若把 bean 迁回 `:app` 再换回 Parcelable。
+
+**验证**：`:app` 35 tests / 0 failures（列表 18 + 详情 14 + 原有 3），`:net` 7 / 0，
+`:app:assembleDebug` 通过且**实测 APK 内含** `FriendRequestDetailActivity`（classes13.dex）
+与清单条目（含 `screenOrientation="portrait"`，与原版一致）；业务布局 inflate 仍 306/335。
+详情屏的测试全程用生产路径 `start()` 造 Intent（列表屏那条用例负责验真跳转与 bean 存活），
+避免测试自己拼 extra 造成"契约改了测试还绿"。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -317,6 +352,8 @@ IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还
 7. **baseUrl 走配置，默认指向生产 `https://link.tttick.com/`**。1.6.6 把测试服地址 `ag.a.f1732c` 硬编码进了正式包，等于整个线上客户端在打测试环境——这是一处独立的发布事故，重建时不要再复制。三个候选地址已固化在 `net/.../LinkUpClient.kt` 的 `LinkUpEndpoints`：`PRODUCTION` / `API`(测试) / `TRACKER_LEGACY`(定位上报)。
 8. **ViewBinding 只在 `:app` 开，`:res166` 永远关**。银行里的布局引用了本模块 classpath 上没有的厂商 View 类，codegen 出来的 Java 必挂（本轮实测 100 个错误）。规则：**重建哪一屏，就把那一屏的 layout 从银行复制进 `app/src/main/res/layout/`**，同名资源由应用模块覆盖库；一屏一屏推进，绑定类留在 `com.youloft.watcher.databinding`，与原版一致。
 9. **列表屏按原版用 BRVAH `adapter4`**（`BaseQuickAdapter` + `QuickViewHolder` + `addOnItemChildClickListener(viewId)`），不要自造 RecyclerView.Adapter：90 多个业务屏都是这个形状，模板对齐一次，后面每屏都省一次翻译。
+10. **跨屏传整个 bean，用 `java.io.Serializable`，不用 Parcel 数字/JSON 字符串凑**。判定在 `tools/gen_beans.py`：字段图里出现 `JsonElement` 或 bean 自身带泛型 ⇒ 不加标记。理由见五点十。
+11. **屏间跳转先进接口**（本流程是 `FriendRequestNavigation`），目标屏没重建就留空实现，测试用 Recorder 断言"跳转意图"而不是断言空界面；目标屏重建后把空实现换成真 `startActivity`，上一屏的测试不用改。
 
 ## 六点五、API 面已强类型（2026-11-02）
 
@@ -369,6 +406,9 @@ IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还
 | 7 | BRVAH 的确切小版本 | APK 内只留下 `com.chad.library.adapter4` 类结构，版本字符串没提取出来；现按 4.1.7 编，若线上列表行为（动画/复用/加载更多）与真机对不上，先怀疑这里 |
 | 8 | 好友申请屏在真机上的滚动分页与 28dp 圆角效果 | Robolectric 里是我手动 measure/layout 的；真实手指滚动、末行圆角与白卡阴影必须装包看屏 |
 | 9 | `isVip` / 好友数缓存 / `showPermissionChannel` 三个读数的真实值 | MMKV 层（`CacheUtils`/`ConfigUtils`）尚未重建，当前是 `LinkUpApplication` 上的 open 默认值，装包后走的是错分支，需接回后复验 |
+| 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有 |
+| 11 | 头像加载的占位/圆角/淡入 | 原版是 `fastkit.widget.i.f(view, url, null)`，参数在混淆体里取不出来，本轮用 Glide 直连，只保证"显示出来" |
+| 12 | `normalButtonStyle` 在 `isEnabled=false` 时的实际观感 | 逻辑已按原版还原（非 0 态禁用并改文案），效果要装包看屏 |
 
 ## 十、下一步顺序（建议）
 

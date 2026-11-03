@@ -1,16 +1,15 @@
 package com.youloft.watcher.pages.friend
 
 import android.view.View
-import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.core.app.ApplicationProvider
 import com.youloft.linkup.api.dto.ConfirmAdd
 import com.youloft.linkup.api.dto.FriendRequest
-import com.youloft.linkup.api.dto.FriendRequestList
-import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.watcher.R
-import com.youloft.watcher.data.FriendRequestRepository
-import com.youloft.watcher.data.LinkUpApplication
+import com.youloft.watcher.pages.friend.FriendFlowFixtures.FakeRepository
+import com.youloft.watcher.pages.friend.FriendFlowFixtures.Recorder
+import com.youloft.watcher.pages.friend.FriendFlowFixtures.TestApplication
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
@@ -25,87 +24,21 @@ import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowToast
 
 /**
- * Regression net for the first rebuilt screen: the recovered row state machine, the paging guards,
+ * Regression net for the rebuilt list screen: the recovered row state machine, the paging guards,
  * the four agree pre-conditions and the confirm round-trip, all without a device.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], application = FriendRequestListActivityTest.TestApplication::class)
+@Config(sdk = [34], application = TestApplication::class)
 class FriendRequestListActivityTest {
 
-    companion object {
-        var repository = FakeRepository()
-        val flags = Flags()
-    }
+    private val repository: FakeRepository get() = FriendFlowFixtures.repository
+    private val flags get() = FriendFlowFixtures.flags
 
-    class Flags {
-        var vip = false
-        var cachedFriends = 0
-        var askPermissions = false
-    }
-
-    class TestApplication : LinkUpApplication() {
-        override val friendRequests: FriendRequestRepository get() = repository
-        override val isVip: Boolean get() = flags.vip
-        override val cachedFriendCount: Int get() = flags.cachedFriends
-        override val askPermissionsAfterAdd: Boolean get() = flags.askPermissions
-    }
-
-    class FakeRepository : FriendRequestRepository {
-        val listRequests = mutableListOf<Pair<Int, Int>>()
-        val confirmations = mutableListOf<Triple<Long, Int, Permission?>>()
-        var firstPage: List<FriendRequest?> = emptyList()
-        var nextPage: List<FriendRequest?> = emptyList()
-        var firstPageLimit = false
-        var confirmResponse = ApiResponse(200, "success", data = ConfirmAdd())
-        var networkFailure: Throwable? = null
-
-        override suspend fun applyList(page: Int, pageSize: Int): ApiResponse<FriendRequestList> {
-            listRequests += page to pageSize
-            networkFailure?.let { throw it }
-            val list = if (page == 1) firstPage else nextPage
-            return ApiResponse(
-                200,
-                "success",
-                data = FriendRequestList(
-                    list = list,
-                    isFriendLimit = if (page == 1) firstPageLimit else null,
-                ),
-            )
-        }
-
-        override suspend fun confirmAdd(
-            userId: Long,
-            relation: Int,
-            sensSetting: Permission?,
-        ): ApiResponse<ConfirmAdd> {
-            confirmations += Triple(userId, relation, sensSetting)
-            return confirmResponse
-        }
-    }
-
-    class Recorder : FriendRequestNavigation {
-        val events = mutableListOf<String>()
-        override fun openAddFriend() { events += "addFriend" }
-
-        override fun openFriendRequestDetail(request: FriendRequest, friendLimit: Boolean) {
-            events += "detail:${request.userId}:$friendLimit"
-        }
-
-        override fun openFriendInfo(userId: Long) { events += "info:$userId" }
-        override fun openAgreeAdd() { events += "agreeAdd" }
-        override fun showFriendNumLimitDialog() { events += "numLimitDialog" }
-        override fun showPermissionSettings(friendUserId: Long) { events += "permissions:$friendUserId" }
-    }
-
-    private val day = 86_400_000L
     private val now = System.currentTimeMillis()
 
     @Before
     fun setUp() {
-        repository = FakeRepository()
-        flags.vip = false
-        flags.cachedFriends = 0
-        flags.askPermissions = false
+        FriendFlowFixtures.reset()
     }
 
     private fun request(
@@ -117,16 +50,16 @@ class FriendRequestListActivityTest {
         unregister: Boolean = false,
         friendLimitReached: Boolean = false,
         relation: Int = 2,
-    ) = FriendRequest(
+    ) = FriendFlowFixtures.request(
         userId = userId,
-        nickname = "昵称$userId",
-        relation = relation,
         status = status,
-        createAt = (now - ageDays * day) / 1000L,
+        ageDays = ageDays,
         riskLevel = riskLevel,
         riskTypes = riskTypes,
-        isUnregister = unregister,
-        isFriendLimit = friendLimitReached,
+        unregister = unregister,
+        friendLimitReached = friendLimitReached,
+        relation = relation,
+        nowMillis = now,
     )
 
     /** Brings the screen up and forces a layout so the rows are real views, not stubs. */
@@ -195,7 +128,7 @@ class FriendRequestListActivityTest {
         val (_, recyclerView) = launch()
 
         val pendingRow = rowAt(recyclerView, 0)
-        assertEquals("昵称11", pendingRow.findViewById<TextView>(R.id.tv_name).text.toString())
+        assertEquals("昵称11", pendingRow.findViewById<android.widget.TextView>(R.id.tv_name).text.toString())
         assertEquals(View.VISIBLE, pendingRow.findViewById<View>(R.id.tv_agree).visibility)
         assertEquals(View.INVISIBLE, pendingRow.findViewById<View>(R.id.tv_added).visibility)
         assertEquals(View.VISIBLE, pendingRow.findViewById<View>(R.id.view_divider).visibility)
@@ -215,7 +148,7 @@ class FriendRequestListActivityTest {
         assertEquals(View.VISIBLE, warning.visibility)
         assertEquals(
             activity.getString(R.string.add_multiple_friends_recently),
-            warning.findViewById<TextView>(R.id.tv_warning_tips).text.toString(),
+            warning.findViewById<android.widget.TextView>(R.id.tv_warning_tips).text.toString(),
         )
     }
 
@@ -269,11 +202,32 @@ class FriendRequestListActivityTest {
         rowAt(recyclerView, 0).findViewById<View>(R.id.tv_agree).performClick()
         shadowOf(android.os.Looper.getMainLooper()).idle()
 
-        assertEquals(listOf(Triple<Long, Int, Permission?>(11L, 3, null)), repository.confirmations)
+        assertEquals(listOf(Triple<Long, Int, com.youloft.linkup.api.dto.Permission?>(11L, 3, null)), repository.confirmations)
         assertEquals(1, activity.listAdapter().getItem(0)?.status)
         assertTrue(recorder.events.contains("agreeAdd"))
         assertTrue(activity.isFinishing)
         assertNull(ShadowToast.getTextOfLatestToast())
+    }
+
+    @Test
+    fun `agree launches the rebuilt detail screen with the quota flag`() {
+        repository.firstPage = listOf(request(11, status = 0))
+        repository.firstPageLimit = true
+        val (_, recyclerView) = launch()
+
+        rowAt(recyclerView, 0).performClick()
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        val started = shadowOf(
+            ApplicationProvider.getApplicationContext<android.app.Application>(),
+        ).nextStartedActivity
+        assertEquals(FriendRequestDetailActivity::class.java.name, started.component?.className)
+        assertEquals(
+            11L,
+            (started.getSerializableExtra("data") as FriendRequest).userId,
+            "the bean must survive the Intent transport",
+        )
+        assertEquals(true, started.getBooleanExtra("myFriendLimit", false))
     }
 
     @Test

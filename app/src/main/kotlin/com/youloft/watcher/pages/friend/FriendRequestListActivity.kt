@@ -42,7 +42,7 @@ class FriendRequestListActivity : AppCompatActivity() {
         }
     }
 
-    var navigation: FriendRequestNavigation = NoopFriendRequestNavigation
+    var navigation: FriendRequestNavigation = DefaultFriendRequestNavigation(this)
 
     private var page = 1
     private var loading = false
