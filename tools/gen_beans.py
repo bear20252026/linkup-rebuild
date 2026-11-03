@@ -48,11 +48,117 @@ def index_classes():
 
 IDX = index_classes()
 
+# simple name of a nested bean -> the class it is nested in (filled as beans are generated)
+NESTED = {}
+
 # `static` is excluded on purpose: Parcelable beans carry a `public static final Creator<X> CREATOR`
 # field that Gson does not serialize, and it was landing in the generated data classes.
 FIELD_RE = re.compile(r'^\s*(?:private|public|protected)\s+(?!static\b)(?:final\s+)?'
                       r'([\w.$<>,?\s\[\]]+?)\s+(\w+)\s*(?:=.*)?;\s*$')
 ANN_RE = re.compile(r'@(?:vl|pl|kotlin\.jvm\.internal)\.(l|m)\b')
+RENAMED_RE = re.compile(r'renamed from:\s*([^\s,]+)')
+CLASS_RE = re.compile(r'\b(?:class|interface)\s+(\w+)')
+
+
+def class_bodies(text):
+    """[(name, start, end)] char ranges of every class body in the file, outermost first."""
+    out = []
+    for m in CLASS_RE.finditer(text):
+        i = text.find('{', m.end())
+        if i < 0:
+            continue
+        depth = 0
+        for j in range(i, len(text)):
+            if text[j] == '{':
+                depth += 1
+            elif text[j] == '}':
+                depth -= 1
+                if depth == 0:
+                    out.append((m.group(1), i + 1, j))
+                    break
+    return out
+
+
+def innermost(line_start, line_end, bodies):
+    """Name of the smallest class body holding this line."""
+    best = None
+    for name, start, end in bodies:
+        if start <= line_start and line_end <= end:
+            if best is None or (best[2] - best[1]) > (end - start):
+                best = (name, start, end)
+    return best[0] if best else None
+
+
+def parse_class_fields(path, owner, bodies):
+    """Fields declared directly in `owner`'s body, not those of its nested classes."""
+    text = open(path, encoding="utf-8", errors="replace").read()
+    lines = text.split("\n")
+    offsets = []
+    pos = 0
+    for line in lines:
+        offsets.append((pos, pos + len(line)))
+        pos += len(line) + 1
+
+    out, pending, pending_name = [], None, None
+    for idx, line in enumerate(lines):
+        lo, hi = offsets[idx]
+        a = ANN_RE.search(line)
+        if a and ";" not in line and "=" not in line:
+            pending = a.group(1)
+            continue
+        r = RENAMED_RE.search(line)
+        if r:
+            pending_name = r.group(1)
+            continue
+        m = FIELD_RE.match(line)
+        if not m:
+            continue
+        raw_type, name = m.group(1).strip(), m.group(2)
+        if name in ("serialVersionUID",):
+            continue
+        if innermost(lo, hi, bodies) != owner:
+            pending_name = None
+            continue
+        # jadx renames fields that collide with a package segment (`id` becomes `f63406id`).
+        # The real Java name is what Gson sees as the JSON key, so recover it from the comment.
+        if pending_name and name != pending_name and name.endswith(pending_name) and re.match(r"f\d+", name):
+            name = pending_name
+        pending_name = None
+        nullable = (pending == "m") if pending else not raw_type.islower()
+        pending = None
+        out.append((name, raw_type, nullable))
+    return out
+
+
+def primary_and_nested(path):
+    text = open(path, encoding="utf-8", errors="replace").read()
+    bodies = class_bodies(text)
+    if not bodies:
+        return None, []
+    stem = os.path.basename(path)[:-5]
+    primary = next((n for n, _s, _e in bodies if n == stem), bodies[0][0])
+    nested = []
+    for name, _s, _e in bodies:
+        if name == primary or name.endswith("Creator"):
+            continue
+        fields = parse_class_fields(path, name, bodies)
+        if fields:
+            nested.append((name, fields))
+    return primary, nested
+
+
+def parse_fields(path):
+    """Back-compatible entry point: the top-level class's own fields."""
+    owner, _nested = primary_and_nested(path)
+    if owner is None:
+        return []
+    return parse_class_fields(path, owner, class_bodies(
+        open(path, encoding="utf-8", errors="replace").read()))
+
+
+def nested_classes(path):
+    """[(name, fields)] for nested `class` declarations that carry data fields."""
+    return primary_and_nested(path)[1]
 
 
 def split_top(decl, open_ch, close_ch):
@@ -66,28 +172,6 @@ def split_top(decl, open_ch, close_ch):
             if depth == 0:
                 return decl[i + 1:j], j + 1
     return "", len(decl)
-
-
-def parse_fields(path):
-    """Return [(name, raw_type, nullable)] reading annotations attached above each field."""
-    lines = open(path, encoding="utf-8", errors="replace").read().split("\n")
-    out = []
-    pending = None
-    for line in lines:
-        a = ANN_RE.search(line)
-        if a and ";" not in line and "=" not in line:
-            pending = a.group(1)  # l = non-null, m = nullable
-            continue
-        m = FIELD_RE.match(line)
-        if not m:
-            continue
-        raw_type, name = m.group(1).strip(), m.group(2)
-        if name in ("serialVersionUID",):
-            continue
-        nullable = (pending == "m") if pending else not raw_type.islower()
-        pending = None
-        out.append((name, raw_type, nullable))
-    return out
 
 
 def class_generics(path):
@@ -115,7 +199,7 @@ def simple(t):
     return t.strip().split(".")[-1]
 
 
-def map_type(raw, nullable, queue):
+def map_type(raw, nullable, queue, local=frozenset()):
     """Convert a decompiled Java type into a Kotlin type, queueing beans for generation."""
     raw = raw.strip()
     generic_part, _ = split_top(raw, '<', '>') if '<' in raw else ("", 0)
@@ -132,6 +216,17 @@ def map_type(raw, nullable, queue):
         return "JsonElement?"
     if raw.startswith("[]") or raw.endswith("[]"):
         return f"List<{map_type(raw.replace('[]', ''), False, queue)}>" + ("?" if nullable else "")
+
+    if head in local:
+        # A nested class of the bean being generated right now; unqualified resolves inside it.
+        return head + ("?" if nullable else "")
+    if head in NESTED:
+        parent = NESTED[head]
+        if head in IDX:
+            return "JsonElement?"          # ambiguous simple name; do not guess a parent
+        if parent not in generated and parent not in queue:
+            queue.append(parent)
+        return f"{parent}.{head}?"
 
     if head in ALIAS:
         return ALIAS[head]
@@ -177,10 +272,16 @@ def generate(root):
             continue
         generics = class_generics(path)
         fields = fields_of(path)
-        if not fields:
+        nested = [(cn, cf) for cn, cf in nested_classes(path)]
+        if not fields and not nested:
             continue
+        local = {cn for cn, _ in nested}
+        for cn in local:
+            NESTED[cn] = name
         generated[name] = {"generics": generics,
-                           "fields": [(n, map_type(t, nul, queue), nul) for n, t, nul in fields],
+                           "fields": [(n, map_type(t, nul, queue, local), nul) for n, t, nul in fields],
+                           "nested": [(cn, [(f, map_type(t, nul, queue, local), nul)
+                                             for f, t, nul in cf]) for cn, cf in nested],
                            "source": os.path.relpath(path, SRC).replace("\\", "/")}
 
 
@@ -199,14 +300,21 @@ os.makedirs(os.path.dirname(DTO_OUT), exist_ok=True)
 # Intent, so beans whose field graph is plain Java (no JsonElement, no generics) carry
 # java.io.Serializable instead. Anything holding raw JSON is left unmarked rather than promising
 # a serialization it cannot deliver.
+def all_fields(spec):
+    out = list(spec["fields"])
+    for _cn, cfields in spec["nested"]:
+        out.extend(cfields)
+    return out
+
+
 def bean_refs(spec):
-    text = " ".join(t for _, t, _ in spec["fields"])
+    text = " ".join(t for _, t, _ in all_fields(spec))
     return {n for n in generated if re.search(rf"\b{n}\b", text)}
 
 
 serializable = {n: True for n in generated}
 for n, spec in generated.items():
-    if any("JsonElement" in t for _, t, _ in spec["fields"]) or spec["generics"]:
+    if any("JsonElement" in t for _, t, _ in all_fields(spec)) or spec["generics"]:
         serializable[n] = False
 for _ in range(len(generated)):
     flipped = False
@@ -217,14 +325,10 @@ for _ in range(len(generated)):
     if not flipped:
         break
 
-lines = ["package com.youloft.linkup.api.dto", "",
-         "import com.google.gson.JsonElement", ""]
-for name, spec in sorted(generated.items()):
-    g = f"<{spec['generics']}>" if spec["generics"] else ""
-    lines.append(f"/** recovered from {spec['source']} */")
-    lines.append(f"data class {name}{g}(")
-    body = []
-    for fname, ftype, nullable in spec["fields"]:
+
+def render_fields(fields, indent):
+    out = []
+    for fname, ftype, nullable in fields:
         if ftype.endswith("?"):
             default = " = null"
         elif ftype in DEFAULTS:
@@ -234,9 +338,29 @@ for name, spec in sorted(generated.items()):
         kn = re.sub(r"[^A-Za-z0-9_]", "", fname)
         if kn in ("in", "object", "fun", "is", "when", "type", "val", "var"):
             kn = f"`{kn}`"
-        body.append(f"    val {kn}: {ftype}{default},")
-    lines.extend(body)
-    lines.append(") : java.io.Serializable" if serializable[name] else ")")
+        out.append(f"{indent}    val {kn}: {ftype}{default},")
+    return out
+
+
+lines = ["package com.youloft.linkup.api.dto", "",
+         "import com.google.gson.JsonElement", ""]
+for name, spec in sorted(generated.items()):
+    g = f"<{spec['generics']}>" if spec["generics"] else ""
+    marker = " : java.io.Serializable" if serializable[name] else ""
+    lines.append(f"/** recovered from {spec['source']} */")
+    lines.append(f"data class {name}{g}(")
+    lines.extend(render_fields(spec["fields"], ""))
+    if spec["nested"]:
+        lines.append(")" + marker + " {")
+        for cn, cfields in spec["nested"]:
+            lines.append("")
+            lines.append(f"    /** nested bean of {spec['source']} */")
+            lines.append(f"    data class {cn}(")
+            lines.extend(render_fields(cfields, "    "))
+            lines.append("    )" + marker)
+        lines.append("}")
+    else:
+        lines.append(")" + marker)
     lines.append("")
 open(DTO_OUT, "w", encoding="utf-8", newline="\n").write("\n".join(lines))
 

@@ -42,7 +42,7 @@ data class Address(
 data class Anniversary(
     val anniversaryTime: Long? = null,
     val avatar: String? = null,
-    val f63402id: Int? = null,
+    val id: Int? = null,
     val title: String? = null,
     val userId: Long? = null,
 ) : java.io.Serializable
@@ -104,7 +104,7 @@ data class AutoReportSettings(
 /** recovered from com/youloft/watcher/bean/Avatar.java */
 data class Avatar(
     val avatar: String? = null,
-    val f63403id: Long = 0L,
+    val id: Long = 0L,
 ) : java.io.Serializable
 
 /** recovered from com/youloft/watcher/bean/AvatarList.java */
@@ -149,7 +149,7 @@ data class ChatCollectionData(
 data class ChatEmojiCollectBean(
     val hasAlpha: Boolean = false,
     val height: Int = 0,
-    val f63405id: Int = 0,
+    val id: Int = 0,
     val image: String? = null,
     val image_thumb: String? = null,
     val res: Int? = null,
@@ -161,7 +161,7 @@ data class ChatEmojiCollectBean(
 data class ChatGifBean(
     val hasAlpha: Boolean = false,
     val height: Int = 0,
-    val f63414id: Int = 0,
+    val id: Int = 0,
     val image_url: String? = null,
     val width: Int = 0,
 ) : java.io.Serializable
@@ -247,30 +247,35 @@ data class FriendInfo(
 
 /** recovered from com/youloft/watcher/bean/FriendList.java */
 data class FriendList(
-    val list: List<JsonElement?>? = null,
-    val av: String? = null,
-    val avatar: String? = null,
-    val createAt: Long = 0L,
-    val deleteAt: Long = 0L,
-    val f63406id: Long = 0L,
-    val imSuspend: Boolean = false,
-    val location: Location? = null,
-    val newFriend: Boolean = false,
-    val nickname: String? = null,
-    val permissionValue: Boolean = false,
-    val receivedFirstMsg: Boolean = false,
-    val relation: Int = 0,
-    val remark: String? = null,
-    val remarkToMe: String? = null,
-    val riskLevel: Int = 0,
-    val riskTypes: List<Int?>? = null,
-    val selected: Boolean = false,
-    val sendFirstMsg: Boolean = false,
-    val sex: Int = 0,
-    val unregisterTime: Long = 0L,
-    val userId: Long = 0L,
-    val vipExpireTime: Long = 0L,
-)
+    val list: List<FriendList.Info?>? = null,
+) : java.io.Serializable {
+
+    /** nested bean of com/youloft/watcher/bean/FriendList.java */
+    data class Info(
+        val av: String? = null,
+        val avatar: String? = null,
+        val createAt: Long = 0L,
+        val deleteAt: Long = 0L,
+        val id: Long = 0L,
+        val imSuspend: Boolean = false,
+        val location: Location? = null,
+        val newFriend: Boolean = false,
+        val nickname: String? = null,
+        val permissionValue: Boolean = false,
+        val receivedFirstMsg: Boolean = false,
+        val relation: Int = 0,
+        val remark: String? = null,
+        val remarkToMe: String? = null,
+        val riskLevel: Int = 0,
+        val riskTypes: List<Int?>? = null,
+        val selected: Boolean = false,
+        val sendFirstMsg: Boolean = false,
+        val sex: Int = 0,
+        val unregisterTime: Long = 0L,
+        val userId: Long = 0L,
+        val vipExpireTime: Long = 0L,
+    ) : java.io.Serializable
+}
 
 /** recovered from com/youloft/watcher/bean/FriendLocation.java */
 data class FriendLocation(
@@ -365,18 +370,23 @@ data class ListBean<T>(
 data class Location(
     val accuracy: Float = 0f,
     val address: Address? = null,
-    val f63408id: Long = 0L,
-    val imPush: JsonElement? = null,
+    val id: Long = 0L,
+    val imPush: ImPush? = null,
     val lat: Double = 0.0,
     val lng: Double = 0.0,
     val locType: Int = 0,
     val speed: Float = 0f,
     val timePeriod: Long = 0L,
     val `type`: Int = 0,
-    val isNewLocation: Boolean = false,
-    val residenceTime: Long = 0L,
-    val stayCount: Int = 0,
-)
+) : java.io.Serializable {
+
+    /** nested bean of com/youloft/watcher/bean/Location.java */
+    data class ImPush(
+        val isNewLocation: Boolean = false,
+        val residenceTime: Long = 0L,
+        val stayCount: Int = 0,
+    ) : java.io.Serializable
+}
 
 /** recovered from com/youloft/watcher/bean/LocationWidget.java */
 data class LocationWidget(
@@ -501,8 +511,8 @@ data class Pop(
     val cutPopType: Int = 0,
     val description: String? = null,
     val endTime: Long = 0L,
-    val extra: JsonElement? = null,
-    val f63211id: Int = 0,
+    val extra: Extra? = null,
+    val id: Int = 0,
     val image: String? = null,
     val popType: Int = 0,
     val target: String? = null,
@@ -510,30 +520,35 @@ data class Pop(
     val tips: String? = null,
     val title: String? = null,
     val typeId: Int = 0,
-    val closeButton: Boolean = false,
-    val currentPrice: Int = 0,
-    val discountPrice: Int = 0,
-    val entranceScenario: Int = 0,
-    val friendAvatar: String? = null,
-    val friendId: Long = 0L,
-    val goodsId: Int = 0,
-    val originPrice: Int = 0,
-    val packetPrice: Int = 0,
-    val payTypes: List<PayTypeItem?>? = null,
-    val price: Int = 0,
-    val productId: String? = null,
-    val shareNum: Int = 0,
-    val showButton: Boolean = false,
-    val strategy: String? = null,
-    val upgradePrice: Int = 0,
-    val vipSubType: Int = 0,
-)
+) : java.io.Serializable {
+
+    /** nested bean of com/youloft/common/bean/Pop.java */
+    data class Extra(
+        val closeButton: Boolean = false,
+        val currentPrice: Int = 0,
+        val discountPrice: Int = 0,
+        val entranceScenario: Int = 0,
+        val friendAvatar: String? = null,
+        val friendId: Long = 0L,
+        val goodsId: Int = 0,
+        val originPrice: Int = 0,
+        val packetPrice: Int = 0,
+        val payTypes: List<PayTypeItem?>? = null,
+        val price: Int = 0,
+        val productId: String? = null,
+        val shareNum: Int = 0,
+        val showButton: Boolean = false,
+        val strategy: String? = null,
+        val upgradePrice: Int = 0,
+        val vipSubType: Int = 0,
+    ) : java.io.Serializable
+}
 
 /** recovered from com/youloft/common/bean/PopListBean.java */
 data class PopListBean(
     val delayRefresh: Long = 0L,
     val popList: List<Pop?>? = null,
-)
+) : java.io.Serializable
 
 /** recovered from com/youloft/watcher/bean/privacy/PrivacyList.java */
 data class PrivacyList(
@@ -549,12 +564,17 @@ data class PrivacyRes(
 /** recovered from com/youloft/watcher/bean/privacy/PrivacySetting.java */
 data class PrivacySetting(
     val key: String? = null,
-    val userList: List<JsonElement?>? = null,
-    val avatar: String? = null,
-    val nickname: String? = null,
-    val sex: Int = 0,
-    val userId: Long = 0L,
-)
+    val userList: List<PrivacySetting.UserList?>? = null,
+) : java.io.Serializable {
+
+    /** nested bean of com/youloft/watcher/bean/privacy/PrivacySetting.java */
+    data class UserList(
+        val avatar: String? = null,
+        val nickname: String? = null,
+        val sex: Int = 0,
+        val userId: Long = 0L,
+    ) : java.io.Serializable
+}
 
 /** recovered from com/youloft/watcher/bean/privacy/PrivacySettingList.java */
 data class PrivacySettingList(
@@ -569,7 +589,7 @@ data class Product(
     val add: Int = 0,
     val client: Int = 0,
     val describe: String? = null,
-    val f63419id: Int = 0,
+    val id: Int = 0,
     val originPrice: Double = 0.0,
     val packetPrice: Double = 0.0,
     val price: Double = 0.0,
@@ -729,7 +749,7 @@ data class TalkRiskInit(
 data class TodoModel(
     val avatar: String? = null,
     val content: String? = null,
-    val f63418id: Long = 0L,
+    val id: Long = 0L,
     val isFinish: Boolean = false,
     val listType: Int = 0,
     val nickname: String? = null,
@@ -784,16 +804,34 @@ data class TrackRecordBean(
     val totalStayTime: Int = 0,
     val tracks: List<JsonElement?>? = null,
     val userId: Long = 0L,
-    val distance: Double = 0.0,
-    val duration: Long = 0L,
-    val `type`: Int = 0,
-    val lat: Double = 0.0,
-    val lng: Double = 0.0,
-    val timePeriod: Long = 0L,
-    val address: String? = null,
-    val line: JsonElement? = null,
-    val lostType: Int = 0,
-)
+) {
+
+    /** nested bean of com/youloft/watcher/bean/TrackRecordBean.java */
+    data class Line(
+        val distance: Double = 0.0,
+        val duration: Long = 0L,
+        val `type`: Int = 0,
+    )
+
+    /** nested bean of com/youloft/watcher/bean/TrackRecordBean.java */
+    data class Point(
+        val lat: Double = 0.0,
+        val lng: Double = 0.0,
+        val timePeriod: Long = 0L,
+        val `type`: Int = 0,
+    )
+
+    /** nested bean of com/youloft/watcher/bean/TrackRecordBean.java */
+    data class Track(
+        val address: String? = null,
+        val lat: Double = 0.0,
+        val line: Line? = null,
+        val lng: Double = 0.0,
+        val lostType: Int = 0,
+        val timePeriod: Long = 0L,
+        val `type`: Int = 0,
+    )
+}
 
 /** recovered from com/youloft/watcher/bean/TrackWidget.java */
 data class TrackWidget(
@@ -836,19 +874,24 @@ data class VipData(
     val inductionType: Int = 0,
     val oneFold: Boolean = false,
     val productList: List<Product?>? = null,
-    val randomBroadcast: List<JsonElement?>? = null,
+    val randomBroadcast: List<VipData.RandomBroadcast?>? = null,
     val retainCountdown: Long = 0L,
     val vipType: Int = 0,
-    val avatar: String? = null,
-    val nickname: String? = null,
-    val productName: String? = null,
-)
+) : java.io.Serializable {
+
+    /** nested bean of com/youloft/watcher/bean/vip/VipData.java */
+    data class RandomBroadcast(
+        val avatar: String? = null,
+        val nickname: String? = null,
+        val productName: String? = null,
+    ) : java.io.Serializable
+}
 
 /** recovered from com/youloft/watcher/bean/Voice.java */
 data class Voice(
     val cover: String? = null,
     val duration: Int? = null,
-    val f63412id: Int = 0,
+    val id: Int = 0,
     val isCustom: Boolean = false,
     val localUri: String? = null,
     val sort: Int = 0,
@@ -868,15 +911,20 @@ data class VoiceRsp(
 
 /** recovered from com/youloft/watcher/bean/WeatherBean.java */
 data class WeatherBean(
-    val now: JsonElement? = null,
-    val feels_like: Int = 0,
-    val f63413rh: Int = 0,
-    val temp: Int = 0,
-    val text: String? = null,
-    val uptime: String? = null,
-    val wind_class: String? = null,
-    val wind_dir: String? = null,
-)
+    val now: Weather? = null,
+) : java.io.Serializable {
+
+    /** nested bean of com/youloft/watcher/bean/WeatherBean.java */
+    data class Weather(
+        val feels_like: Int = 0,
+        val rh: Int = 0,
+        val temp: Int = 0,
+        val text: String? = null,
+        val uptime: String? = null,
+        val wind_class: String? = null,
+        val wind_dir: String? = null,
+    ) : java.io.Serializable
+}
 
 /** recovered from com/youloft/watcher/bean/vip/WxPay.java */
 data class WxPay(
