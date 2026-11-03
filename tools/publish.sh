@@ -36,8 +36,8 @@ echo "== pending files: $(git status --porcelain | wc -l)"
 
 if [ "${PUSH:-0}" = "1" ]; then
     git commit -m "${MSG:?set MSG to the commit message}"
-    git push origin HEAD:master
-    echo "pushed ${REPO}"
+    git push origin HEAD          # 推到 clone 当前分支跟踪的那个分支，别写死分支名
+    echo "pushed ${REPO} on $(git rev-parse --abbrev-ref HEAD)"
 else
     echo "dry run: set PUSH=1 MSG='...' to publish"
 fi
