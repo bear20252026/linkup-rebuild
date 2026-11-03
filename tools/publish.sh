@@ -18,7 +18,7 @@ REPO="bear20252026/linkup-recovery"
 [ -d "$PUB/.git" ] || gh repo clone "$REPO" "$PUB"
 
 cd "$PUB"
-git checkout -- .
+git checkout -- rebuild          # 只回退本脚本负责的 rebuild/，报告与 README 的手改不能被动掉
 rm -rf rebuild/app rebuild/fastkit rebuild/net rebuild/res166 rebuild/recovered rebuild/tools \
        rebuild/*.kts rebuild/*.properties rebuild/README.md rebuild/.gitignore
 
