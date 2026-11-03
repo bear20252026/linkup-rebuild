@@ -15,73 +15,69 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.content.res.use
 import androidx.constraintlayout.widget.ConstraintLayout
-import com.mc.fastkit.view.ShapeStyle
+import com.mc.fastkit.view.ShapeAttrs
 import com.youloft.watcher.res166.R as BankR
+
+/**
+ * Shape views expose their parsed `mc_*` style so a bind can change the corners at runtime, which
+ * is what the recovered list screens do for their first and last rows.
+ */
+interface Shaped {
+    val shapeAttrs: ShapeAttrs
+}
 
 class ShapedTextView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : AppCompatTextView(context, attrs, defStyleAttr) {
+) : AppCompatTextView(context, attrs, defStyleAttr), Shaped {
 
-    init {
-        ShapeStyle.apply(this, attrs)
-    }
+    override val shapeAttrs = ShapeAttrs(this, attrs)
 }
 
 class ShapedEditText @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = androidx.appcompat.R.attr.editTextStyle,
-) : AppCompatEditText(context, attrs, defStyleAttr) {
+) : AppCompatEditText(context, attrs, defStyleAttr), Shaped {
 
-    init {
-        ShapeStyle.apply(this, attrs)
-    }
+    override val shapeAttrs = ShapeAttrs(this, attrs)
 }
 
 class ShapedFrameLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : FrameLayout(context, attrs, defStyleAttr) {
+) : FrameLayout(context, attrs, defStyleAttr), Shaped {
 
-    init {
-        ShapeStyle.apply(this, attrs)
-    }
+    override val shapeAttrs = ShapeAttrs(this, attrs)
 }
 
 class ShapedLinearLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : LinearLayout(context, attrs, defStyleAttr) {
+) : LinearLayout(context, attrs, defStyleAttr), Shaped {
 
-    init {
-        ShapeStyle.apply(this, attrs)
-    }
+    override val shapeAttrs = ShapeAttrs(this, attrs)
 }
 
 class ShapedRelativeLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : RelativeLayout(context, attrs, defStyleAttr) {
+) : RelativeLayout(context, attrs, defStyleAttr), Shaped {
 
-    init {
-        ShapeStyle.apply(this, attrs)
-    }
+    override val shapeAttrs = ShapeAttrs(this, attrs)
 }
 
 class ShapedConstraintLayout @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : ConstraintLayout(context, attrs, defStyleAttr) {
+) : ConstraintLayout(context, attrs, defStyleAttr), Shaped {
 
-    init {
-        ShapeStyle.apply(this, attrs)
-    }
+    override val shapeAttrs = ShapeAttrs(this, attrs)
 }
 
 /** Rounds the drawable within the view bounds; mc_cornerSize accepts a dimension or a fraction. */
@@ -89,13 +85,14 @@ class ShapedImageView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
-) : AppCompatImageView(context, attrs, defStyleAttr) {
+) : AppCompatImageView(context, attrs, defStyleAttr), Shaped {
+
+    override val shapeAttrs = ShapeAttrs(this, attrs)
 
     private var cornerPx = 0f
     private var cornerFraction = 0f
 
     init {
-        ShapeStyle.apply(this, attrs)
         if (attrs != null) {
             context.obtainStyledAttributes(attrs, CORNER_ATTRS).use { a ->
                 val value = a.peekValue(0)

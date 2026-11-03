@@ -259,6 +259,53 @@ BaseRecyclerViewAdapterHelper 3.0.10（需 jitpack 仓库）。
 UI 资源层"补控件就能解"的部分至此见底，再往上要么接厂商依赖（广告 276 + 环信 40），要么逐屏重建。
 详见 `report/13_last_three_views_CN.md`。
 
+## 五点九、逐屏重建的第一块垂直切片（2026-11-03）
+
+第一屏选 **好友申请列表**（`FriendRequestListActivity`），因为它在 1.5.6 里是可读源码，
+且把重建一屏需要的四类东西全碰上了：分页列表、行渲染状态机、写接口动作、跨屏跳转。
+
+**这一屏的还原依据**（全部按代码，不按印象）：
+
+| 事实 | 来源 |
+|---|---|
+| 分页状态在 Activity 而不是 ViewModel，`page` 从 1 起，`list.size < 20` 即到底 | `FriendRequestListActivity.java` `b.invokeSuspend` / `v0()` |
+| 失败不推进 `page`，只 toast `tips_net_err` | 同上，`apiCall` 的 catch 分支 |
+| 同意键有 500ms 去抖 | `A0()` 第一句 `System.currentTimeMillis() - f64688y < 500` |
+| 四条前置闸门：过期 30 天 → 非 VIP 且服务端说满 → 对方已注销 → 对方自己满 | `A0()` 顺序 |
+| 请求体是 `{code, relation, sensSetting}` 且 query 也带 `code` | `ApiDataSource$confirmAdd` 的 `a1.j0(...)` |
+| 服务端不总回 `friendUserId`，客户端把申请者的 userId 回填进响应 | `FriendRequestListViewModel$a.invokeSuspend` |
+| 行首圆角在**左**两角、行尾在**右**两角，半径 28dp；分割线末行是 `INVISIBLE` 不是 `GONE` | `t0.java` 的 `P().k/t` `P().l/r` 与 `setVisibility(4)` |
+| 三态标签：`{1,4}`→已添加；`status≠0 或 <30 天`→同意；否则→已过期 | `t0.java` 后两个分支 |
+| 风险提示只在 `riskLevel==3` 显示，且只有再满足 `riskTypes.contains(4)` 才改文案 | `t0.java` 的两次 `llWarning` 赋值 |
+
+两处**原样的坑我没有"顺手修好"**，因为修不修是产品决定，不是还原：① 风险文案只在命中时覆写，
+复用行会残留上一行的文案；② `status` 既不是 0/1/4 时行尾仍出现可点的"同意"。
+
+**顺带补的 fastkit 真接口**：`ShapedView` 的样式对象在运行时可改（`ShapeAttrs.setTopLeftRadius(...).render()`），
+这是从上面那个 28dp 圆角调用点反推出来的——之前只做了 XML 一次性应用，业务屏一 bind 就会缺 API。
+
+**验证（全在本机 JVM 上跑，无设备）**：`FriendRequestListActivityTest` **17 条**，
+含真实 BRVAH 子键点击 → ViewModel → repository → 状态回写 → 跳转的整链路（`performClick()` 走真视图树，
+RecyclerView 手动 measure/layout，不是反射也不是桩），以及行状态机、分页、四条闸门、去抖、空态、返回与加友键。
+`:net:test` 与 `:app:assembleDebug` 同轮通过（APK 60.6MB）。业务屏可 inflate 仍 **306 / 335**，本轮没有倒退。
+
+**这一轮暴露的架构约束（写进第六节，别再反复）**：`:res166` 里 936 个布局的自定义 View 类
+（百度地图、各广告 SDK、环信…）不在该模块 classpath 上，**ViewBinding 在资源银行里根本编不过**；
+所以绑定必须留在 `:app`，每重建一屏就把那屏用到的 layout 从银行复制进 `app/src/main/res/layout/`
+（应用模块资源覆盖库同名资源，不会 duplicate）。绑定包名因此是 `com.youloft.watcher.databinding`，
+与原版一致——上一轮临时造的 `res166.databinding` 已废。
+
+**BRVAH 版本澄清**：APK 里是 `com.chad.library.**adapter4**`（4.x），不是之前记的 3.0.10（那是 `adapter.base`）。
+现按 Maven Central 可解析的 `io.github.cymchad:BaseRecyclerViewAdapterHelper4:4.1.7` 接；
+**APK 内的精确小版本没提取出来**，列入待验：子键点击、动画与 `submitList` 行为若与线上不一致，需要按包内类结构再对一次。
+
+**这一屏留下的口子（都有主，不是散落 TODO）**：6 个跳转目标（`AddFriendActivity`、`FriendRequestDetailActivity`、
+`FriendInfoActivity`、`AgreeAddActivity`、`FriendNumLimitDialog`、`FriendPermissionsSettingsDialog`）走
+`FriendRequestNavigation` 接口，实现暂为空——各自屏重建时填；`isVip` / `cachedFriendCount` /
+`askPermissionsAfterAdd` 三个 MMKV 与服务端渠道开关的读数在 `LinkUpApplication` 上留成 open 值；
+`PrivacyRepository.updatePermissions`（确认后逐项同步权限）与全局错误处理（登录态刷新）、
+IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还没接。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -268,6 +315,8 @@ UI 资源层"补控件就能解"的部分至此见底，再往上要么接厂商
 5. **响应 bean 暂用 `JsonElement`**，先把 97 条路由全部接上；字段结构按 1.5.6 的 `bean`（113 个可读文件）逐个补成 data class。这样不会出现"为了编译通过而瞎猜字段"。
 6. 签名输入用 `encodedPath + "?" + encodedQuery`（原实现走 `java.net.URL.getPath()/getQuery()`，即已编码形态）。**重写时别改成解码形态**，否则签名静默失效。
 7. **baseUrl 走配置，默认指向生产 `https://link.tttick.com/`**。1.6.6 把测试服地址 `ag.a.f1732c` 硬编码进了正式包，等于整个线上客户端在打测试环境——这是一处独立的发布事故，重建时不要再复制。三个候选地址已固化在 `net/.../LinkUpClient.kt` 的 `LinkUpEndpoints`：`PRODUCTION` / `API`(测试) / `TRACKER_LEGACY`(定位上报)。
+8. **ViewBinding 只在 `:app` 开，`:res166` 永远关**。银行里的布局引用了本模块 classpath 上没有的厂商 View 类，codegen 出来的 Java 必挂（本轮实测 100 个错误）。规则：**重建哪一屏，就把那一屏的 layout 从银行复制进 `app/src/main/res/layout/`**，同名资源由应用模块覆盖库；一屏一屏推进，绑定类留在 `com.youloft.watcher.databinding`，与原版一致。
+9. **列表屏按原版用 BRVAH `adapter4`**（`BaseQuickAdapter` + `QuickViewHolder` + `addOnItemChildClickListener(viewId)`），不要自造 RecyclerView.Adapter：90 多个业务屏都是这个形状，模板对齐一次，后面每屏都省一次翻译。
 
 ## 六点五、API 面已强类型（2026-11-02）
 
@@ -317,6 +366,9 @@ UI 资源层"补控件就能解"的部分至此见底，再往上要么接厂商
 | 4 | 97 条路由逐条字段对齐 | 需要登录态逐条打 |
 | 5 | ~~生产后端是否还活着、归属谁~~ | **本轮已答**：归属我方，生产 API 活在 `link.tttick.com`（第七节） |
 | 6 | 服务端 Go 源码在内网哪台机 | 公网探不到 Jenkins（`8080` 不可达、`/login` 404），只能内网找 CI 与仓库 |
+| 7 | BRVAH 的确切小版本 | APK 内只留下 `com.chad.library.adapter4` 类结构，版本字符串没提取出来；现按 4.1.7 编，若线上列表行为（动画/复用/加载更多）与真机对不上，先怀疑这里 |
+| 8 | 好友申请屏在真机上的滚动分页与 28dp 圆角效果 | Robolectric 里是我手动 measure/layout 的；真实手指滚动、末行圆角与白卡阴影必须装包看屏 |
+| 9 | `isVip` / 好友数缓存 / `showPermissionChannel` 三个读数的真实值 | MMKV 层（`CacheUtils`/`ConfigUtils`）尚未重建，当前是 `LinkUpApplication` 上的 open 默认值，装包后走的是错分支，需接回后复验 |
 
 ## 十、下一步顺序（建议）
 

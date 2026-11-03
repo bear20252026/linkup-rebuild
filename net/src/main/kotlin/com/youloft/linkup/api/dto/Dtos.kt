@@ -30,7 +30,6 @@ data class AdConfigRes(
 
 /** recovered from com/youloft/common/bean/Address.java */
 data class Address(
-    val CREATOR: JsonElement? = null,
     val city: String? = null,
     val district: String? = null,
     val poiName: String? = null,
@@ -41,7 +40,6 @@ data class Address(
 
 /** recovered from com/youloft/watcher/bean/Anniversary.java */
 data class Anniversary(
-    val CREATOR: JsonElement? = null,
     val anniversaryTime: Long? = null,
     val avatar: String? = null,
     val f63402id: Int? = null,
@@ -51,7 +49,6 @@ data class Anniversary(
 
 /** recovered from com/youloft/watcher/bean/AppUsage.java */
 data class AppUsage(
-    val CREATOR: JsonElement? = null,
     val appName: String? = null,
     val count: Int = 0,
     val duration: Long = 0L,
@@ -117,7 +114,6 @@ data class AvatarList(
 
 /** recovered from com/youloft/watcher/bean/Birthday.java */
 data class Birthday(
-    val CREATOR: JsonElement? = null,
     val date: String? = null,
     val isLunar: Boolean = false,
 )
@@ -251,7 +247,6 @@ data class FriendInfo(
 
 /** recovered from com/youloft/watcher/bean/FriendList.java */
 data class FriendList(
-    val CREATOR: JsonElement? = null,
     val list: List<JsonElement?>? = null,
     val av: String? = null,
     val avatar: String? = null,
@@ -279,7 +274,6 @@ data class FriendList(
 
 /** recovered from com/youloft/watcher/bean/FriendLocation.java */
 data class FriendLocation(
-    val CREATOR: JsonElement? = null,
     val address: Address? = null,
     val arrivalTime: Long = 0L,
     val endMeetingTime: Long = 0L,
@@ -293,7 +287,6 @@ data class FriendLocation(
 
 /** recovered from com/youloft/watcher/bean/friend/FriendRequest.java */
 data class FriendRequest(
-    val CREATOR: JsonElement? = null,
     val avatar: String? = null,
     val birthday: Birthday? = null,
     val createAt: Long = 0L,
@@ -370,7 +363,6 @@ data class ListBean<T>(
 
 /** recovered from com/youloft/watcher/bean/Location.java */
 data class Location(
-    val CREATOR: JsonElement? = null,
     val accuracy: Float = 0f,
     val address: Address? = null,
     val f63408id: Long = 0L,
@@ -432,13 +424,10 @@ data class Permission(
     val sensScreenShot: Boolean = false,
     val sensSensitive: Boolean = false,
     val sensTrack: Boolean = false,
-    val Companion: JsonElement? = null,
-    val CREATOR: JsonElement? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/PermissionUpdateBean.java */
 data class PermissionUpdateBean(
-    val CREATOR: JsonElement? = null,
     val androidLockApp: List<AppUsage?>? = null,
     val appleBindApp: List<AppUsage?>? = null,
     val friendIds: List<Long?>? = null,
@@ -654,14 +643,12 @@ data class SearchFriend(
 
 /** recovered from com/youloft/common/bean/Sender.java */
 data class Sender(
-    val CREATOR: JsonElement? = null,
     val nickName: String? = null,
     val userId: Long = 0L,
 )
 
 /** recovered from com/youloft/common/bean/SensBean.java */
 data class SensBean(
-    val CREATOR: JsonElement? = null,
     val address: Address? = null,
     val answerCount: Int? = null,
     val appIcon: String? = null,
@@ -709,7 +696,6 @@ data class SensSettings(
 
 /** recovered from com/youloft/watcher/bean/ShareVip.java */
 data class ShareVip(
-    val CREATOR: JsonElement? = null,
     val avatar: String? = null,
     val expireTime: Long? = null,
     val nickname: String? = null,
@@ -820,7 +806,6 @@ data class TrackWidget(
 
 /** recovered from com/youloft/watcher/bean/User.java */
 data class User(
-    val CREATOR: JsonElement? = null,
     val anniversary: Anniversary? = null,
     val avatar: String? = null,
     val birthday: Birthday? = null,
@@ -847,8 +832,6 @@ data class User(
 
 /** recovered from com/youloft/watcher/bean/vip/VipData.java */
 data class VipData(
-    val Companion: JsonElement? = null,
-    val evaluateList: List<Int?>? = null,
     val expireTime: Long = 0L,
     val inductionType: Int = 0,
     val oneFold: Boolean = false,
@@ -863,7 +846,6 @@ data class VipData(
 
 /** recovered from com/youloft/watcher/bean/Voice.java */
 data class Voice(
-    val Companion: JsonElement? = null,
     val cover: String? = null,
     val duration: Int? = null,
     val f63412id: Int = 0,
