@@ -252,6 +252,10 @@ BaseRecyclerViewAdapterHelper 3.0.10（需 jitpack 仓库）。
 业务屏可 inflate：**306 / 335 = 91%**；因自有 View 失败的布局从 8 降到 5。
 剩 5 个不是一个量级的活：`ProductsView`、`VipCard`、`SlideRecyclerView`（侧滑触摸处理）、
 `FixWheelView`（要先接回 contrarywind）、`ShotPreviewView`（1.5.6 无源）。
+一条操作约束：**被布局引用的 asset 必须随仓库走**——43 个 Lottie/SVGA JSON（约 3.7MB）不在 git 里时，
+干净 clone 会少 13 个业务布局（87% vs 91%），因为 Lottie 按 `lottie_fileName` 读不到文件就直接 inflate 失败；
+其余 25MB 二进制仍走 `tools/stage_assets.sh` 还原。
+
 UI 资源层"补控件就能解"的部分至此见底，再往上要么接厂商依赖（广告 276 + 环信 40），要么逐屏重建。
 详见 `report/13_last_three_views_CN.md`。
 
