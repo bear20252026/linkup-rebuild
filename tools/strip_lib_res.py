@@ -16,7 +16,7 @@ CACHE = os.path.expanduser("~/.gradle/caches/modules-2/files-2.1")
 RES = "D:/linkup-rebuild/res166/src/main/res"
 REPORT = "D:/linkup-rebuild/recovered/stripped_lib_resources.json"
 
-GAV = re.compile(r"([A-Za-z0-9._-]+):([A-Za-z0-9._-]+):([0-9][A-Za-z0-9._-]*)")
+GAV = re.compile(r"([A-Za-z0-9._-]+):([A-Za-z0-9._+-]+):([A-Za-z0-9][A-Za-z0-9._+-]*)")
 DIR_TYPE = {"anim": "anim", "animator": "animator", "color": "color", "drawable": "drawable",
             "layout": "layout", "menu": "menu", "mipmap": "mipmap", "raw": "raw",
             "xml": "xml", "font": "font", "interpolator": "interpolator", "array": "array"}

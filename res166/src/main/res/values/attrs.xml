@@ -1,43 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <attr name="addMoreType" format="integer" />
-    <attr name="antiAlias" format="boolean" />
-    <attr name="assetName" format="string" />
-    <attr name="autoPlay" format="boolean" />
     <attr name="avatarSize">
         <enum name="large" value="0" />
         <enum name="medium" value="1" />
         <enum name="small" value="2" />
     </attr>
-    <attr name="banner_auto_loop" format="boolean" />
-    <attr name="banner_indicator_gravity">
-        <enum name="left" value="0" />
-        <enum name="center" value="1" />
-        <enum name="right" value="2" />
-    </attr>
-    <attr name="banner_indicator_height" format="dimension" />
-    <attr name="banner_indicator_margin" format="dimension" />
-    <attr name="banner_indicator_marginBottom" format="dimension" />
-    <attr name="banner_indicator_marginLeft" format="dimension" />
-    <attr name="banner_indicator_marginRight" format="dimension" />
-    <attr name="banner_indicator_marginTop" format="dimension" />
-    <attr name="banner_indicator_normal_color" format="color|reference" />
-    <attr name="banner_indicator_normal_width" format="dimension" />
-    <attr name="banner_indicator_radius" format="dimension" />
-    <attr name="banner_indicator_selected_color" format="color|reference" />
-    <attr name="banner_indicator_selected_width" format="dimension" />
-    <attr name="banner_indicator_space" format="dimension" />
-    <attr name="banner_infinite_loop" format="boolean" />
-    <attr name="banner_loop_time" format="integer" />
-    <attr name="banner_orientation">
-        <enum name="horizontal" value="0" />
-        <enum name="vertical" value="1" />
-    </attr>
-    <attr name="banner_radius" format="dimension" />
-    <attr name="banner_round_bottom_left" format="boolean" />
-    <attr name="banner_round_bottom_right" format="boolean" />
-    <attr name="banner_round_top_left" format="boolean" />
-    <attr name="banner_round_top_right" format="boolean" />
     <attr name="bigEmojiconRows" format="integer" />
     <attr name="borderColor" format="color" />
     <attr name="bottomEdgeSwipeOffset" format="dimension" />
@@ -48,17 +16,9 @@
     <attr name="chat_extend_menu_num_columns" format="integer" />
     <attr name="chat_extend_menu_vertical_spacing" format="dimension" />
     <attr name="circularRadius" format="dimension" />
-    <attr name="clearsAfterDetached" format="boolean" />
-    <attr name="clearsAfterStop" format="boolean" />
     <attr name="clickToClose" format="boolean" />
     <attr name="clickable" format="boolean" />
     <attr name="css" format="string" />
-    <attr name="drag_edge">
-        <flag name="left" value="1" />
-        <flag name="right" value="2" />
-        <flag name="top" value="4" />
-        <flag name="bottom" value="8" />
-    </attr>
     <attr name="drawBackgroundOutsideProgress" format="boolean|reference" />
     <attr name="ease_border_color" format="color" />
     <attr name="ease_border_width" format="dimension" />
@@ -161,11 +121,6 @@
     <attr name="easy_themeColor" format="color" />
     <attr name="editTag_visible" format="boolean" />
     <attr name="emojiconColumns" format="integer" />
-    <attr name="fillMode">
-        <enum name="Backward" value="0" />
-        <enum name="Forward" value="1" />
-        <enum name="Clear" value="2" />
-    </attr>
     <attr name="fromSource" format="string" />
     <attr name="gtGif" format="reference" />
     <attr name="gtGifViewStyle" format="reference" />
@@ -208,10 +163,6 @@
     <attr name="hl_textColor" format="color" />
     <attr name="hl_textColor_true" format="color" />
     <attr name="hl_text_true" format="string" />
-    <attr name="implementationMode">
-        <enum name="performance" value="0" />
-        <enum name="compatible" value="1" />
-    </attr>
     <attr name="indicatorStyle">
         <enum name="circular" value="0x1" />
         <enum name="roundReact" value="0x2" />
@@ -506,41 +457,10 @@
     <attr name="ksad_use_fake_bold" format="boolean" />
     <attr name="ksad_verticalRadius" format="dimension" />
     <attr name="ksad_width_in_landscape" format="dimension" />
-    <attr name="kswAnimationDuration" format="integer" />
-    <attr name="kswBackColor" format="color|reference" />
-    <attr name="kswBackDrawable" format="reference" />
-    <attr name="kswBackRadius" format="dimension|reference" />
-    <attr name="kswFadeBack" format="boolean" />
-    <attr name="kswTextAdjust" format="dimension" />
-    <attr name="kswTextExtra" format="dimension" />
-    <attr name="kswTextOff" format="string" />
-    <attr name="kswTextOn" format="string" />
-    <attr name="kswTextThumbInset" format="dimension" />
-    <attr name="kswThumbColor" format="color|reference" />
-    <attr name="kswThumbDrawable" format="reference" />
-    <attr name="kswThumbHeight" format="dimension|reference" />
-    <attr name="kswThumbMargin" format="dimension|reference" />
-    <attr name="kswThumbMarginBottom" format="dimension|reference" />
-    <attr name="kswThumbMarginLeft" format="dimension|reference" />
-    <attr name="kswThumbMarginRight" format="dimension|reference" />
-    <attr name="kswThumbMarginTop" format="dimension|reference" />
-    <attr name="kswThumbRadius" format="dimension|reference" />
-    <attr name="kswThumbRangeRatio" format="float" />
-    <attr name="kswThumbWidth" format="dimension|reference" />
-    <attr name="kswTintColor" format="color|reference" />
     <attr name="layoutRatio" format="string" />
-    <attr name="layout_srlBackgroundColor" format="color" />
-    <attr name="layout_srlSpinnerStyle">
-        <enum name="Translate" value="0" />
-        <enum name="Scale" value="1" />
-        <enum name="FixedBehind" value="2" />
-        <enum name="FixedFront" value="3" />
-        <enum name="MatchLayout" value="4" />
-    </attr>
     <attr name="leftEdgeSwipeOffset" format="dimension" />
     <attr name="line_count" format="integer|reference" />
     <attr name="line_width" format="dimension|reference" />
-    <attr name="loopCount" format="integer" />
     <attr name="lottie_applyOpacityToLayers" format="boolean" />
     <attr name="lottie_applyShadowToLayers" format="boolean" />
     <attr name="max_select" format="integer" />
@@ -871,10 +791,8 @@
     <attr name="msgListOtherBubbleBackground" format="reference" />
     <attr name="msgListShowUserAvatar" format="boolean" />
     <attr name="msgListShowUserNick" format="boolean" />
-    <attr name="normal_drawable" format="reference" />
     <attr name="numColumns" format="integer" />
     <attr name="numRows" format="integer" />
-    <attr name="panEnabled" format="boolean" />
     <attr name="postSplashScreenTheme" format="reference" />
     <attr name="progress_background_color" format="color|reference" />
     <attr name="progress_blur_radius" format="dimension|reference" />
@@ -905,10 +823,6 @@
     </attr>
     <attr name="progress_text_color" format="color|reference" />
     <attr name="progress_text_size" format="dimension|reference" />
-    <attr name="psBottomNormal" format="boolean" />
-    <attr name="psCorners" format="dimension" />
-    <attr name="psTopNormal" format="boolean" />
-    <attr name="quickScaleEnabled" format="boolean" />
     <attr name="radius" format="dimension" />
     <attr name="reactHeight" format="dimension" />
     <attr name="reactRadius" format="dimension" />
@@ -934,14 +848,6 @@
     <attr name="sb_uncheckcircle_color" format="color|reference" />
     <attr name="sb_uncheckcircle_radius" format="dimension|reference" />
     <attr name="sb_uncheckcircle_width" format="dimension|reference" />
-    <attr name="scaleType">
-        <enum name="fillStart" value="0" />
-        <enum name="fillCenter" value="1" />
-        <enum name="fillEnd" value="2" />
-        <enum name="fitStart" value="3" />
-        <enum name="fitCenter" value="4" />
-        <enum name="fitEnd" value="5" />
-    </attr>
     <attr name="search_drawable_left_height" format="dimension" />
     <attr name="search_drawable_left_width" format="dimension" />
     <attr name="search_drawable_right_height" format="dimension" />
@@ -951,25 +857,12 @@
     <attr name="search_edit_drawable_right_height" format="dimension" />
     <attr name="search_edit_drawable_right_width" format="dimension" />
     <attr name="selectedColor" format="color" />
-    <attr name="selected_drawable" format="reference" />
-    <attr name="shimmer_angle" format="integer|reference" />
-    <attr name="shimmer_animation_duration" format="integer|reference" />
-    <attr name="shimmer_auto_start" format="boolean|reference" />
-    <attr name="shimmer_color" format="color|reference" />
-    <attr name="shimmer_gradient_center_color_width" format="float|reference" />
-    <attr name="shimmer_mask_width" format="float|reference" />
-    <attr name="shimmer_reverse_animation" format="boolean|reference" />
     <attr name="showGifEmoji" format="boolean" />
-    <attr name="show_mode">
-        <enum name="lay_down" value="0" />
-        <enum name="pull_out" value="1" />
-    </attr>
     <attr name="sl_cornerRadius" format="dimension" />
     <attr name="sl_dx" format="dimension" />
     <attr name="sl_dy" format="dimension" />
     <attr name="sl_shadowColor" format="color" />
     <attr name="sl_shadowRadius" format="dimension" />
-    <attr name="source" format="string" />
     <attr name="space" format="dimension" />
     <attr name="splashScreenIconSize" format="dimension" />
     <attr name="srb_clearRatingEnabled" format="boolean" />
@@ -985,70 +878,6 @@
     <attr name="srb_starPadding" format="dimension" />
     <attr name="srb_starWidth" format="dimension" />
     <attr name="srb_stepSize" format="float" />
-    <attr name="src" format="reference" />
-    <attr name="srlAccentColor" format="color" />
-    <attr name="srlClassicsSpinnerStyle">
-        <enum name="Translate" value="0" />
-        <enum name="Scale" value="1" />
-        <enum name="FixedBehind" value="2" />
-    </attr>
-    <attr name="srlDisableContentWhenLoading" format="boolean" />
-    <attr name="srlDisableContentWhenRefresh" format="boolean" />
-    <attr name="srlDragRate" format="float" />
-    <attr name="srlDrawableArrow" format="reference" />
-    <attr name="srlDrawableArrowSize" format="dimension" />
-    <attr name="srlDrawableMarginRight" format="dimension" />
-    <attr name="srlDrawableProgress" format="reference" />
-    <attr name="srlDrawableProgressSize" format="dimension" />
-    <attr name="srlDrawableSize" format="dimension" />
-    <attr name="srlEnableAutoLoadMore" format="boolean" />
-    <attr name="srlEnableClipFooterWhenFixedBehind" format="boolean" />
-    <attr name="srlEnableClipHeaderWhenFixedBehind" format="boolean" />
-    <attr name="srlEnableFooterFollowWhenLoadFinished" format="boolean" />
-    <attr name="srlEnableFooterFollowWhenNoMoreData" format="boolean" />
-    <attr name="srlEnableFooterTranslationContent" format="boolean" />
-    <attr name="srlEnableHeaderTranslationContent" format="boolean" />
-    <attr name="srlEnableHorizontalDrag" format="boolean" />
-    <attr name="srlEnableLastTime" format="boolean" />
-    <attr name="srlEnableLoadMore" format="boolean" />
-    <attr name="srlEnableLoadMoreWhenContentNotFull" format="boolean" />
-    <attr name="srlEnableNestedScrolling" format="boolean" />
-    <attr name="srlEnableOverScrollBounce" format="boolean" />
-    <attr name="srlEnableOverScrollDrag" format="boolean" />
-    <attr name="srlEnablePreviewInEditMode" format="boolean" />
-    <attr name="srlEnablePureScrollMode" format="boolean" />
-    <attr name="srlEnableRefresh" format="boolean" />
-    <attr name="srlEnableScrollContentWhenLoaded" format="boolean" />
-    <attr name="srlEnableScrollContentWhenRefreshed" format="boolean" />
-    <attr name="srlFinishDuration" format="integer" />
-    <attr name="srlFixedFooterViewId" format="reference" />
-    <attr name="srlFixedHeaderViewId" format="reference" />
-    <attr name="srlFooterHeight" format="dimension" />
-    <attr name="srlFooterInsetStart" format="dimension" />
-    <attr name="srlFooterMaxDragRate" format="float" />
-    <attr name="srlFooterTranslationViewId" format="reference" />
-    <attr name="srlFooterTriggerRate" format="float" />
-    <attr name="srlHeaderHeight" format="dimension" />
-    <attr name="srlHeaderInsetStart" format="dimension" />
-    <attr name="srlHeaderMaxDragRate" format="float" />
-    <attr name="srlHeaderTranslationViewId" format="reference" />
-    <attr name="srlHeaderTriggerRate" format="float" />
-    <attr name="srlPrimaryColor" format="color" />
-    <attr name="srlReboundDuration" format="integer" />
-    <attr name="srlStyle" format="reference" />
-    <attr name="srlTextFailed" format="string" />
-    <attr name="srlTextFinish" format="string" />
-    <attr name="srlTextLoading" format="string" />
-    <attr name="srlTextNothing" format="string" />
-    <attr name="srlTextPulling" format="string" />
-    <attr name="srlTextRefreshing" format="string" />
-    <attr name="srlTextRelease" format="string" />
-    <attr name="srlTextSecondary" format="string" />
-    <attr name="srlTextSizeTime" format="dimension" />
-    <attr name="srlTextSizeTitle" format="dimension" />
-    <attr name="srlTextTimeMarginTop" format="dimension" />
-    <attr name="srlTextUpdate" format="string" />
-    <attr name="stroke_Width" format="float" />
     <attr name="stroke_visible" format="boolean" />
     <attr name="svg" format="string|reference" />
     <attr name="tag_gravity">
@@ -1057,7 +886,6 @@
         <enum name="right" value="1" />
     </attr>
     <attr name="targetText" format="string" />
-    <attr name="tileBackgroundColor" format="color" />
     <attr name="titleBarArrowColor" format="color|reference" />
     <attr name="titleBarDisplayHomeAsUpEnabled" format="boolean" />
     <attr name="titleBarLeftImage" format="reference" />
@@ -1076,22 +904,6 @@
     <attr name="topEdgeSwipeOffset" format="dimension" />
     <attr name="topLeftRadius" format="dimension" />
     <attr name="topRightRadius" format="dimension" />
-    <attr name="ucrop_artv_ratio_title" format="string" />
-    <attr name="ucrop_artv_ratio_x" format="float" />
-    <attr name="ucrop_artv_ratio_y" format="float" />
-    <attr name="ucrop_aspect_ratio_x" format="float" />
-    <attr name="ucrop_aspect_ratio_y" format="float" />
-    <attr name="ucrop_circle_dimmed_layer" format="boolean" />
-    <attr name="ucrop_dimmed_color" format="color" />
-    <attr name="ucrop_frame_color" format="color" />
-    <attr name="ucrop_frame_stroke_size" format="dimension" />
-    <attr name="ucrop_grid_color" format="color" />
-    <attr name="ucrop_grid_column_count" format="integer" />
-    <attr name="ucrop_grid_row_count" format="integer" />
-    <attr name="ucrop_grid_stroke_size" format="dimension" />
-    <attr name="ucrop_show_frame" format="boolean" />
-    <attr name="ucrop_show_grid" format="boolean" />
-    <attr name="ucrop_show_oval_crop_frame" format="boolean" />
     <attr name="unselectedColor" format="color" />
     <attr name="vvFrameColor" format="color" />
     <attr name="vvFrameCornerColor" format="color" />
@@ -1177,5 +989,4 @@
     </attr>
     <attr name="yl_textGradientPosition" format="string" />
     <attr name="yl_title" format="string|reference" />
-    <attr name="zoomEnabled" format="boolean" />
-</resources>
+    </resources>

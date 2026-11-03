@@ -17,7 +17,6 @@
         <item name="android:windowEnterAnimation">@anim/ec_alpha_in</item>
         <item name="android:windowExitAnimation">@anim/ec_alpha_out</item>
     </style>
-    <style name="Base.Theme.NoActionBar" parent="@style/Theme.AppCompat.Light.NoActionBar" />
     <style name="Base.Theme.SplashScreen" parent="@style/Base.v21.Theme.SplashScreen" />
     <style name="Base.Theme.SplashScreen.DayNight" parent="@style/Base.Theme.SplashScreen.Light" />
     <style name="Base.Theme.SplashScreen.Light" parent="@style/Base.v21.Theme.SplashScreen.Light" />
@@ -151,47 +150,6 @@
         <item name="android:backgroundDimEnabled">false</item>
         <item name="android:windowDisablePreview">true</item>
     </style>
-    <style name="Picture.Theme.AlertDialog" parent="@android:style/Theme.Dialog">
-        <item name="android:backgroundDimAmount">0.4</item>
-        <item name="android:windowBackground">@color/ps_color_transparent</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowIsTranslucent">false</item>
-        <item name="android:windowAnimationStyle">@null</item>
-        <item name="android:windowFullscreen">false</item>
-        <item name="android:backgroundDimEnabled">false</item>
-    </style>
-    <style name="Picture.Theme.Dialog" parent="@android:style/Theme.Dialog">
-        <item name="android:windowBackground">@android:color/transparent</item>
-        <item name="android:windowFrame">@android:color/transparent</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowIsTranslucent">false</item>
-        <item name="android:windowContentOverlay">@null</item>
-        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
-        <item name="android:windowSoftInputMode">adjustPan</item>
-    </style>
-    <style name="Picture.Theme.Dialog.AudioStyle" parent="@style/Picture.Theme.Dialog">
-        <item name="android:windowEnterAnimation">@anim/ps_anim_enter</item>
-        <item name="android:windowExitAnimation">@anim/ps_anim_exit</item>
-    </style>
-    <style name="Picture.Theme.Translucent" parent="@style/Base.Theme.NoActionBar">
-        <item name="android:windowBackground">@color/ps_color_transparent</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowIsTranslucent">true</item>
-    </style>
-    <style name="PictureThemeDialogFragmentAnim" parent="@android:style/Animation">
-        <item name="android:windowEnterAnimation">@anim/ps_anim_up_in</item>
-        <item name="android:windowExitAnimation">@anim/ps_anim_down_out</item>
-    </style>
-    <style name="PictureThemeDialogWindowStyle">
-        <item name="android:windowEnterAnimation">@anim/ps_anim_modal_in</item>
-        <item name="android:windowExitAnimation">@anim/ps_anim_modal_out</item>
-    </style>
-    <style name="PictureThemeWindowStyle">
-        <item name="android:windowEnterAnimation">@anim/ps_anim_album_show</item>
-        <item name="android:windowExitAnimation">@anim/ps_anim_album_dismiss</item>
-    </style>
     <style name="PopupWindowFadeAnimationStyle">
         <item name="android:windowEnterAnimation">@anim/shopping_popup_fade_in</item>
         <item name="android:windowExitAnimation">@anim/shopping_popup_fade_out</item>
@@ -215,48 +173,9 @@
         <item name="android:windowEnterAnimation">@anim/ec_bottom_in</item>
         <item name="android:windowExitAnimation">@anim/ec_bottom_out</item>
     </style>
-    <style name="SmartRefreshStyle">
-        <item name="srlAccentColor">@android:color/white</item>
-        <item name="srlDisableContentWhenLoading">false</item>
-        <item name="srlDisableContentWhenRefresh">false</item>
-        <item name="srlDragRate">0.5</item>
-        <item name="srlEnableAutoLoadMore">true</item>
-        <item name="srlEnableClipFooterWhenFixedBehind">true</item>
-        <item name="srlEnableClipHeaderWhenFixedBehind">true</item>
-        <item name="srlEnableFooterFollowWhenNoMoreData">false</item>
-        <item name="srlEnableLoadMoreWhenContentNotFull">true</item>
-        <item name="srlEnableNestedScrolling">true</item>
-        <item name="srlEnableOverScrollBounce">true</item>
-        <item name="srlEnableOverScrollDrag">false</item>
-        <item name="srlEnablePreviewInEditMode">true</item>
-        <item name="srlEnablePureScrollMode">false</item>
-        <item name="srlEnableScrollContentWhenLoaded">true</item>
-        <item name="srlEnableScrollContentWhenRefreshed">true</item>
-        <item name="srlFooterHeight">60.0dp</item>
-        <item name="srlFooterInsetStart">0.0dp</item>
-        <item name="srlFooterMaxDragRate">2.5</item>
-        <item name="srlFooterTriggerRate">1.0</item>
-        <item name="srlHeaderHeight">100.0dp</item>
-        <item name="srlHeaderInsetStart">0.0dp</item>
-        <item name="srlHeaderMaxDragRate">2.5</item>
-        <item name="srlHeaderTriggerRate">1.0</item>
-        <item name="srlPrimaryColor">@android:color/holo_blue_dark</item>
-        <item name="srlReboundDuration">300</item>
-    </style>
     <style name="StoreAppBottomSheetStyle" parent="@style/EC.Widget.Design.BottomSheet.Modal">
         <item name="android:windowAnimationStyle">@style/SKUPanelDialogAnimation</item>
         <item name="android:background">@android:color/transparent</item>
-    </style>
-    <style name="SwitchButtonMD">
-        <item name="kswBackColor">@color/ksw_md_back_color</item>
-        <item name="kswThumbDrawable">@drawable/ksw_md_thumb</item>
-        <item name="kswThumbHeight">@dimen/ksw_md_thumb_ripple_size</item>
-        <item name="kswThumbMarginBottom">-14.0dp</item>
-        <item name="kswThumbMarginLeft">-16.0dp</item>
-        <item name="kswThumbMarginRight">-16.0dp</item>
-        <item name="kswThumbMarginTop">-14.0dp</item>
-        <item name="kswThumbRangeRatio">1.45</item>
-        <item name="kswThumbWidth">@dimen/ksw_md_thumb_ripple_size</item>
     </style>
     <style name="Theme.Splash" parent="@style/Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/img_splash_bg</item>
@@ -681,54 +600,6 @@
     <style name="transparentButtonStyle" parent="@style/baseButtonStyle">
         <item name="android:textColor">@color/appPrimary</item>
         <item name="mc_contentColor">@color/transparent</item>
-    </style>
-    <style name="ucrop_ImageViewWidgetIcon">
-        <item name="android:layout_gravity">center</item>
-        <item name="android:duplicateParentState">true</item>
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:scaleType">fitCenter</item>
-    </style>
-    <style name="ucrop_TextViewCropAspectRatio">
-        <item name="android:textColor">@color/ucrop_scale_text_view_selector</item>
-        <item name="android:layout_gravity">center</item>
-        <item name="android:duplicateParentState">true</item>
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">@dimen/ucrop_height_crop_aspect_ratio_text</item>
-        <item name="android:textAllCaps">false</item>
-    </style>
-    <style name="ucrop_TextViewWidget">
-        <item name="android:textSize">@dimen/ucrop_text_size_controls_text</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/ucrop_color_widget_active</item>
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">@dimen/ucrop_margin_top_controls_text</item>
-        <item name="android:layout_centerHorizontal">true</item>
-    </style>
-    <style name="ucrop_TextViewWidgetText">
-        <item name="android:textSize">@dimen/ucrop_text_size_widget_text</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/ucrop_color_widget_text</item>
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">@dimen/ucrop_margin_top_widget_text</item>
-        <item name="android:layout_centerHorizontal">true</item>
-    </style>
-    <style name="ucrop_WrapperIconState">
-        <item name="android:gravity">center</item>
-        <item name="android:orientation">vertical</item>
-        <item name="android:clickable">true</item>
-        <item name="android:layout_width">0.0dp</item>
-        <item name="android:layout_height">match_parent</item>
-        <item name="android:layout_weight">1.0</item>
-        <item name="background">?selectableItemBackground</item>
-    </style>
-    <style name="ucrop_WrapperRotateButton">
-        <item name="android:clickable">true</item>
-        <item name="android:layout_width">@dimen/ucrop_size_wrapper_rotate_button</item>
-        <item name="android:layout_height">@dimen/ucrop_size_wrapper_rotate_button</item>
-        <item name="background">?selectableItemBackgroundBorderless</item>
     </style>
     <style name="umeng_socialize_popup_dialog" parent="@android:style/Theme.Dialog">
         <item name="android:backgroundDimAmount">0.6</item>

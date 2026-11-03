@@ -1,17 +1,17 @@
 {
- "surveyed": 829,
+ "surveyed": 798,
  "rates": [
   {
    "scope": "全部布局",
-   "total": 829,
-   "ok": 434,
-   "pct": 52
+   "total": 798,
+   "ok": 444,
+   "pct": 55
   },
   {
    "scope": "业务命名布局",
    "total": 335,
-   "ok": 290,
-   "pct": 86
+   "ok": 303,
+   "pct": 90
   },
   {
    "scope": "广告 SDK 前缀布局",
@@ -21,20 +21,21 @@
   }
  ],
  "failures_by_owner": {
-  "其它三方 UI 库": 63,
-  "非类名原因": 5,
-  "androidx 组件": 5,
-  "APP-OWNED view (要我们重建)": 6,
+  "其它三方 UI 库": 23,
+  "非类名原因": 7,
+  "APP-OWNED view (要我们重建)": 8,
   "广告 SDK 自带 UI": 276,
   "环信 EaseUI": 40
  },
  "app_owned_views_missing": {
+  "com.youloft.watcher.view.im.CameraButtonView": 1,
   "com.youloft.watcher.view.SwitchButton": 1,
   "com.youloft.webview.WebComponent": 1,
   "com.youloft.watcher.pages.shot.view.ShotPreviewView": 1,
   "com.youloft.watcher.view.mine.VipCard": 1,
   "com.youloft.watcher.view.SlideRecyclerView": 1,
-  "com.youloft.watcher.view.lock.FixWheelView": 1
+  "com.youloft.watcher.view.lock.FixWheelView": 1,
+  "com.youloft.watcher.view.vip.ProductsView": 1
  },
  "top_causes": {
   "com.smartdigimkt.sdk.basead.ui.component.RoundImageView": 32,
@@ -51,20 +52,14 @@
   "com.anythink.core.common.inner.ui.ScanningAnimButton": 6,
   "com.kwad.components.core.widget.KSCornerImageView": 6,
   "com.kwad.components.ad.widget.AppScoreView": 6,
-  "com.luck.picture.lib.widget.SquareRelativeLayout": 6,
   "com.smartdigimkt.sdk.basead.ui.ScanningAnimButton": 6,
   "com.smartdigimkt.sdk.basead.ui.component.MarqueeTextView": 6,
-  "com.kyleduo.switchbutton.SwitchButton": 5,
-  "androidx.camera.view.PreviewView": 5,
-  "com.luck.picture.lib.widget.MediumBoldTextView": 5,
   "com.kwad.sdk.core.view.AdBasePvFrameLayout": 5,
   "com.smartdigimkt.sdk.basead.ui.WaveAnimImageView": 5,
-  "com.youth.banner.Banner": 4,
   "com.dinuscxj.progressbar.CircleProgressBar": 4,
   "com.kwad.sdk.core.webview.KsAdWebView": 4,
   "com.kwad.sdk.widget.KSLinearLayout": 4,
   "com.kwad.components.core.page.widget.TextProgressBar": 4,
-  "com.luck.picture.lib.photoview.PhotoView": 4,
   "com.smartdigimkt.sdk.basead.ui.PlayerView": 4,
   "com.baidu.mapapi.map.TextureMapView": 3,
   "com.anythink.core.common.inner.ui.CloseImageView": 3,
@@ -75,7 +70,13 @@
   "com.contrarywind.view.WheelView": 3,
   "com.smartdigimkt.sdk.basead.ui.component.CTAButtonLayout": 3,
   "com.smartdigimkt.sdk.basead.ui.WrapRoundImageView": 3,
-  "com.yalantis.ucrop.view.widget.HorizontalProgressWheelView": 3,
-  "FragmentContainerView must be within a FragmentActivity to u": 2
+  "FragmentContainerView must be within a FragmentActivity to u": 2,
+  "com.lihang.ShadowLayout": 2,
+  "com.mc.fastkit.view.sheet.SheetLayout": 2,
+  "com.anythink.core.common.ui.MarqueeTextView": 2,
+  "Can't convert value at index 0 to dimension: type=0x10; them": 2,
+  "com.baidu.mapapi.map.MapView": 2,
+  "com.kwad.components.core.widget.KsStyledLinearLayout": 2,
+  "com.kwad.components.core.widget.KTextView": 2
  }
 }

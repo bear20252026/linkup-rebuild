@@ -58,10 +58,53 @@ dependencies {
     implementation("com.airbnb.android:lottie:6.4.0")
     implementation("com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.10")
 
+
+    // --- recovered third-party UI dependencies (probe batch) ---
+    implementation("androidx.camera:camera-core:1.4.0")
+    implementation("androidx.camera:camera-camera2:1.4.0")
+    implementation("androidx.camera:camera-lifecycle:1.4.0")
+    implementation("androidx.camera:camera-view:1.4.0")
+    implementation("io.supercharge:shimmerlayout:2.1.0")
+    implementation("com.github.yalantis:ucrop:2.2.11")
+    implementation("io.github.scwang90:refresh-layout-kernel:2.0.5")
+    implementation("io.github.scwang90:refresh-header-classics:2.0.5")
+    implementation("io.github.youth5201314:banner:2.2.3")
+    // unresolved from public repos during this pass; company Nexus or vendor account needed:
+    //   com.dinuscxj:circleprogressbar (4 layouts) · com.github.lihangoffice:ShadowLayout (2)
+    //   com.github.warkiz.*:indicatorseekbar (2)
+    implementation("com.github.chrisbanes:PhotoView:2.3.0")
+    implementation("com.kyleduo.switchbutton:library:2.1.0")
+    implementation("com.github.yyued:SVGAPlayer-Android:2.6.1")
+    implementation("io.github.lucksiege:pictureselector:v3.11.2")
+    implementation("com.github.gzu-liyujiang:AndroidPicker:4.1.13")
+    implementation("com.github.daimajia:AndroidSwipeLayout:v1.1.8") {
+        // this 2014 artifact still depends on com.android.support, which collides with AndroidX
+        exclude(group = "com.android.support")
+    }
+    implementation("com.github.bumptech.glide:glide:4.16.0")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.11.1")
     testImplementation("androidx.test:core:1.5.0")
     testImplementation(kotlin("test"))
+}
+
+/**
+ * Downloads everything on the debug classpath so tools/strip_lib_res.py can read the .aar files.
+ * `gradle :app:dependencies` only resolves metadata, which silently leaves new libraries unstripped.
+ */
+tasks.register("fetchDebugArtifacts") {
+    group = "recovery"
+    description = "Resolve and download debugRuntimeClasspath artifacts into the Gradle cache"
+    doLast {
+        // The Android runtime classpath is attribute-typed (resolving it directly is ambiguous) and
+        // carries its declarations through extended configurations, so copy allDependencies across.
+        val external = configurations.getByName("debugRuntimeClasspath").allDependencies
+            .filterIsInstance<ExternalModuleDependency>()
+            .toTypedArray()
+        val mirror = configurations.detachedConfiguration(*external).apply { isTransitive = true }
+        println("resolved " + mirror.resolve().size + " artifact files")
+    }
 }

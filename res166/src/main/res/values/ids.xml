@@ -200,9 +200,7 @@
     <id name="background" />
     <id name="banner" />
     <id name="bannerLayout" />
-    <id name="banner_data_key" />
     <id name="banner_full_tk_card_view" />
-    <id name="banner_pos_key" />
     <id name="barrier" />
     <id name="barrier_loc" />
     <id name="barrier_promotion" />
@@ -586,7 +584,6 @@
     <id name="frameLayout2" />
     <id name="frost" />
     <id name="fullscreen_header" />
-    <id name="glide_custom_view_target_tag" />
     <id name="gone" />
     <id name="graph" />
     <id name="graph_wrap" />
@@ -2489,7 +2486,6 @@
     <id name="srl_classics_update" />
     <id name="srl_contact_refresh" />
     <id name="srl_refresh" />
-    <id name="srl_tag" />
     <id name="standard" />
     <id name="start" />
     <id name="startHorizontal" />

@@ -4,5 +4,4 @@
     <integer name="default_icon_animation_duration">10000</integer>
     <integer name="ksad_app_bar_elevation_anim_duration">150</integer>
     <integer name="min_screen_width_bucket">1</integer>
-    <integer name="ucrop_progress_loading_anim_time">1500</integer>
-</resources>
+    </resources>

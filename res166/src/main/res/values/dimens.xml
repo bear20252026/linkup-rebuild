@@ -302,14 +302,6 @@
     <dimen name="ksad_splash_shake_view_margin_top">16.0dp</dimen>
     <dimen name="ksad_splash_shake_view_width">92.0dp</dimen>
     <dimen name="ksad_title_bar_height">45.0dp</dimen>
-    <dimen name="ksw_md_thumb_ripple_size">42.0dp</dimen>
-    <dimen name="ksw_md_thumb_shadow_inset">11.0dp</dimen>
-    <dimen name="ksw_md_thumb_shadow_inset_bottom">10.0dp</dimen>
-    <dimen name="ksw_md_thumb_shadow_inset_top">11.0dp</dimen>
-    <dimen name="ksw_md_thumb_shadow_offset">2.0dp</dimen>
-    <dimen name="ksw_md_thumb_shadow_size">21.0dp</dimen>
-    <dimen name="ksw_md_thumb_solid_inset">11.0dp</dimen>
-    <dimen name="ksw_md_thumb_solid_size">20.0dp</dimen>
     <dimen name="margin_chat_activity">10.0dp</dimen>
     <dimen name="margin_chat_bottom_activity">4.0dp</dimen>
     <dimen name="message_padding_horizontal">16.0dp</dimen>
@@ -369,26 +361,4 @@
     <dimen name="splashscreen_icon_size">?splashScreenIconSize</dimen>
     <dimen name="splashscreen_icon_size_no_background">288.0dp</dimen>
     <dimen name="splashscreen_icon_size_with_background">240.0dp</dimen>
-    <dimen name="ucrop_default_crop_frame_stoke_width">1.0dp</dimen>
-    <dimen name="ucrop_default_crop_grid_stoke_width">1.0dp</dimen>
-    <dimen name="ucrop_default_crop_logo_size">200.0dp</dimen>
-    <dimen name="ucrop_default_crop_rect_corner_touch_area_line_length">10.0dp</dimen>
-    <dimen name="ucrop_default_crop_rect_corner_touch_threshold">30.0dp</dimen>
-    <dimen name="ucrop_default_crop_rect_min_size">100.0dp</dimen>
-    <dimen name="ucrop_height_crop_aspect_ratio_text">40.0dp</dimen>
-    <dimen name="ucrop_height_divider_shadow">3.0dp</dimen>
-    <dimen name="ucrop_height_horizontal_wheel_progress_line">20.0dp</dimen>
-    <dimen name="ucrop_height_wrapper_controls">64.0dp</dimen>
-    <dimen name="ucrop_height_wrapper_states">72.0dp</dimen>
-    <dimen name="ucrop_margin_horizontal_wheel_progress_line">10.0dp</dimen>
-    <dimen name="ucrop_margin_top_controls_text">4.0dp</dimen>
-    <dimen name="ucrop_margin_top_widget_text">10.0dp</dimen>
-    <dimen name="ucrop_padding_crop_frame">16.0dp</dimen>
-    <dimen name="ucrop_progress_size">30.0dp</dimen>
-    <dimen name="ucrop_size_dot_scale_text_view">8.0dp</dimen>
-    <dimen name="ucrop_size_wrapper_rotate_button">50.0dp</dimen>
-    <dimen name="ucrop_text_size_controls_text">11.0sp</dimen>
-    <dimen name="ucrop_text_size_widget_text">13.0sp</dimen>
-    <dimen name="ucrop_width_horizontal_wheel_progress_line">2.0dp</dimen>
-    <dimen name="ucrop_width_middle_wheel_progress_line">4.0dp</dimen>
-</resources>
+    </resources>
