@@ -226,4 +226,12 @@ class MyFriendActivityTest {
 
         assertTrue(activity.isFinishing)
     }
+
+    @Test
+    fun `the graph hands every caller the same friend source instance`() {
+        // A `get()` that builds a new source would let one caller observe a list nobody publishes to.
+        val app = com.youloft.watcher.data.LinkUpApplication()
+
+        kotlin.test.assertSame(app.friendList, app.friendList)
+    }
 }
