@@ -242,6 +242,19 @@ BaseRecyclerViewAdapterHelper 3.0.10（需 jitpack 仓库）。
 遮住的内部缺失类。剩 6 个自有 View 各只挡 1 个布局，且都是真活（自绘开关、侧滑、WebView 封装、
 需先接回 contrarywind 的 WheelView 等）。
 
+## 五点八、自有 View 收尾（2026-11-02）
+
+`view.SwitchButton` 经查是 kyleduo 的 vendored 副本（布局用的正是 `sb_*` 上游属性），
+上一轮接回库后**薄封装委托**而非重造 29KB 自绘；`view.im.CameraButtonView` 自绘快门，
+把原版的 `TimerTask` 换成 `ValueAnimator`；`webview.WebComponent` + `CommonWebView` 按可读到的
+原始方法名还原容器 API，**JS bridge 与 protocol dispatcher 不写空壳**（留给 H5 容器卡片）。
+
+业务屏可 inflate：**306 / 335 = 91%**；因自有 View 失败的布局从 8 降到 5。
+剩 5 个不是一个量级的活：`ProductsView`、`VipCard`、`SlideRecyclerView`（侧滑触摸处理）、
+`FixWheelView`（要先接回 contrarywind）、`ShotPreviewView`（1.5.6 无源）。
+UI 资源层"补控件就能解"的部分至此见底，再往上要么接厂商依赖（广告 276 + 环信 40），要么逐屏重建。
+详见 `report/13_last_three_views_CN.md`。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。

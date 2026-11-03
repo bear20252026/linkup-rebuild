@@ -4,14 +4,14 @@
   {
    "scope": "全部布局",
    "total": 798,
-   "ok": 444,
-   "pct": 55
+   "ok": 447,
+   "pct": 56
   },
   {
    "scope": "业务命名布局",
    "total": 335,
-   "ok": 303,
-   "pct": 90
+   "ok": 306,
+   "pct": 91
   },
   {
    "scope": "广告 SDK 前缀布局",
@@ -23,14 +23,11 @@
  "failures_by_owner": {
   "其它三方 UI 库": 23,
   "非类名原因": 7,
-  "APP-OWNED view (要我们重建)": 8,
+  "APP-OWNED view (要我们重建)": 5,
   "广告 SDK 自带 UI": 276,
   "环信 EaseUI": 40
  },
  "app_owned_views_missing": {
-  "com.youloft.watcher.view.im.CameraButtonView": 1,
-  "com.youloft.watcher.view.SwitchButton": 1,
-  "com.youloft.webview.WebComponent": 1,
   "com.youloft.watcher.pages.shot.view.ShotPreviewView": 1,
   "com.youloft.watcher.view.mine.VipCard": 1,
   "com.youloft.watcher.view.SlideRecyclerView": 1,
