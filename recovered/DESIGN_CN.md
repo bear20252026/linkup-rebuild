@@ -341,6 +341,39 @@ IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还
 详情屏的测试全程用生产路径 `start()` 造 Intent（列表屏那条用例负责验真跳转与 bean 存活），
 避免测试自己拼 extra 造成"契约改了测试还绿"。
 
+## 五点十一、第三屏：我的好友列表（2026-11-03）
+
+`MyFriendActivity` 与前两屏**形状完全不同**：没有 ViewModel、没有分页、没有 HTTP 请求。
+数据是一条活频道——原版订阅 `manager.u`（IM 推送 + 本地缓存维护的好友列表与"好友变更命令"），
+屏本身只做排序、标题、点击路由和命令消费。
+
+**还原到的事实**：
+
+| 事实 | 出处 |
+|---|---|
+| 列表为空时**屏幕自己 finish()** | `h0()` 首行 `if (list == null \|\| list.isEmpty()) finish()` |
+| `userId <= 0` 的行不进列表；主账号 `insert(0, …)` 排最前 | `h0()` 过滤与 `add(0, info)` |
+| 标题是 `我的好友（%d）`，计数用**过滤后**的列表 | `h0()` 末段 |
+| `tvAddFriend` 在过滤后为空时 GONE | 同上 |
+| 行点击：`userId==0` 直接 return；`unregisterTime>0` 只 toast；否则 `FriendInfoActivity(userId, type=2, name)` | `j0()` |
+| 加友按钮的 mode：本屏底部键 **6**、空态按钮 **0**、申请列表标题栏 **8** | 三处 `AddFriendActivity.a.b(...)` 的 mask 位推得 |
+| 命令频道：`type ∉ {ADD(1), ADD_SELF(100)}` 才处理，处理前先把命令**置 null 消费掉** | `g0()` + `b.invokeSuspend` |
+| 消费协程是 `launchWhenResumed`；命令落回 null/ADD 类时 **cancel 上一个 job** | `g0()`、`f64725p` |
+| 适配器按构造参数 `styleMode` 切四种行形态，本屏用 mode 0（隐藏性别/添加时间/勾选） | `adapter/FriendListVAdapter.f0()` |
+| `Info.getName()` = `remark` 非空则用 remark，否则 nickname | `bean/FriendList.java` `getName()` |
+| `isExpFriend()` = `userId == 0`；角标由 `FriendListVDecoration` 画在 (左+34dp, 上−11dp) | decoration 全文 |
+
+**顺带纠正：本屏永远不会显示"体验好友"角标**——`h0()` 把 `userId<=0` 过滤掉了，而 `isExpFriend()`
+正是 `userId==0`。角标是**别的屏**（不过滤的那几个）用同一个 decoration 时的行为。这条不是 bug，
+是还原出来的事实，写清楚免得后面有人"顺手补个空态角标"。
+
+**框架缺口一处**：lifecycle 2.7 已删除 `launchWhenResumed`，这里用它的等价替代
+`lifecycle.whenStateAtLeast(RESUMED) { … }`（等到 RESUMED 跑一次、掉下该状态挂起），
+**没有**用 `repeatOnLifecycle`——后者每次回前台重放，会把同一条命令处理两遍。
+
+**测试里学到的 BRVAH 一处坑**：开了 state view 之后，数据为空时 `itemCount` 是 1（那个空态占位），
+断言"几个人"要看 `items.size` 而不是 `itemCount`。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -368,6 +401,23 @@ IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还
 三方 SDK 的类型（如腾讯 TuringFD 的 `Date<T>`）**不生成**，一律 `JsonElement`：那不是本产品的 API 面。
 所有引用字段生成成可空默认 null——原 app 声明非空，但 Gson 缺字段会塞 null，照抄会 NPE。
 详见 `report/08_typed_models_CN.md`。
+
+**2026-11-03 两个必须记下的生成器缺陷（都是"能编译、结果错"型）**：
+
+1. **嵌套 bean 被摊平**。1.6.6 的 bean 里 35 个文件带 `public static final class`，生成器只读顶层类，
+   于是 `FriendList` 既吞了 `Info` 的 23 个字段、又把自己的 `list` 退化成 `List<JsonElement?>?`——
+   `FriendList.Info` 这个类型在重建里**根本不存在**，任何用它的屏都写不出来。
+   现按花括号范围把每个类体自己的字段分干净，嵌套类生成成 `data class FriendList { … data class Info(…) }`，
+   外层字段类型回到 `List<FriendList.Info?>?`；跨文件引用一律写限定名 `Parent.Inner`，
+   简单名与顶层类撞车时退回 `JsonElement`（宁可退让也不猜父类）。9 个嵌套 bean 恢复，
+   `List<JsonElement?>?` 从 6 处降到 3 处（剩下的是真的取不到类型的）。
+2. **jadx 改名污染了 JSON key**。字段与包名段冲突时 jadx 把它写成 `f63406id` 并留一行
+   `renamed from: id` 注释；由于两个 APK 的 `@SerializedName` 都被抹掉，**JSON key 就等于 Java 字段名**，
+   照抄改名结果就是"字段永远解析不成默认值"。现在从那条注释取回真名（并要求残名确实以真名结尾），
+   11 处 `id`/`rh` 恢复。
+
+这两处的共同特征是**不会报错**：编译过、测试也可能过（因为 fake 数据是照着错字段名造的），
+只有真打线上才会发现一片 0 和 null。生成器改动后必须重跑 `:net:test`（含线上抓包留证那条）。
 
 ## 七、后端现状：生产 API 其实还活着，后端不用重写
 
@@ -409,6 +459,9 @@ IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还
 | 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有 |
 | 11 | 头像加载的占位/圆角/淡入 | 原版是 `fastkit.widget.i.f(view, url, null)`，参数在混淆体里取不出来，本轮用 Glide 直连，只保证"显示出来" |
 | 12 | `normalButtonStyle` 在 `isEnabled=false` 时的实际观感 | 逻辑已按原版还原（非 0 态禁用并改文案），效果要装包看屏 |
+| 13 | 「我的好友」的真实数据、被删好友后的刷新、空列表自关屏这条路径 | 数据源是 IM manager（卡片未做），当前只能由测试喂列表与命令；真机上这三条都要走一遍 |
+| 14 | 体验好友角标 | 本屏把 `userId<=0` 过滤掉了，这条分支只有用同一 decoration 但不过滤的那些屏才会出现，需连那些屏一起验 |
+| 15 | 推送命令"等 RESUMED 消费一次"的真实行为 | 原版 `launchWhenResumed` 在 lifecycle 2.7 已删除，我用 `whenStateAtLeast(RESUMED)` 等价替换；退后台再回前台是否会重复处理同一条命令，只能真机确认 |
 
 ## 十、下一步顺序（建议）
 

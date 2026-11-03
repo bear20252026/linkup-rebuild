@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <ImageView android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_empty" />
+    <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:text="@string/have_any_friends_yet_go_add_them" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_empty_button" android:layout_width="88.0dp" android:layout_height="42.0dp" android:layout_marginTop="8.0dp" android:foreground="@drawable/common_click_effect" android:text="@string/add_friend" android:fontFamily="@font/alibaba_puhuiti_medium_lite" app:mc_contentColor="@color/colorBrand" app:mc_radius="12.0dp" />
+</LinearLayout>

@@ -42,7 +42,7 @@ class FriendRequestListActivity : AppCompatActivity() {
         }
     }
 
-    var navigation: FriendRequestNavigation = DefaultFriendRequestNavigation(this)
+    var navigation: FriendFlowNavigation = DefaultFriendFlowNavigation(this)
 
     private var page = 1
     private var loading = false
@@ -69,7 +69,7 @@ class FriendRequestListActivity : AppCompatActivity() {
         })
 
         binding.ivBack.setOnClickListener { finish() }
-        binding.ivAddFriend.setOnClickListener { navigation.openAddFriend() }
+        binding.ivAddFriend.setOnClickListener { navigation.openAddFriend(ADD_FRIEND_MODE_REQUEST_HEADER) }
 
         viewModel.confirmAdd.asLiveData().observe(this) { onConfirmAdd(it) }
 
@@ -159,7 +159,7 @@ class FriendRequestListActivity : AppCompatActivity() {
         }
         when (request.status) {
             STATUS_PENDING, STATUS_ADDED_ALT -> navigation.openFriendRequestDetail(request, friendLimit)
-            STATUS_ADDED -> navigation.openFriendInfo(request.userId)
+            STATUS_ADDED -> navigation.openFriendInfo(request.userId, FRIEND_INFO_TYPE_DEFAULT, null)
         }
     }
 
@@ -169,6 +169,9 @@ class FriendRequestListActivity : AppCompatActivity() {
 
     companion object {
         const val PAGE_SIZE = 20
+        /** The mode each recovered call site passed to its target screen. */
+        const val ADD_FRIEND_MODE_REQUEST_HEADER = 8
+        const val FRIEND_INFO_TYPE_DEFAULT = 0
         private const val NEAR_BOTTOM = 3
         private const val AGREE_DEBOUNCE_MILLIS = 500L
         private const val EXPIRE_DAYS = 30L

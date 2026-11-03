@@ -36,7 +36,7 @@ class FriendRequestDetailActivity : AppCompatActivity() {
     private var myFriendLimit = false
     private var lastAgreeClickAt = 0L
 
-    var navigation: FriendRequestNavigation = DefaultFriendRequestNavigation(this)
+    var navigation: FriendFlowNavigation = DefaultFriendFlowNavigation(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

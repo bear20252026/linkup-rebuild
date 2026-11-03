@@ -351,7 +351,7 @@ class FriendRequestListActivityTest {
         activity.onRowClick(2)
         activity.onRowClick(3)
 
-        assertEquals(listOf("detail:11:false", "info:22", "detail:33:false"), recorder.events)
+        assertEquals(listOf("detail:11:false", "info:22:0:-", "detail:33:false"), recorder.events)
     }
 
     @Test
@@ -362,7 +362,7 @@ class FriendRequestListActivityTest {
         activity.navigation = recorder
 
         activity.window.decorView.findViewById<View>(R.id.iv_add_friend).performClick()
-        assertEquals(listOf("addFriend"), recorder.events)
+        assertEquals(listOf("addFriend:8"), recorder.events)
 
         activity.window.decorView.findViewById<View>(R.id.iv_back).performClick()
         assertTrue(activity.isFinishing)

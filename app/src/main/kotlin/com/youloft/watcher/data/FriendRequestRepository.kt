@@ -51,6 +51,12 @@ open class LinkUpApplication : Application() {
     /** `CacheUtils.isVip()` — gates the friend-quota upsell. */
     open val isVip: Boolean get() = false
 
+    /**
+     * The live friend list and push channel the friend screens observe. The IM manager behind it is a
+     * separate card, so the default keeps the shape of the contract without inventing push behaviour.
+     */
+    open val friendList: FriendListSource get() = PendingFriendListSource()
+
     /** `CacheUtils.friendList.size` — used to re-derive the quota after a confirmed add. */
     open val cachedFriendCount: Int get() = 0
 

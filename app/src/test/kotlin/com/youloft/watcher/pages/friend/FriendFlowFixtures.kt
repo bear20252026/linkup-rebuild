@@ -2,12 +2,16 @@ package com.youloft.watcher.pages.friend
 
 import com.youloft.linkup.api.dto.Birthday
 import com.youloft.linkup.api.dto.ConfirmAdd
+import com.youloft.linkup.api.dto.FriendList
 import com.youloft.linkup.api.dto.FriendRequest
 import com.youloft.linkup.api.dto.FriendRequestList
 import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.net.ApiResponse
+import com.youloft.watcher.bean.CmdFriendBean
+import com.youloft.watcher.data.FriendListSource
 import com.youloft.watcher.data.FriendRequestRepository
 import com.youloft.watcher.data.LinkUpApplication
+import com.youloft.watcher.data.PendingFriendListSource
 
 /**
  * Shared fixtures for the rebuilt friend-request flow. Robolectric builds the Application outside
@@ -15,14 +19,54 @@ import com.youloft.watcher.data.LinkUpApplication
  */
 object FriendFlowFixtures {
     var repository = FakeRepository()
+    var source = TestFriendListSource()
     val flags = Flags()
 
     fun reset() {
         repository = FakeRepository()
+        source = TestFriendListSource()
         flags.vip = false
         flags.cachedFriends = 0
         flags.askPermissions = false
     }
+
+    /** Records what screens push through the friend-list channel; `handleFriendCommand` belongs to the IM card. */
+    class TestFriendListSource : PendingFriendListSource() {
+        var mainUser = 0L
+        val handled = mutableListOf<CmdFriendBean>()
+        var clears = 0
+
+        override fun mainUserId(): Long = mainUser
+
+        override fun clearFriendCommand() {
+            clears++
+            super.clearFriendCommand()
+        }
+
+        override fun handleFriendCommand(context: android.content.Context, command: CmdFriendBean) {
+            handled += command
+        }
+    }
+
+    fun friend(
+        userId: Long,
+        nickname: String? = "网友$userId",
+        remark: String? = null,
+        relation: Int = 2,
+        sex: Int = 1,
+        createAt: Long = 1_700_000_000L,
+        unregisterTime: Long = 0L,
+        permissionValue: Boolean = false,
+    ) = FriendList.Info(
+        userId = userId,
+        nickname = nickname,
+        remark = remark,
+        relation = relation,
+        sex = sex,
+        createAt = createAt,
+        unregisterTime = unregisterTime,
+        permissionValue = permissionValue,
+    )
 
     private const val DAY_MILLIS = 86_400_000L
 
@@ -61,6 +105,7 @@ object FriendFlowFixtures {
 
     class TestApplication : LinkUpApplication() {
         override val friendRequests: FriendRequestRepository get() = repository
+        override val friendList: FriendListSource get() = source
         override val isVip: Boolean get() = flags.vip
         override val cachedFriendCount: Int get() = flags.cachedFriends
         override val askPermissionsAfterAdd: Boolean get() = flags.askPermissions
@@ -99,15 +144,15 @@ object FriendFlowFixtures {
         }
     }
 
-    class Recorder : FriendRequestNavigation {
+    class Recorder : FriendFlowNavigation {
         val events = mutableListOf<String>()
-        override fun openAddFriend() { events += "addFriend" }
+        override fun openAddFriend(mode: Int) { events += "addFriend:$mode" }
 
         override fun openFriendRequestDetail(request: FriendRequest, friendLimit: Boolean) {
             events += "detail:${request.userId}:$friendLimit"
         }
 
-        override fun openFriendInfo(userId: Long) { events += "info:$userId" }
+        override fun openFriendInfo(userId: Long, type: Int, name: String?) { events += "info:$userId:$type:${name ?: '-'}" }
         override fun openAgreeAdd() { events += "agreeAdd" }
         override fun showFriendNumLimitDialog() { events += "numLimitDialog" }
         override fun showPermissionSettings(friendUserId: Long) { events += "permissions:$friendUserId" }
