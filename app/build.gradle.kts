@@ -43,6 +43,7 @@ kotlin {
 dependencies {
     implementation(project(":net"))
     implementation(project(":res166"))
+    implementation(project(":fastkit"))
 
     implementation("androidx.core:core-ktx:1.13.0")
     implementation("androidx.appcompat:appcompat:1.7.0")

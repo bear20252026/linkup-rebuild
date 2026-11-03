@@ -206,6 +206,32 @@ BaseRecyclerViewAdapterHelper 3.0.10（需 jitpack 仓库）。
 复核：`:net:test` 5/0/0、`:net:liveVerify` `PROTOCOL_RECOVERED=1`、`:app:assembleDebug` 出 **50.6MB** APK
 （内含 937 个布局、2272 条 string、`resources.arsc` 1.56MB）。**该 APK 能否正常启动仍未验**（本机无设备）。
 
+## 五点七、`:fastkit` 已建，UI 可跑面已量化（2026-11-02）
+
+新模块 `:fastkit`（namespace `com.mc.fastkit`）覆盖布局中出现的全部 14 个 fastkit 标签；
+银行里 201 个 `mc_*` 顶层 attr 已够，布局用到的 78 个**零缺失**。`ShapeStyle` 按原语义实现
+`mc_renderMode`（background/foreground）、四角独立半径、渐变（枚举值取自 attrs.xml）、虚线描边，
+`ShapedImageView` 的 `mc_cornerSize` 同时支持 dimension 与 fraction。
+**刻意没做**：`mc_font` 不套用 Typeface（原库有字体缓存，硬接会静默改字形）；`SheetLayout` 未实现
+（带状态机与手势，空壳等于骗人），其 3 个布局仍在失败清单里。
+
+`UiInflateSurvey` 把 829 个布局逐个在 Robolectric 上吹开，产出逐布局 CSV + 原因排名
+（`recovered/ui_inflate_summary.json`）：
+
+| 口径 | 总数 | 今天能 inflate |
+|---|---|---|
+| 全部布局 | 829 | 404（48%） |
+| **业务命名布局** | 335 | **260（77%）** |
+| 广告 SDK 自带布局 | 360 | 84（23%） |
+
+425 个失败的归属分布：**广告 SDK 自带 UI 276**、其它三方 UI 库 58、**我方自有 View 43（25 个类）**、
+环信 EaseUI 40、androidx 5、非类名 3。
+⇒ 排期上只有那 **25 个自有 View** 属于"重写业务"，其余是"接回某个 SDK"。最挡路的：
+`VoiceTimesView(5)`、`StrokeTextView(4)`、`PayTypeView(4)`、`lock.UnlockButton(3)`。
+
+体检方法自己踩的两坑已修并记录：`<merge>` 需要 `attachToRoot=true`（误判 57 个），
+以及必须取异常链最内层按 `Error inflating class X` 归类（否则 450 条失败全是同一句无信息量的话）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
