@@ -4,14 +4,14 @@
   {
    "scope": "全部布局",
    "total": 829,
-   "ok": 404,
-   "pct": 48
+   "ok": 434,
+   "pct": 52
   },
   {
    "scope": "业务命名布局",
    "total": 335,
-   "ok": 260,
-   "pct": 77
+   "ok": 290,
+   "pct": 86
   },
   {
    "scope": "广告 SDK 前缀布局",
@@ -21,39 +21,20 @@
   }
  ],
  "failures_by_owner": {
-  "其它三方 UI 库": 58,
-  "APP-OWNED view (要我们重建)": 43,
-  "非类名原因": 3,
+  "其它三方 UI 库": 63,
+  "非类名原因": 5,
   "androidx 组件": 5,
+  "APP-OWNED view (要我们重建)": 6,
   "广告 SDK 自带 UI": 276,
   "环信 EaseUI": 40
  },
  "app_owned_views_missing": {
-  "com.youloft.watcher.view.PswInputView": 2,
-  "com.youloft.watcher.view.AutoReportSettingsView": 1,
-  "com.youloft.watcher.view.SendCodeButton": 2,
-  "com.youloft.watcher.view.ChatPhoneStausView": 1,
   "com.youloft.watcher.view.SwitchButton": 1,
   "com.youloft.webview.WebComponent": 1,
-  "com.youloft.watcher.view.DotIndicatorView": 1,
-  "com.youloft.watcher.view.lock.UnlockButton": 3,
   "com.youloft.watcher.pages.shot.view.ShotPreviewView": 1,
-  "com.youloft.watcher.view.StrokeTextView": 4,
-  "com.youloft.watcher.view.AvatarView": 2,
-  "com.youloft.watcher.view.MaxHeightRecyclerView": 2,
-  "com.youloft.watcher.view.voice.VoiceTimesView": 5,
-  "com.youloft.watcher.view.BottomLineTextView": 1,
-  "com.youloft.watcher.view.RelationButton": 2,
-  "com.youloft.watcher.view.PayTypeView": 4,
-  "com.youloft.watcher.view.RollingTextView": 2,
-  "com.youloft.watcher.view.lock.LockedPreview": 1,
-  "com.youloft.watcher.view.mine.UserInfoView": 1,
+  "com.youloft.watcher.view.mine.VipCard": 1,
   "com.youloft.watcher.view.SlideRecyclerView": 1,
-  "com.youloft.watcher.view.lock.LockActionView": 1,
-  "com.youloft.watcher.view.lock.FixWheelView": 1,
-  "com.youloft.watcher.view.lock.QuestionStatusView": 1,
-  "com.youloft.watcher.view.ScreenUsageView": 1,
-  "com.youloft.watcher.view.mine.AvatarsView": 1
+  "com.youloft.watcher.view.lock.FixWheelView": 1
  },
  "top_causes": {
   "com.smartdigimkt.sdk.basead.ui.component.RoundImageView": 32,
@@ -76,25 +57,25 @@
   "com.kyleduo.switchbutton.SwitchButton": 5,
   "androidx.camera.view.PreviewView": 5,
   "com.luck.picture.lib.widget.MediumBoldTextView": 5,
-  "com.youloft.watcher.view.voice.VoiceTimesView": 5,
   "com.kwad.sdk.core.view.AdBasePvFrameLayout": 5,
   "com.smartdigimkt.sdk.basead.ui.WaveAnimImageView": 5,
-  "com.youloft.watcher.view.StrokeTextView": 4,
-  "com.youloft.watcher.view.PayTypeView": 4,
+  "com.youth.banner.Banner": 4,
+  "com.dinuscxj.progressbar.CircleProgressBar": 4,
   "com.kwad.sdk.core.webview.KsAdWebView": 4,
   "com.kwad.sdk.widget.KSLinearLayout": 4,
   "com.kwad.components.core.page.widget.TextProgressBar": 4,
   "com.luck.picture.lib.photoview.PhotoView": 4,
   "com.smartdigimkt.sdk.basead.ui.PlayerView": 4,
   "com.baidu.mapapi.map.TextureMapView": 3,
-  "com.youloft.watcher.view.lock.UnlockButton": 3,
   "com.anythink.core.common.inner.ui.CloseImageView": 3,
   "com.anythink.core.common.inner.ui.RoundCornerRelativeLayout": 3,
   "com.hyphenate.easeui.widget.EaseChatQuoteView": 3,
-  "com.youth.banner.Banner": 3,
   "com.kwad.components.ad.widget.DownloadProgressView": 3,
   "com.kwad.components.ad.widget.tailframe.appbar.TailFrameBarA": 3,
   "com.contrarywind.view.WheelView": 3,
-  "com.smartdigimkt.sdk.basead.ui.component.CTAButtonLayout": 3
+  "com.smartdigimkt.sdk.basead.ui.component.CTAButtonLayout": 3,
+  "com.smartdigimkt.sdk.basead.ui.WrapRoundImageView": 3,
+  "com.yalantis.ucrop.view.widget.HorizontalProgressWheelView": 3,
+  "FragmentContainerView must be within a FragmentActivity to u": 2
  }
 }

@@ -232,6 +232,16 @@ BaseRecyclerViewAdapterHelper 3.0.10（需 jitpack 仓库）。
 体检方法自己踩的两坑已修并记录：`<merge>` 需要 `attachToRoot=true`（误判 57 个），
 以及必须取异常链最内层按 `Error inflating class X` 归类（否则 450 条失败全是同一句无信息量的话）。
 
+**2026-11-02 第二轮补自有 View 后的最新数字**（详见 `report/11_app_views_batch_CN.md`）：
+业务命名布局 **290 / 335 = 86%** 可 inflate（第一轮 77%），全部布局 434 / 829，
+因自有 View 缺失而失败的布局从 43 降到 **6**。
+
+一条要记住的判断依据：**类的包名必须以布局里那串全类名为准**，不是 1.5.6 的目录印象。
+第一版我把 `VoiceTimesView`/`UnlockButton`/`AvatarsView` 等建在 `view` 根包，体检几乎不动（77%→81%）；
+按 `view.voice` / `view.lock` / `view.mine` / `view.vip` 归位后立刻 274→287，还顺带暴露出被外层
+遮住的内部缺失类。剩 6 个自有 View 各只挡 1 个布局，且都是真活（自绘开关、侧滑、WebView 封装、
+需先接回 contrarywind 的 WheelView 等）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
