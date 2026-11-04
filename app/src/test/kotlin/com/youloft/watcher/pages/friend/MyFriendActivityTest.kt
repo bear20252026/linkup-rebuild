@@ -3,6 +3,7 @@ package com.youloft.watcher.pages.friend
 import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.core.app.ApplicationProvider
 import com.youloft.watcher.R
 import com.youloft.watcher.bean.CmdFriendBean
 import com.youloft.watcher.pages.friend.FriendFlowFixtures.Recorder
@@ -225,6 +226,23 @@ class MyFriendActivityTest {
         activity.window.decorView.findViewById<View>(R.id.iv_back).performClick()
 
         assertTrue(activity.isFinishing)
+    }
+
+    @Test
+    fun `a row click really launches the rebuilt friend info screen`() {
+        source.publish(listOf(friend(11, remark = "备注11")))
+        val activity = launch()
+        measure(activity)
+
+        rowAt(activity, 0).performClick()
+
+        val started = shadowOf(
+            ApplicationProvider.getApplicationContext<android.app.Application>(),
+        ).nextStartedActivity
+        assertEquals(FriendInfoActivity::class.java.name, started.component?.className)
+        assertEquals(11L, started.getLongExtra(FriendInfoActivity.EXTRA_ID, 0L))
+        assertEquals(2, started.getIntExtra(FriendInfoActivity.EXTRA_SOURCE, 0))
+        assertEquals("备注11", started.getStringExtra(FriendInfoActivity.EXTRA_NICK_NAME))
     }
 
     @Test
