@@ -2,6 +2,7 @@ package com.youloft.watcher.data.local
 
 import com.youloft.watcher.data.LinkUpApplication
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import org.junit.Test
@@ -100,17 +101,32 @@ class LocalCacheTest {
     }
 
     @Test
-    fun `the channel gate matches this install, the wildcard, or nothing`() {
-        val stores = InMemoryKeyValueStores()
+    fun `the gate has one rule per shipped version`() {
         fun gate(entries: List<String>, channel: String) = PermissionChannelGate(
             FallbackInstallChannel(channel),
             FakeRemoteConfig().apply { this.entries = entries },
         )
 
-        assertTrue(gate(listOf("3801", "3300"), "3801").asksAfterAddFriend())
-        assertTrue(gate(listOf("-1"), "whatever").asksAfterAddFriend(), "the recovered wildcard was -1")
-        assertFalse(gate(listOf("3300"), "3801").asksAfterAddFriend())
-        assertFalse(gate(emptyList(), "3801").asksAfterAddFriend())
+        // 1.6.6 replaced the remote list with a single channel comparison.
+        assertTrue(gate(emptyList(), "3301").asksAfterAddFriend())
+        assertFalse(gate(listOf("3301"), "3302").asksAfterAddFriend())
+
+        // 1.5.6 read the list and honoured the -1 wildcard.
+        assertTrue(gate(listOf("3801", "3300"), "3801").asksAfterAddFriendByConfig())
+        assertTrue(gate(listOf("-1"), "whatever").asksAfterAddFriendByConfig(), "the recovered wildcard was -1")
+        assertFalse(gate(listOf("3300"), "3801").asksAfterAddFriendByConfig())
+        assertFalse(gate(emptyList(), "3801").asksAfterAddFriendByConfig())
+    }
+
+    @Test
+    fun `only four channels put a hint under the add-friend screen`() {
+        fun tips(channel: String) = AddFriendTipsPolicy(FallbackInstallChannel(channel)).tips()
+
+        assertEquals(AddFriendTips.LocationMutualConsent, tips("3801"))
+        assertEquals(AddFriendTips.BothInstallOrVip, tips("3301"))
+        assertEquals(AddFriendTips.BothInstallApp, tips("3300"))
+        assertEquals(AddFriendTips.BothInstallApp, tips("3302"))
+        assertNull(tips("0"), "the store builds that were never given a hint")
     }
 
     @Test
@@ -121,12 +137,13 @@ class LocalCacheTest {
             ),
         ).apply {
             stores.putForUser(42L, FriendCache.KEY_FRIENDS, """[{"userId":1},{"userId":2},{"userId":3}]""")
-            config = FakeRemoteConfig().apply { entries = listOf("3801") }
+            channel = FallbackInstallChannel("3301")
         }
 
         assertTrue(application.isVip)
         assertEquals(3, application.cachedFriendCount)
         assertTrue(application.askPermissionsAfterAdd)
+        assertEquals(AddFriendTips.BothInstallOrVip, application.addFriendTips)
     }
 
     @Test

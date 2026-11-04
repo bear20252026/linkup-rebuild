@@ -20,6 +20,7 @@ class FriendPermissionsSettingsDialog(
     private val source: Int,
     private val initial: Permission?,
     private val showClose: Boolean = true,
+    private val onDismissed: () -> Unit = {},
     private val onResult: (Permission?) -> Unit,
 ) : BindingDialog<DialogFriendPermissionsBinding>(context) {
 
@@ -35,6 +36,10 @@ class FriendPermissionsSettingsDialog(
                 dismissReported = true
                 onResult(chosen)
             }
+            // 1.6.6 also hung a second listener on this dialog from the add-friend screen, to say
+            // "申请已发送" once the consent sheet went away. Callers get the same hook instead of
+            // their own listener, which would replace the reporting one above.
+            onDismissed()
         }
         if (initial == null) {
             dismissDelayed()

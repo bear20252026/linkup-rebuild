@@ -3,9 +3,13 @@ package com.youloft.watcher.data
 import android.app.Application
 import android.content.Context
 import com.youloft.linkup.api.dto.ConfirmAdd
+import com.youloft.linkup.api.dto.Friend
+import com.youloft.linkup.api.dto.FriendApply
 import com.youloft.linkup.api.dto.FriendInfo
 import com.youloft.linkup.api.dto.FriendRequestList
 import com.youloft.linkup.api.dto.Permission
+import com.youloft.linkup.api.dto.PublicKey
+import com.youloft.linkup.api.dto.SearchFriend
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.linkup.net.LinkUpApi
 import com.youloft.linkup.net.LinkUpClient
@@ -15,10 +19,13 @@ import com.youloft.watcher.data.local.InstallChannel
 import com.youloft.watcher.data.local.FallbackInstallChannel
 import com.youloft.watcher.data.local.KeyValueStores
 import com.youloft.watcher.data.local.MmkvKeyValueStores
+import com.youloft.watcher.data.local.AddFriendTipsPolicy
+import com.youloft.watcher.data.local.AddFriendTips
 import com.youloft.watcher.data.local.PermissionChannelGate
 import com.youloft.watcher.data.local.PendingRemoteConfig
 import com.youloft.watcher.data.local.RemoteConfig
 import com.youloft.watcher.data.local.UserCache
+import com.youloft.watcher.view.QrCodeRenderer
 
 /**
  * `repository/FriendRepository` in the recovered app: one class covers every relation endpoint,
@@ -37,6 +44,18 @@ interface FriendRepository {
     suspend fun updateRelation(userId: Long, relation: Int): ApiResponse<Unit>
 
     suspend fun updateRemark(userId: Long, remark: String): ApiResponse<Unit>
+
+    /** GET api/relation/pre_confirm — look a stranger up by match code before offering to add them. */
+    suspend fun preConfirm(code: Long): ApiResponse<Friend>
+
+    /** POST /api/relation/apply — the same three fields as confirm, but for someone not yet connected. */
+    suspend fun applyAdd(code: Long, relation: Int, sensSetting: Permission?): ApiResponse<FriendApply>
+
+    /** GET api/tool/rsa/public_key — the key the contact-search envelope is sealed under. */
+    suspend fun serverPublicKey(): ApiResponse<PublicKey>
+
+    /** POST /api/relation/match_by_phone — the body is the sealed envelope, never the phone numbers. */
+    suspend fun matchByPhone(encrypted: String, keyEncrypted: String): ApiResponse<SearchFriend>
 }
 
 class NetworkFriendRepository(private val api: LinkUpApi) : FriendRepository {
@@ -63,6 +82,22 @@ class NetworkFriendRepository(private val api: LinkUpApi) : FriendRepository {
 
     override suspend fun updateRemark(userId: Long, remark: String) =
         api.relationUpdateRemark(payload = mapOf("friendId" to userId, "remark" to remark))
+
+    override suspend fun preConfirm(code: Long) = api.relationPreConfirm(code = code)
+
+    override suspend fun applyAdd(code: Long, relation: Int, sensSetting: Permission?) =
+        api.apiRelationApply(
+            payload = mapOf(
+                "code" to code,
+                "relation" to relation,
+                "sensSetting" to sensSetting,
+            ),
+        )
+
+    override suspend fun serverPublicKey() = api.toolRsaPublicKey()
+
+    override suspend fun matchByPhone(encrypted: String, keyEncrypted: String) =
+        api.apiRelationMatchByPhone(payload = mapOf("encrypted" to encrypted, "keyEncrypted" to keyEncrypted))
 }
 
 /**
@@ -122,6 +157,15 @@ open class LinkUpApplication : Application() {
 
     /** `ConfigUtils.showPermissionChannel` matched against the install channel. */
     open val askPermissionsAfterAdd: Boolean get() = permissionChannels.asksAfterAddFriend()
+
+    /** The channel-specific hint under the add-friend screen; null on channels that show none. */
+    open val addFriendTips: AddFriendTips? get() = AddFriendTipsPolicy(installChannel).tips()
+
+    /**
+     * Draws the match-code QR. The original painted it with `com.google.zxing` plus its own rounded
+     * module painter; that dependency and painter are their own card, so the default draws nothing.
+     */
+    open val qrRenderer: QrCodeRenderer get() = QrCodeRenderer.Pending
 }
 
 fun appGraph(context: Context): LinkUpApplication = context.applicationContext as LinkUpApplication

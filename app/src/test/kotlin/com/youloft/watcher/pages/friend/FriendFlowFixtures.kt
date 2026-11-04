@@ -2,17 +2,29 @@ package com.youloft.watcher.pages.friend
 
 import com.youloft.linkup.api.dto.Birthday
 import com.youloft.linkup.api.dto.ConfirmAdd
+import com.youloft.linkup.api.dto.Friend
+import com.youloft.linkup.api.dto.FriendApply
 import com.youloft.linkup.api.dto.FriendInfo
 import com.youloft.linkup.api.dto.FriendList
 import com.youloft.linkup.api.dto.FriendRequest
 import com.youloft.linkup.api.dto.FriendRequestList
 import com.youloft.linkup.api.dto.Permission
+import com.youloft.linkup.api.dto.PublicKey
+import com.youloft.linkup.api.dto.SearchFriend
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.watcher.bean.CmdFriendBean
 import com.youloft.watcher.data.FriendListSource
 import com.youloft.watcher.data.FriendRepository
 import com.youloft.watcher.data.LinkUpApplication
 import com.youloft.watcher.data.PendingFriendListSource
+import com.youloft.watcher.data.local.AddFriendTips
+import com.youloft.watcher.data.local.AddFriendTipsPolicy
+import com.youloft.watcher.data.local.FallbackInstallChannel
+import com.youloft.watcher.data.local.InMemoryKeyValueStores
+import com.youloft.watcher.data.local.InstallChannel
+import com.youloft.watcher.data.local.KeyValueStores
+import com.youloft.watcher.data.local.UserCache
+import com.youloft.watcher.view.QrCodeRenderer
 
 /**
  * Shared fixtures for the rebuilt friend-request flow. Robolectric builds the Application outside
@@ -22,13 +34,26 @@ object FriendFlowFixtures {
     var repository = FakeRepository()
     var source = TestFriendListSource()
     val flags = Flags()
+    var stores = InMemoryKeyValueStores()
+    var qr: QrCodeRenderer = QrCodeRenderer.Pending
 
     fun reset() {
         repository = FakeRepository()
         source = TestFriendListSource()
+        stores = InMemoryKeyValueStores()
+        qr = QrCodeRenderer.Pending
         flags.vip = false
         flags.cachedFriends = 0
         flags.askPermissions = false
+        flags.channel = "0"
+    }
+
+    /** `CacheUtils.y0()` — the cached account the add-friend screen reads its own match code from. */
+    fun seedAccount(userId: Long = 424_242L, nickname: String = "我的名字", sex: Int = 1) {
+        stores.shared.putString(
+            UserCache.KEY_USER,
+            """{"userId":$userId,"nickname":"$nickname","sex":$sex,"token":"tk"}""",
+        )
     }
 
     /** Records what screens push through the friend-list channel; `handleFriendCommand` belongs to the IM card. */
@@ -102,14 +127,19 @@ object FriendFlowFixtures {
         var vip = false
         var cachedFriends = 0
         var askPermissions = false
+        var channel = "0"
     }
 
     class TestApplication : LinkUpApplication() {
         override val friends: FriendRepository get() = repository
         override val friendList: FriendListSource get() = source
+        override val keyValueStores: KeyValueStores get() = stores
         override val isVip: Boolean get() = flags.vip
         override val cachedFriendCount: Int get() = flags.cachedFriends
         override val askPermissionsAfterAdd: Boolean get() = flags.askPermissions
+        override val installChannel: InstallChannel get() = FallbackInstallChannel(flags.channel)
+        override val addFriendTips: AddFriendTips? get() = AddFriendTipsPolicy(installChannel).tips()
+        override val qrRenderer: QrCodeRenderer get() = qr
     }
 
     class FakeRepository : FriendRepository {
@@ -173,6 +203,36 @@ object FriendFlowFixtures {
             confirmations += Triple(userId, relation, sensSetting)
             return confirmResponse
         }
+
+        val preConfirmRequests = mutableListOf<Long>()
+        var preConfirmResponse: ApiResponse<Friend>? = null
+        val applications = mutableListOf<Triple<Long, Int, Permission?>>()
+        var applyResponse = ApiResponse(200, "success", data = FriendApply())
+        var publicKey: String? = null
+        val contactSearches = mutableListOf<Pair<String, String>>()
+        var contactResponse: ApiResponse<SearchFriend>? = null
+
+        override suspend fun preConfirm(code: Long): ApiResponse<Friend> {
+            preConfirmRequests += code
+            networkFailure?.let { throw it }
+            return preConfirmResponse ?: ApiResponse(500, "no fixture")
+        }
+
+        override suspend fun applyAdd(
+            code: Long,
+            relation: Int,
+            sensSetting: Permission?,
+        ): ApiResponse<FriendApply> {
+            applications += Triple(code, relation, sensSetting)
+            return applyResponse
+        }
+
+        override suspend fun serverPublicKey() = ApiResponse(200, "success", data = PublicKey(publicKey))
+
+        override suspend fun matchByPhone(encrypted: String, keyEncrypted: String): ApiResponse<SearchFriend> {
+            contactSearches += encrypted to keyEncrypted
+            return contactResponse ?: ApiResponse(500, "no fixture")
+        }
     }
 
     class Recorder : FriendFlowNavigation {
@@ -185,6 +245,9 @@ object FriendFlowFixtures {
 
         override fun openFriendInfo(userId: Long, type: Int, name: String?) { events += "info:$userId:$type:${name ?: '-'}" }
         override fun openChat(userId: Long) { events += "chat:$userId" }
+        override fun openContactList() { events += "contactList" }
+        override fun openQrScanner() { events += "qrScanner" }
+        override fun openVip(source: Int, label: String) { events += "vip:$source:$label" }
         override fun openAgreeAdd() { events += "agreeAdd" }
         override fun showFriendNumLimitDialog() { events += "numLimitDialog" }
         override fun showPermissionSettings(friendUserId: Long) { events += "permissions:$friendUserId" }

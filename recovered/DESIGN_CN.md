@@ -553,6 +553,147 @@ JSON 坏了或缺键 → 回落到默认 `User()`，不抛。
 
 包体从 60.6MB 涨到 61.3MB，是 MMKV 带进来的 native 库（不是代码量）。
 
+## 五点十六、第六屏：添加好友（#15，2026-11-04）
+
+这一屏是**整个好友流程的入口**：App 里每一处"加好友"的按钮都带着自己的 `source` 跳进来。它也是第一屏
+出现"两版行为不等价、必须按 1.6.6 重建"的情况，所以先把版本落差写清楚。
+
+### 为什么这屏按 1.6.6 而不是 1.5.6
+
+先前定的规则是"资源取 1.6.6、行为取 1.5.6"，理由是 1.6.6 被 R8 压扁。这屏推翻了它对行为的一半适用性：
+1.6.6 里 **ViewBinding 的字段名全部保留**（`ActivityAddFriendBinding` 是可读的），于是一屏的逻辑几乎逐行
+可读 —— 而 1.6.6 的这屏**比 1.5.6 多了一条完整链路**：
+
+| 能力 | 1.5.6 | 1.6.6 |
+|---|---|---|
+| 搜索 | 点输入框 → 跳 `SearchFriendActivity` 另开一屏 | **屏内搜索**：输入框 + TextWatcher 控制清空键/搜索键、IME 搜索键、focus/键盘遮罩 |
+| 搜索结果消费 | 只消费 `pre_confirm`（`m`） | 还消费 `match_by_phone`（`q`），从 `SearchFriend.list` 现建一个 `Friend` |
+| 申请成功提示 | 只在权限弹窗收起时 toast | 权限门不开时**立刻** toast（`else if` 分支） |
+| source 标签 | 19 个 | 21 个（新增 20 实时截屏 / 21 隐私设置） |
+| 分享 URL 的 `av` | `1.5.6` | `1.6.6` |
+
+所以：**资源 1.6.6 + 行为 1.6.6**，1.5.6 只用来给被压扁的方法名对号（例如确认 `f63863w` 就是权限弹窗的
+`source`）。规则本身已改进第六节第 12 条。
+
+### 布局差集：三处不是"我没搬"，是 1.6.6 真删了
+
+1.5.6 的 `M()` 会碰 `binding.llHuaweiTips` / `binding.ivDownload` / `binding.sclScan`，1.6.6 的 binding 里
+一个都没有。逐个定性：
+
+- `iv_download` + `ShareMatchCodeView`：**下载二维码卡片整条入口被删**。连带 `saveBitmap`/`p()` 这条 toast
+  通道在本屏无可触达调用点 → 没有重建（不是遗漏，见下）。
+- `ll_huawei_tips`：**不是删除，是换宿主**。1.5.6 把 `tv_tips` 包在一个默认隐藏的 LinearLayout 里；1.6.6
+  直接让页底那一条 `tv_tips` 显示。渠道判定式与文案分支完全一致（字母被重排：`i/k/g/f` → `i/l/g/f`）。
+- `scl_scan` → `tvScanAdd`：扫一扫从"整行卡片"变成一个胶囊按钮。
+
+### 匹配码显示与复制（一处容易做错）
+
+```kotlin
+binding.tvMatchCode.text = userId.toString().chunked(4).joinToString(" ")   // 1234 5678 90
+platform.copy(userIdText)                                                    // 复制的是裸 id
+```
+
+1.5.6 是 `"匹配码:" + " " + userId`（不分组）；1.6.6 改成四位一组。点击复制传的是
+`String.valueOf(user.userId)`，**不是显示串** —— 界面带空格、剪贴板不带。测试两条都钉了。
+
+### 21 个入口标签（`x0(source)`）
+
+1 守护Tab-好友切换弹窗 / 2 守护Tab-添加好友banner / 3 守护Tab-体验好友时卡片点击 / 4 守护Tab-右上角添加好友 /
+5 我的Tab / 6 我的好友 / 7 H5 / 8 好友申请 / 9 一键锁机 / 10 实时语音 / 11 守护Tab-新用户体验模式弹窗立即添加按钮 /
+12 守护Tab右上角会员入口 / 13 我的Tab会员入口 / 14 小组件 / 15 应用锁 / 16 水印拍照-发送给好友 / 17 添加好友推送 /
+18 卫星地图 / 19 显示路况 / **20 实时截屏 / 21 隐私设置（1.6.6 新增）** / 其他。
+`openAddFriend(mode)` 从此是**真跳转**：申请列表头部 8、好友列表按钮 6、空视图 0 三条线闭环。
+
+### 四条找人路径与两套"来源编号"
+
+这是本屏最容易混淆的地方，原版用了**两个不同的数**：
+
+| 路径 | 核对信息弹窗 `type` | 权限弹窗 `source`（字段 `A`/`f63863w`） |
+|---|---|---|
+| 手输 8 位 → `pre_confirm` | 2 | 3 |
+| 手输其他 → `match_by_phone` | 3 | 4 |
+| 扫一扫 | 1 | 2 |
+| H5（`source==7` 且 extra `match_code_from_h5`≠0） | 5 | 6 |
+| 通讯录（另一屏自己发） | 4 | 5 |
+
+判定树（`f1()`）：输入非空才发；**8 位**当匹配码走 `pre_confirm`，其余走封套上传；`add_type` 埋点串同步取
+"搜索匹配码"/"搜索手机号"。ViewModel 里还有一条 6 位也算码的分支（`size==1 && (len==8||len==6)`），原版
+**先封套、后分流**，所以 6/8 位也会白算一次封套 —— 原样保留。
+
+扫码（`e1()`）：结果串长 8 → 直接当匹配码；否则解 `Uri.fragment` 里 `userid=` 到 `&`，必须纯数字；都不成
+→ `invalid_qr_code`。两条成功路都 `dialogSource=2`，并**先把 `lastSearch` 置 null**（这决定了 type 落 1 还是 2）。
+
+### 通讯录搜索的封套协议（本轮最硬的一块）
+
+`net/src/main/kotlin/.../ContactSearchEnvelope.kt`，逐层还原：
+
+1. `GET api/tool/rsa/public_key` → 剥 PEM。**结束标记是四个横杠** `----END PUBLIC KEY-----`（原版就是这么
+   写的），去所有空白，Base64(NO_WRAP) 解出 DER，X509 → RSA 公钥。
+2. 内层 `{"phoneList":[…]}` 只做 **Base64**（不加密！）放进 `ciphertext` 字段。
+3. 外层 `{"keyID":<我的 userId>,"ciphertext":…,"timestamp":<秒>}` 用**随机 16 字节**做 AES/CBC/PKCS7，
+   **IV 就是这同一串随机 key**。
+4. 随机 key 用 `RSA/ECB/OAEPWithSHA-256AndMGF1Padding` 加密。
+5. `POST /api/relation/match_by_phone` body `{"encrypted":<b64>,"keyEncrypted":<b64>}`。
+6. **公钥拿不到时的约定**：不发请求、不报网络错，而是自己 post 一个 `status=10086` 的空壳响应
+   （8 位 → `Friend(sslCertificateError=true)`，否则 `SearchFriend(sslCertificateError=true)`）。界面读到
+   10086 就**不弹**"匹配码无效"，只清空输入框并把光标放回去。
+
+测试里抓到一个真 bug：Gson 默认把 `=` 做 HTML 转义成 `\u003d`，会**毁掉内层 Base64**；原版用 org.json 不受
+影响，所以必须 `disableHtmlEscaping()`。另外标准五横杠 PEM 页脚按原版字面量剥会残留一个 `-`，Base64 解不出 →
+读作"无公钥"。这条**是集成风险**（服务端到底发哪种页脚未知），已进待验清单。
+
+### 权限门换人了：从远程配置改成硬编码渠道
+
+同一个动作（加完好友后弹不弹权限设置）在两版里**判据不同**，且这是 #23 那条外部依赖的一半答案：
+
+- 1.5.6：`ConfigUtils.n()` = 远程配置 `showPermissionChannel` 列表里含本渠道，或列表含通配 `"-1"`。
+- 1.6.6：**四个调用点**（`AddFriendActivity:409`、`ContactInfoListActivity:245`、
+  `FriendRequestDetailActivity:174`、`FriendRequestListActivity:387`）全改成 `utils.p.i()`，即
+  `渠道号 == "3301"`，与远程配置无关。
+
+所以 `askPermissionsAfterAdd` 现在走 1.6.6 规则；1.5.6 规则留在
+`PermissionChannelGate.asksAfterAddFriendByConfig()`（有测试），因为那是真实历史行为，也解释了那个配置键
+当初是干什么的。渠道常量表（`utils.p`，两版一致）：3801 定位互授权文案 / 3301 走 `add_friend_bottom_tip` /
+3300 与 3302 走另一条硬编码 / 其余渠道不显示。
+
+### 核对信息弹窗（本轮顺带重建）
+
+`VerifyInfoDialog` 两版逐行一致（1.5.6 284 行 / 1.6.6 290 行）。三条值得写下来的事实：
+
+- 预选关系按**性别配对**：异性 → 恋人(1)，两个男生 → 挚友(2)，性别未知 → 其他(4)，并把对方性别画成
+  `tv_name` 的右侧 compound drawable。
+- 对方到好友上限时：`tv_confirm` **GONE**，换成会员角标 `iv_label_vip`，点它 → `ext.s.a(ctx, 16, "多个好友")`
+  （会员页入口，source 16）。
+- `onConfirm(relation, dismissParent)` 的第二参数是**给调用方**用来关本弹窗的；本屏不用它（弹窗自己已收起）。
+
+### 本轮落在哪、绿在哪
+
+- 新文件：`pages/friend/AddFriendActivity.kt`、`AddFriendViewModel.kt`、`AddFriendDialogs.kt`、
+  `AddFriendPlatform.kt`、`pages/friend/dialog/VerifyInfoDialog.kt`、`view/QrCodeRenderer.kt`、
+  `fastkit/.../utils/KeyboardUtils.kt`、`net/.../ContactSearchEnvelope.kt`；两个布局
+  （`activity_add_friend`、`dialog_verify_info`）按惯例复制进 `:app`；清单注册了 Activity，并补了
+  `<queries>`（Android 11+ 包可见性，否则"装没装微信"永远假）。
+- 测试：`:app` **140 条全绿**（本轮 +32 屏 +6 弹窗），`:net` **10 条全绿**（+3 封套）。
+- fastkit 顺带补的 `KeyboardUtils` 只搬了这屏要的三件事（hide / isShown / 全局布局监听），阈值 250 与 200
+  是原样数字。**发现一个既有缺口**：`:fastkit:test` 的单测资源合并本来就跑不过（合并出的 values 引用
+  material 属性而 fastkit 不依赖 material），与本轮无关，未修。
+
+### 本轮**没有**重建的（别误会成已完成）
+
+1. **二维码绘制**：原版 `utils/z0.d(url, scale, size, …)` 用 `com.google.zxing` + 自绘模块（H 纠错、UTF-8、
+   静区 0、圆角点阵、可选中心 logo）。zxing 不在依赖里 → `QrCodeRenderer.Pending` 返回 null，所以**装包后
+   QR 卡片是空的**，只有 `iv_code` 的位置留着。这条自成一张卡。
+2. **LoadingDialog**（播 `loading.svga`）→ 平台缝 `showLoading/hideLoading` 是空实现，只有时序对，没有画面。
+3. **微信/QQ 分享本体**（`utils/h1`、`utils/i0` 缩略图上传）：装没装用包查询等价复现了（原版本来就是包查询），
+   分享调用是空实现。
+4. **QR png 上传 H5**（`api/tool/uploadLog` + 上传 helper）：`uploadQrImage` 空实现。
+5. **`ContactInfoListActivity` / `QRCodeScanActivity` / `SearchFriendActivity`(仅 1.5.6)**：只留
+   `openContactList()`/`openQrScanner()` 意图；扫码结果由 `onQrResult(raw)` 收，真启动器待那屏落地。
+6. **埋点汇 `mf.b`**：21 条 source 标签、`add_type`/`relationship`/`add_result` 事件形状都由测试钉住，无处可发。
+7. **同意后 IM 侧效应**：IM 角标 `widget.im.e.w(userId,1)`、`AgreeAddActivity` 拉起、会话提示气泡 —— 属 IM 卡。
+8. **权限库**：XXPermissions 未接回，用 androidx `RequestPermission` 复刻；"永久拒绝跳系统设置"用
+   `shouldShowRequestPermissionRationale` 等价判定（原版第二个布尔 `neverAskAgain` 语义相近但不完全相同）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -566,6 +707,7 @@ JSON 坏了或缺键 → 回落到默认 `User()`，不抛。
 9. **列表屏按原版用 BRVAH `adapter4`**（`BaseQuickAdapter` + `QuickViewHolder` + `addOnItemChildClickListener(viewId)`），不要自造 RecyclerView.Adapter：90 多个业务屏都是这个形状，模板对齐一次，后面每屏都省一次翻译。
 10. **跨屏传整个 bean，用 `java.io.Serializable`，不用 Parcel 数字/JSON 字符串凑**。判定在 `tools/gen_beans.py`：字段图里出现 `JsonElement` 或 bean 自身带泛型 ⇒ 不加标记。理由见五点十。
 11. **屏间跳转先进接口**（本流程是 `FriendRequestNavigation`），目标屏没重建就留空实现，测试用 Recorder 断言"跳转意图"而不是断言空界面；目标屏重建后把空实现换成真 `startActivity`，上一屏的测试不用改。
+12. **"资源取 1.6.6、行为取 1.5.6"只对 1.6.6 名字被压扁的地方成立**。1.6.6 的 ViewBinding 字段名、资源 ID、字符串引用都活着，所以只要那一屏的 binding 存在，**行为以 1.6.6 为准**，1.5.6 退居"给压扁的方法名对号"的旁证（添加好友屏实测：1.6.6 比 1.5.6 多整条屏内搜索链路，照 1.5.6 重建就会做出一屏旧 UI）。附带判定：1.5.6 代码里碰过、而 1.6.6 binding 里没有的 View，是**那版真删了的 UI**，不许复活；换了宿主但文案仍在的（`llHuaweiTips` → 页底 `tv_tips`）不算删除。
 
 ## 六点五、API 面已强类型（2026-11-02）
 
@@ -635,8 +777,7 @@ JSON 坏了或缺键 → 回落到默认 `User()`，不抛。
 | 7 | BRVAH 的确切小版本 | APK 内只留下 `com.chad.library.adapter4` 类结构，版本字符串没提取出来；现按 4.1.7 编，若线上列表行为（动画/复用/加载更多）与真机对不上，先怀疑这里 |
 | 8 | 好友申请屏在真机上的滚动分页与 28dp 圆角效果 | Robolectric 里是我手动 measure/layout 的；真实手指滚动、末行圆角与白卡阴影必须装包看屏 |
 | 9 | ~~三个读数是写死的默认值~~ → 现在还剩什么 | 读已按原样接上（五点十四：MMKV 键 `user2`/`friendList`、isVip 规则、渠道通配规则，9 条测试钉住）；仍待的是**写入方**：登录流没重建 → `user2` 没人写；IM 缓存没重建 → `friendList` 没人写；渠道段与远程配置 SDK 没接 → 装包后这三个值今日仍是 false/0/false，但不再因为代码写死 |
-| 25 | 真机上让 `user2` 真的有值 | 写入通道已通（#16），但**登录屏没重建**：短信/一键登录还牵着号码认证 SDK（`GYManager.preLogin`）与 `/api/sms/send`——后者我不会去碰（会发真短信）。过渡办法是探针屏那条 `GET api/user/info`，前提是先灌进一个有效 token |
-| 26 | VIP 状态变化的四个副作用 | `AccountSideEffects.onVipStateChanged` 只有条件被测试钉住；IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播，都要等 IM/widget 那两张卡 || 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有 |
+| 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有
 | 11 | 头像加载的占位/圆角/淡入 | 原版是 `fastkit.widget.i.f(view, url, null)`，参数在混淆体里取不出来，本轮用 Glide 直连，只保证"显示出来" |
 | 12 | `normalButtonStyle` 在 `isEnabled=false` 时的实际观感 | 逻辑已按原版还原（非 0 态禁用并改文案），效果要装包看屏 |
 | 13 | 「我的好友」的真实数据、被删好友后的刷新、空列表自关屏这条路径 | 数据源是 IM manager（卡片未做），当前只能由测试喂列表与命令；真机上这三条都要走一遍 |
@@ -651,6 +792,16 @@ JSON 坏了或缺键 → 回落到默认 `User()`，不抛。
 | 22 | 渠道号 | 原版从 APK 签名块中魔数 `1903654775` 的自定义 section 读；我们现在的包没这段 → 走默认 `"0"`。要配套做"打包写入 + 安装读出"，属发布链那张卡 |
 | 23 | `showPermissionChannel` 这类远程配置 | 走三方配置 SDK（`of.b.f("android-watcher","156")` + fastjson），**不是**我们自己的 `clientConfig`（已用生产回包样本核过没有这个键）；SDK 未接回前恒 false |
 | 24 | 老用户升级时 `user2` 读不到之后的旧 Parcelable 回读 | 我们的 DTO 不是 Parcelable，这段没搬；那批老用户装新包会显示成未登录，等登录流接管写入时一并定 |
+| 25 | 真机上让 `user2` 真的有值 | 写入通道已通（#16），但**登录屏没重建**：短信/一键登录还牵着号码认证 SDK（`GYManager.preLogin`）与 `/api/sms/send`——后者我不会去碰（会发真短信）。过渡办法是探针屏那条 `GET api/user/info`，前提是先灌进一个有效 token |
+| 26 | 服务端公钥 PEM 的**页脚到底是四个还是五个横杠** | 原版按 `----END PUBLIC KEY-----`（四横杠）字面剥离；标准五横杠会残留 `-` → Base64 解不出 → 走 10086"匹配码无效都不弹"的静默分支。装包后打一次通讯录搜索即可判定 |
+| 27 | VIP 状态变化的四个副作用 | `AccountSideEffects.onVipStateChanged` 只有条件被测试钉住；IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播，都要等 IM/widget 那两张卡
+| 28 | 加完好友后弹不弹权限设置，真机上按哪条判据 | 已按 1.6.6 改成"渠道号==3301"；我们的包没有渠道段（第 22 条）会恒 false。要么先补渠道段，要么临时按 1.5.6 配置规则验 |
+| 29 | 匹配码"四位一组"的显示与"裸 id"的复制 | 逻辑与文案已由测试钉住；实际观感（等宽字体 `sf_pro_rounded_bold_subset`、超长 id 换行、复制后系统剪贴板提示）要装包看 |
+| 30 | 二维码卡片是真空的 | `QrCodeRenderer.Pending` 有意返回 null，装包后 `iv_code` 应显示为空白卡片；zxing + 自绘 painter 那张卡完成后这条自动关闭 |
+| 31 | 键盘遮罩（`view_input_mask`）与输入框 focus 的联动 | 判定式已测（focus ∧ keyboardVisible）；fastkit 的 `KeyboardUtils` 只搬了全局布局监听 + 250/200 阈值，真实 IME 下的高度/时机要装包验，`adjustResize` 也没在清单里（原版就没有） |
+| 32 | 权限请求的两处等价替换 | XXPermissions 未接回：①"永久拒绝跳系统设置"用 `shouldShowRequestPermissionRationale` 判定，与原版第二个布尔不完全相同；②原版 `onGranted(allGranted=false)` 也会 toast，单权限 contracts 无此分支 |
+| 33 | 微信/QQ 分享本体 | 装没装已用包查询等价复现（原版本来就是包查询），分享调用是空实现；`<queries>` 只写了两个包名，真机上若还有 SDK 声明需合并 |
+| 34 | 加载遮罩（LoadingDialog） | `showLoading/hideLoading` 时序对、画面空（它播 `loading.svga`），本轮没搬；请求期间界面不会变灰 |
 
 ## 十、下一步顺序（建议）
 

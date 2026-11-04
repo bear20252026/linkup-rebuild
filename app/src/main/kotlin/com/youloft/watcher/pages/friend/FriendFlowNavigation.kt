@@ -10,8 +10,9 @@ import com.youloft.watcher.pages.friend.dialog.FriendPermissionsSettingsDialog
  * call site passed to the target screen, so they are kept even where nothing reads them yet —
  * they are how the destination knows where the user came from.
  *
- * The detail screen is rebuilt, so it launches for real; the rest stay empty until their own
- * cards land, which keeps the recovered control flow readable instead of pretending they exist.
+ * The detail, info and add-friend screens are rebuilt, so they launch for real; the rest stay empty
+ * until their own cards land, which keeps the recovered control flow readable instead of pretending
+ * they exist.
  */
 interface FriendFlowNavigation {
     /** `AddFriendActivity` modes: 8 from the request list header, 6 from the friend-list button, 0 from its empty view. */
@@ -25,6 +26,15 @@ interface FriendFlowNavigation {
     /** `ChatActivity` — the IM layer is its own card, so only the intent is recorded. */
     fun openChat(userId: Long)
 
+    /** `ContactInfoListActivity`, reached only after READ_CONTACTS has been granted. */
+    fun openContactList()
+
+    /** `QRCodeScanActivity`, reached only after CAMERA has been granted; its result goes back to the caller. */
+    fun openQrScanner()
+
+    /** The membership page, reached from a friend-quota wall. `source`/`label` are what the caller reported. */
+    fun openVip(source: Int, label: String)
+
     fun openAgreeAdd()
 
     fun showFriendNumLimitDialog()
@@ -32,7 +42,7 @@ interface FriendFlowNavigation {
     fun showPermissionSettings(friendUserId: Long)
 }
 
-/** Not rebuilt yet: `AddFriendActivity`, `AgreeAddActivity`, `ChatActivity`. */
+/** Not rebuilt yet: `ChatActivity`, `ContactInfoListActivity`, `QRCodeScanActivity`, `AgreeAddActivity`. */
 class DefaultFriendFlowNavigation(
     private val activity: Activity,
 ) : FriendFlowNavigation {
@@ -48,6 +58,12 @@ class DefaultFriendFlowNavigation(
     }
 
     override fun openChat(userId: Long) = Unit
+
+    override fun openContactList() = Unit
+
+    override fun openQrScanner() = Unit
+
+    override fun openVip(source: Int, label: String) = Unit
 
     override fun openAgreeAdd() = Unit
 

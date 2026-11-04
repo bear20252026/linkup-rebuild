@@ -40,6 +40,19 @@
             android:name=".pages.friend.MyFriendActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".pages.friend.AddFriendActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
+
+    <!-- The add-friend screen asks whether WeChat/QQ are installed. On API 30+ that query is only
+         answered for packages declared here; the original asked through the SDKs, which declare them
+         in their own manifests. -->
+    <queries>
+        <package android:name="com.tencent.mm" />
+        <package android:name="com.tencent.mobileqq" />
+    </queries>
 
 </manifest>
