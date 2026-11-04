@@ -32,6 +32,11 @@
             android:screenOrientation="portrait" />
 
         <activity
+            android:name=".pages.friend.FriendInfoActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".pages.friend.MyFriendActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

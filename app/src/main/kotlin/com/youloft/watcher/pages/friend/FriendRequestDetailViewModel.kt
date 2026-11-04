@@ -9,7 +9,7 @@ import com.youloft.linkup.api.dto.ConfirmAdd
 import com.youloft.linkup.api.dto.FriendRequest
 import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.net.ApiResponse
-import com.youloft.watcher.data.FriendRequestRepository
+import com.youloft.watcher.data.FriendRepository
 import kotlinx.coroutines.launch
 
 /**
@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
  * backfill, because the detail screen never reads that field back.
  */
 class FriendRequestDetailViewModel(
-    private val repository: FriendRequestRepository,
+    private val repository: FriendRepository,
 ) : ViewModel() {
 
     private val _confirmAdd = MutableLiveData<ApiResponse<ConfirmAdd>>()
@@ -38,7 +38,7 @@ class FriendRequestDetailViewModel(
     }
 
     companion object {
-        fun factory(repository: FriendRequestRepository) = object : ViewModelProvider.Factory {
+        fun factory(repository: FriendRepository) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
                 FriendRequestDetailViewModel(repository) as T

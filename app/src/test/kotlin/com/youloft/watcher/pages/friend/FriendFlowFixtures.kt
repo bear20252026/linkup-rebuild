@@ -2,6 +2,7 @@ package com.youloft.watcher.pages.friend
 
 import com.youloft.linkup.api.dto.Birthday
 import com.youloft.linkup.api.dto.ConfirmAdd
+import com.youloft.linkup.api.dto.FriendInfo
 import com.youloft.linkup.api.dto.FriendList
 import com.youloft.linkup.api.dto.FriendRequest
 import com.youloft.linkup.api.dto.FriendRequestList
@@ -9,7 +10,7 @@ import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.watcher.bean.CmdFriendBean
 import com.youloft.watcher.data.FriendListSource
-import com.youloft.watcher.data.FriendRequestRepository
+import com.youloft.watcher.data.FriendRepository
 import com.youloft.watcher.data.LinkUpApplication
 import com.youloft.watcher.data.PendingFriendListSource
 
@@ -104,14 +105,14 @@ object FriendFlowFixtures {
     }
 
     class TestApplication : LinkUpApplication() {
-        override val friendRequests: FriendRequestRepository get() = repository
+        override val friends: FriendRepository get() = repository
         override val friendList: FriendListSource get() = source
         override val isVip: Boolean get() = flags.vip
         override val cachedFriendCount: Int get() = flags.cachedFriends
         override val askPermissionsAfterAdd: Boolean get() = flags.askPermissions
     }
 
-    class FakeRepository : FriendRequestRepository {
+    class FakeRepository : FriendRepository {
         val listRequests = mutableListOf<Pair<Int, Int>>()
         val confirmations = mutableListOf<Triple<Long, Int, Permission?>>()
         var firstPage: List<FriendRequest?> = emptyList()
@@ -120,7 +121,16 @@ object FriendFlowFixtures {
         var confirmResponse = ApiResponse(200, "success", data = ConfirmAdd())
         var networkFailure: Throwable? = null
 
-        override suspend fun applyList(page: Int, pageSize: Int): ApiResponse<FriendRequestList> {
+        val friendInfoRequests = mutableListOf<Long>()
+        var friendInfoResponse: ApiResponse<FriendInfo>? = null
+        val deletions = mutableListOf<Long>()
+        var deleteResponse = ApiResponse<Unit>(200, "success")
+        val relationUpdates = mutableListOf<Pair<Long, Int>>()
+        var relationResponse = ApiResponse<Unit>(200, "success")
+        val remarkUpdates = mutableListOf<Pair<Long, String>>()
+        var remarkResponse = ApiResponse<Unit>(200, "success")
+
+        override suspend fun relationApplyList(page: Int, pageSize: Int): ApiResponse<FriendRequestList> {
             listRequests += page to pageSize
             networkFailure?.let { throw it }
             val list = if (page == 1) firstPage else nextPage
@@ -132,6 +142,27 @@ object FriendFlowFixtures {
                     isFriendLimit = if (page == 1) firstPageLimit else null,
                 ),
             )
+        }
+
+        override suspend fun friendInfo(userId: Long): ApiResponse<FriendInfo> {
+            friendInfoRequests += userId
+            networkFailure?.let { throw it }
+            return friendInfoResponse ?: ApiResponse(500, "no fixture")
+        }
+
+        override suspend fun deleteFriend(userId: Long): ApiResponse<Unit> {
+            deletions += userId
+            return deleteResponse
+        }
+
+        override suspend fun updateRelation(userId: Long, relation: Int): ApiResponse<Unit> {
+            relationUpdates += userId to relation
+            return relationResponse
+        }
+
+        override suspend fun updateRemark(userId: Long, remark: String): ApiResponse<Unit> {
+            remarkUpdates += userId to remark
+            return remarkResponse
         }
 
         override suspend fun confirmAdd(
@@ -153,6 +184,7 @@ object FriendFlowFixtures {
         }
 
         override fun openFriendInfo(userId: Long, type: Int, name: String?) { events += "info:$userId:$type:${name ?: '-'}" }
+        override fun openChat(userId: Long) { events += "chat:$userId" }
         override fun openAgreeAdd() { events += "agreeAdd" }
         override fun showFriendNumLimitDialog() { events += "numLimitDialog" }
         override fun showPermissionSettings(friendUserId: Long) { events += "permissions:$friendUserId" }

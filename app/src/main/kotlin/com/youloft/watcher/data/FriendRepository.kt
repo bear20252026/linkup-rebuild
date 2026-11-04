@@ -3,6 +3,7 @@ package com.youloft.watcher.data
 import android.app.Application
 import android.content.Context
 import com.youloft.linkup.api.dto.ConfirmAdd
+import com.youloft.linkup.api.dto.FriendInfo
 import com.youloft.linkup.api.dto.FriendRequestList
 import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.net.ApiResponse
@@ -10,16 +11,28 @@ import com.youloft.linkup.net.LinkUpApi
 import com.youloft.linkup.net.LinkUpClient
 import com.youloft.watcher.AndroidDeviceContext
 
-/** The relation endpoints this screen needs, kept small enough to fake in tests. */
-interface FriendRequestRepository {
-    suspend fun applyList(page: Int, pageSize: Int): ApiResponse<FriendRequestList>
+/**
+ * `repository/FriendRepository` in the recovered app: one class covers every relation endpoint,
+ * so rebuilt screens take this interface rather than a per-screen one.
+ */
+interface FriendRepository {
+    suspend fun relationApplyList(page: Int, pageSize: Int): ApiResponse<FriendRequestList>
 
+    /** POST api/relation/confirm — the recovered body carries code, relation and the optional sens settings. */
     suspend fun confirmAdd(userId: Long, relation: Int, sensSetting: Permission?): ApiResponse<ConfirmAdd>
+
+    suspend fun friendInfo(userId: Long): ApiResponse<FriendInfo>
+
+    suspend fun deleteFriend(userId: Long): ApiResponse<Unit>
+
+    suspend fun updateRelation(userId: Long, relation: Int): ApiResponse<Unit>
+
+    suspend fun updateRemark(userId: Long, remark: String): ApiResponse<Unit>
 }
 
-class NetworkFriendRequestRepository(private val api: LinkUpApi) : FriendRequestRepository {
+class NetworkFriendRepository(private val api: LinkUpApi) : FriendRepository {
 
-    override suspend fun applyList(page: Int, pageSize: Int) =
+    override suspend fun relationApplyList(page: Int, pageSize: Int) =
         api.apiRelationApplyList(page = page, pageSize = pageSize)
 
     override suspend fun confirmAdd(userId: Long, relation: Int, sensSetting: Permission?) =
@@ -31,6 +44,16 @@ class NetworkFriendRequestRepository(private val api: LinkUpApi) : FriendRequest
                 "sensSetting" to sensSetting,
             ),
         )
+
+    override suspend fun friendInfo(userId: Long) = api.relationInfo(queryId = userId)
+
+    override suspend fun deleteFriend(userId: Long) = api.relationDel(payload = mapOf("friendId" to userId))
+
+    override suspend fun updateRelation(userId: Long, relation: Int) =
+        api.relationUpdate(payload = mapOf("friendId" to userId, "relation" to relation))
+
+    override suspend fun updateRemark(userId: Long, remark: String) =
+        api.relationUpdateRemark(payload = mapOf("friendId" to userId, "remark" to remark))
 }
 
 /**
@@ -44,18 +67,18 @@ class NetworkFriendRequestRepository(private val api: LinkUpApi) : FriendRequest
  */
 open class LinkUpApplication : Application() {
 
-    open val friendRequests: FriendRequestRepository by lazy {
-        NetworkFriendRequestRepository(LinkUpClient(context = AndroidDeviceContext(this)).api)
+    open val friends: FriendRepository by lazy {
+        NetworkFriendRepository(LinkUpClient(context = AndroidDeviceContext(this)).api)
     }
-
-    /** `CacheUtils.isVip()` — gates the friend-quota upsell. */
-    open val isVip: Boolean get() = false
 
     /**
      * The live friend list and push channel the friend screens observe. The IM manager behind it is a
      * separate card, so the default keeps the shape of the contract without inventing push behaviour.
      */
     open val friendList: FriendListSource by lazy { PendingFriendListSource() }
+
+    /** `CacheUtils.isVip()` — gates the friend-quota upsell. */
+    open val isVip: Boolean get() = false
 
     /** `CacheUtils.friendList.size` — used to re-derive the quota after a confirmed add. */
     open val cachedFriendCount: Int get() = 0

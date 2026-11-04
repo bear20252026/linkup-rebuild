@@ -28,7 +28,7 @@ class FriendRequestDetailActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFriendRequestDetailBinding
 
     private val viewModel: FriendRequestDetailViewModel by viewModels {
-        FriendRequestDetailViewModel.factory(appGraph(this).friendRequests)
+        FriendRequestDetailViewModel.factory(appGraph(this).friends)
     }
 
     private lateinit var request: FriendRequest

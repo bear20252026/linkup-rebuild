@@ -374,6 +374,52 @@ IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还
 **测试里学到的 BRVAH 一处坑**：开了 state view 之后，数据为空时 `itemCount` 是 1（那个空态占位），
 断言"几个人"要看 `items.size` 而不是 `itemCount`。
 
+## 五点十二、第四屏：好友信息（2026-11-03）
+
+`FriendInfoActivity` 是四屏里动作最多的一屏：资料展示 + 备注 + 关系 + 权限摘要 + 聊天入口 + 删除，
+外加一条 IM 推送覆盖层。它按 `id` 加载（`relation/info?queryId=`），没有分页。
+
+**还原到的事实**：
+
+| 事实 | 出处 |
+|---|---|
+| Intent 契约三个键：`id` / `source` / `nickName` | `M()` 前三行与 `a().a(context, id, source, name)` |
+| `sex` 与 `relation` 在这个 bean 里是**字符串**，原版直接 `Integer.parseInt` | `z0()` |
+| remark 只在非空时写入标签（空则保留原值） | `z0()` |
+| 权限摘要 = 数 9 个 sens 开关的 true 个数：>0 → `%d项数据`(appPrimary)，否则 → `无可见数据`(appSecondary) | `w0(Permission)`，顺序 location/track/phoneUse/call/phoneState/sensitive/appUse/lockPhone/realtimeVoice |
+| 加载失败**或 data 为 null** → `S0()`：隐藏 rl_remark / rl_relation / ll_permissions / ll_add_date / iv_delete / toolbar，显示 tv_not_friend，用户名退回 Intent 里的 nickName，匹配码用 Intent 里的 id 现算 | `S0()` + `z0()` 头两行 |
+| 关系行在 `relation <= 0` 时不弹任何窗 | `K0()` |
+| 删除要过确认框；确认后 `relation/del`，成功 → toast + **`LiveDataBus("friend_delete")` 广播该 id** + finish | `I0/J0/A0` |
+| 更新关系/备注的响应是**客户端把自己发出去的值回显**成 data（不是服务端回包） | `FriendInfoViewModel` 里 `new ApiResponse(status, msg, relation / remark)` |
+| 备注更新成功还会刷 IM 与最近会话（`u.M` + `widget.im.e.v()`） | 同上 |
+| 推送 type=2 → 覆盖层可点，toast「你们已不是好友」；type=4 → 「该账号已注销」 | `E0/F0/G0` |
+| `source` 只用于埋点标签：1 守护Tab-头像功能弹窗 / 2 消息中心-我的好友 / 3 im头像 / 其他 空 | `x0()` + `M()` |
+
+**四处按调用点解出来的端点**（1.5.6 的 Retrofit 注解也被混淆成 `@o/@f/@t/@bm.a`，要先把字母还原成
+GET/POST/Query/Body 再按"最近的注解"配对才拿得到路径）：
+
+| 动作 | 端点 | 体 |
+|---|---|---|
+| 资料 | `GET api/relation/info?queryId=` | — |
+| 删除 | `POST api/relation/del` | `{friendId}` |
+| 改关系 | `POST api/relation/update` | `{friendId, relation}` |
+| 改备注 | `POST api/relation/update_remark` | `{friendId, remark}` |
+| 改权限（**本轮未接**） | `POST api/setting/friend_sens` + 逐类型回灌 | 见下 |
+
+顺手把仓储层并回原版形状：`FriendRequestRepository` → **`FriendRepository`**（原版就是一个
+`repository/FriendRepository` 覆盖全部 relation 端点），屏不再按屏拆接口。
+
+**两处我明确偏离原版的决定**（都有测试钉住，不是顺手"修好"）：
+1. `Integer.parseInt(sex/relation)` 在字段缺失时会抛异常。这里取 `toIntOrNull() ?: 0`，落进"未知/其他"分支。
+   原版会崩，我们不还原崩溃。
+2. 两条 toast 文案在原版的**调用点就是硬编码中文**（`a0.e("你们已不是好友")`），资源表里没有对应条目。
+   这里保留字面量以维持一致，并把"该进 i18n"记进待验/整改清单，不假装它本来有资源。
+
+**没有半接线的东西**：`PrivacyRepository.updatePermissions` 是两阶段流程——先 POST
+`api/setting/friend_sens`，失败且原本有权限对象时，再拉一次当前权限、然后**逐类型**（track/call/appUse/
+location/…）分别回灌。这一整块属于隐私权限卡片，本轮只在权限行留了"打开弹窗"这一步的真实调用与
+回调空位，**没有**为了让代码看起来完整而先接上半个端点。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -462,6 +508,11 @@ IM 本地同步（`manager.u`）、埋点（`mf.b.i("好友申请页")`）都还
 | 13 | 「我的好友」的真实数据、被删好友后的刷新、空列表自关屏这条路径 | 数据源是 IM manager（卡片未做），当前只能由测试喂列表与命令；真机上这三条都要走一遍 |
 | 14 | 体验好友角标 | 本屏把 `userId<=0` 过滤掉了，这条分支只有用同一 decoration 但不过滤的那些屏才会出现，需连那些屏一起验 |
 | 15 | 推送命令"等 RESUMED 消费一次"的真实行为 | 原版 `launchWhenResumed` 在 lifecycle 2.7 已删除，我用 `whenStateAtLeast(RESUMED)` 等价替换；退后台再回前台是否会重复处理同一条命令，只能真机确认 |
+| 16 | 四个弹窗的真实交互（ConfirmDialog / UpdateRelationDialog / UpdateUsernameDialog / FriendPermissionsSettingsDialog） | 本轮用 `FriendInfoDialogs` 接口 + 假实现把回调打出来，动作链路已全绿；弹窗本体是单独一张卡，做完它这一屏与申请流的两处才算真能点 |
+| 17 | 权限更新的两阶段流程（先 POST friend_sens，失败再逐类型回灌） | 有意**没有**半接线，见五点十二末段 |
+| 18 | 聊天入口 | `ChatActivity` 属 IM 卡片，只留了 `openChat` 意图 |
+| 19 | "friend_delete" 广播的订阅方 | 已按原版主题名发出，但接收方（会话列表等）还没重建，端到端要等那些屏 |
+| 20 | 两条硬编码中文 toast 要不要进资源表 | 原版调用点就是字面量（"你们已不是好友" / "该账号已注销"），改不改是 i18n 决定 |
 
 ## 十、下一步顺序（建议）
 

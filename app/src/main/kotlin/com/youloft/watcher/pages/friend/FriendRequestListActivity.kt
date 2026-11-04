@@ -30,7 +30,7 @@ class FriendRequestListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityFriendRequestListBinding
 
     private val viewModel: FriendRequestListViewModel by viewModels {
-        FriendRequestListViewModel.factory(appGraph(this).friendRequests)
+        FriendRequestListViewModel.factory(appGraph(this).friends)
     }
 
     private val requests = mutableListOf<FriendRequest>()
@@ -80,9 +80,9 @@ class FriendRequestListActivity : AppCompatActivity() {
         if (loading || exhausted) return
         loading = true
         lifecycleScope.launch {
-            val repository = appGraph(this@FriendRequestListActivity).friendRequests
+            val repository = appGraph(this@FriendRequestListActivity).friends
             val response = try {
-                repository.applyList(page = page, pageSize = PAGE_SIZE)
+                repository.relationApplyList(page = page, pageSize = PAGE_SIZE)
             } catch (error: Throwable) {
                 error.printStackTrace()
                 toast(getString(R.string.tips_net_err))

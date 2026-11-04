@@ -7,7 +7,7 @@ import com.youloft.linkup.api.dto.ConfirmAdd
 import com.youloft.linkup.api.dto.FriendRequest
 import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.net.ApiResponse
-import com.youloft.watcher.data.FriendRequestRepository
+import com.youloft.watcher.data.FriendRepository
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
  * written into the response before it is emitted — the original did the same.
  */
 class FriendRequestListViewModel(
-    private val repository: FriendRequestRepository,
+    private val repository: FriendRepository,
 ) : ViewModel() {
 
     private val _confirmAdd = MutableSharedFlow<ApiResponse<ConfirmAdd>>(extraBufferCapacity = 1)
@@ -34,7 +34,7 @@ class FriendRequestListViewModel(
     }
 
     companion object {
-        fun factory(repository: FriendRequestRepository) = object : ViewModelProvider.Factory {
+        fun factory(repository: FriendRepository) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
                 FriendRequestListViewModel(repository) as T

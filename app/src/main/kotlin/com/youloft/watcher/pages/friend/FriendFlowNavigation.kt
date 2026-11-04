@@ -20,6 +20,9 @@ interface FriendFlowNavigation {
     /** `FriendInfoActivity` types: 0 from the request list, 2 from my-friend list. */
     fun openFriendInfo(userId: Long, type: Int, name: String?)
 
+    /** `ChatActivity` — the IM layer is its own card, so only the intent is recorded. */
+    fun openChat(userId: Long)
+
     fun openAgreeAdd()
 
     fun showFriendNumLimitDialog()
@@ -39,7 +42,11 @@ class DefaultFriendFlowNavigation(
         FriendRequestDetailActivity.start(activity, request, friendLimit)
     }
 
-    override fun openFriendInfo(userId: Long, type: Int, name: String?) = Unit
+    override fun openFriendInfo(userId: Long, type: Int, name: String?) {
+        FriendInfoActivity.start(activity, userId, type, name)
+    }
+
+    override fun openChat(userId: Long) = Unit
 
     override fun openAgreeAdd() = Unit
 
