@@ -11,6 +11,8 @@ import com.tencent.mmkv.MMKV
  */
 interface KeyValueStore {
     fun string(key: String): String?
+
+    fun putString(key: String, value: String)
 }
 
 interface KeyValueStores {
@@ -23,6 +25,9 @@ interface KeyValueStores {
 
 private class MmkvStore(private val mmkv: MMKV) : KeyValueStore {
     override fun string(key: String): String? = mmkv.decodeString(key)
+    override fun putString(key: String, value: String) {
+        mmkv.encode(key, value)
+    }
 }
 
 /** Production stores. Initialized once because `MMKV.initialize` needs the app root dir. */
@@ -40,19 +45,25 @@ class MmkvKeyValueStores(context: Context) : KeyValueStores {
 
 /** Test/dev double: two independent key spaces, no native library involved. */
 class InMemoryKeyValueStores(
-    sharedValues: Map<String, String> = emptyMap(),
+    initialShared: Map<String, String> = emptyMap(),
     private val userValues: MutableMap<Long, MutableMap<String, String>> = mutableMapOf(),
 ) : KeyValueStores {
-    private val sharedValues = sharedValues.toMutableMap()
+    private val sharedValues = initialShared.toMutableMap()
 
     override val shared: KeyValueStore = object : KeyValueStore {
         override fun string(key: String): String? = sharedValues[key]
+        override fun putString(key: String, value: String) {
+            sharedValues[key] = value
+        }
     }
 
     override fun forUser(userId: Long): KeyValueStore {
         val values = userValues.getOrPut(userId) { mutableMapOf() }
         return object : KeyValueStore {
             override fun string(key: String): String? = values[key]
+            override fun putString(key: String, value: String) {
+                values[key] = value
+            }
         }
     }
 

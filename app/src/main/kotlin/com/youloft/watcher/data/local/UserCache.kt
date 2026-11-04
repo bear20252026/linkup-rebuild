@@ -24,11 +24,28 @@ class UserCache(
 
     fun isVip(): Boolean = user().isVip()
 
+    /** `CacheUtils.P2` / `U2`: the account JSON and the token both live in the default store. */
+    fun token(): String = stores.shared.string(KEY_TOKEN).orEmpty()
+
+    fun saveToken(token: String) {
+        stores.shared.putString(KEY_TOKEN, token)
+    }
+
+    /**
+     * `CacheUtils.U2` — writes the whole record as JSON under `user2`. Logout writes a default
+     * `User()` through this same path rather than clearing the key, which is what the recovered
+     * sign-out did, so the key is always present once a device has ever logged in.
+     */
+    fun save(user: User) {
+        stores.shared.putString(KEY_USER, gson.toJson(user))
+    }
+
     /** `CacheUtils.z0()` — the id the per-user store is named after. */
     fun userId(): Long = user().userId
 
     companion object {
         const val KEY_USER = "user2"
+        const val KEY_TOKEN = "token"
     }
 }
 

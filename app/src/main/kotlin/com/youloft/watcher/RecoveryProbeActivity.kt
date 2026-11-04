@@ -5,6 +5,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.youloft.linkup.net.LinkUpClient
+import com.youloft.watcher.data.appGraph
+import com.youloft.watcher.data.local.isVip
 import kotlinx.coroutines.launch
 
 /** Entry point: proves the recovered signing stack and the recovered theme run on Android. */
@@ -29,6 +31,18 @@ class RecoveryProbeActivity : AppCompatActivity() {
                         appendLine("autoReportAddressShow=${it.autoReportAddressShow}")
                         appendLine("imGroup huawei=${it.imGroupHuawei} oppo=${it.imGroupOppo}")
                     }
+                    // The account write path, so a device check can confirm that a fetched user
+                    // lands in MMKV under the recovered keys and feeds isVip / the request identity.
+                    val users = appGraph(this@RecoveryProbeActivity).users
+                    appendLine("---- GET api/user/info (needs a token in `token`) ----")
+                    val account = runCatching { users.refresh() }
+                    account.fold(
+                        onSuccess = { appendLine("status=${it.status} msg=${it.msg}") },
+                        onFailure = { appendLine("request failed: $it") },
+                    )
+                    val cached = users.current()
+                    appendLine("cached userId=${cached.userId} mainUser=${cached.mainUser}")
+                    appendLine("cached isVip=${users.current().isVip()} tokenStored=${users.token().isNotEmpty()}")
                 }
             }.getOrElse { "FAILED: $it" }
         }

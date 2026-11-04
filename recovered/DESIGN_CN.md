@@ -517,6 +517,42 @@ JSON 坏了或缺键 → 回落到默认 `User()`，不抛。
 **装包后的真实状态**（不等真机也说得清）：写入方（登录流、IM 好友缓存）还没重建，渠道段与远程配置 SDK 也还没接，
 所以现在装上包这三个读数仍然是 `false / 0 / false`——**只是不再是因为代码写死了**。
 
+## 五点十五、登录写路径接管（#16，2026-11-04）
+
+#11 把"读"接上之后，三个数还是 `false/0/false`——因为**没人写**。这一轮补的就是写的这一半。
+
+### 原版的写入点与顺序（当场核出来的）
+
+| 动作 | 原版实现 | 关键点 |
+|---|---|---|
+| 存账号 | `CacheUtils.U2(User)` → `defaultMMKV.encode("user2", Gson().toJson(user))` | 就是默认实例的 `user2`，与 #11 的读一侧对齐 |
+| 存 token | `CacheUtils.P2(String)` → `encode("token", value)` | **token 不在单独的登录回包字段里，而是 `User.token`**（`z0.g()` 里 `P2(user.getToken())`） |
+| 登录收尾 `z0.g(user, isNewUser)` | 先按 `nickname 空 / isRegister` 分流 → **再 `P2(user.token)`** → IM 登录 → 埋点 sign-in | 顺序：先落身份，再连 IM |
+| 刷新 `s2` 的那段 | `api/user/info` → 成功且 data 非空 → **先比较 `cache.isVip() != user.isVip()`（或强制位）做副作用** → 再 `U2(user)` → 最后 `postValue` | **VIP 判断必须在写缓存之前**，写完就拿不到旧值了；这条顺序我原样保留并有测试钉住 |
+| 退出 | `P2("")` + `s2.m(User(默认值))` | **是"覆盖成空账号"，不是删键**——所以 `user2` 一旦存在就永远在 |
+
+### 重建里落了什么
+
+* `KeyValueStore` 补 `putString`（原来只读）；`UserCache` 补 `save / saveToken / token`（键就是 `user2`、`token`）。
+* `UserRepository.userInfo()`（`GET api/user/info`，路由早就在 `:net` 里）+ `UserManager`
+  （`store` / `refresh` / `signOut`，一个 `LiveData<User>`），对应原版 `manager/s2` + `manager/z0` 的这两块职责。
+* `AndroidDeviceContext` 的 `authToken() / userId / mainUser` **改读同一份缓存**：一旦有账号，
+  之后每个请求的 `Authorization` 与 11 个公共参数就是本机真实身份，不再是两套平行存储。
+  **`channel` 故意没动**——真值在 APK 签名块里（#17），现在改等于凭空猜一个签名输入。
+* `AccountSideEffects.onVipStateChanged` 是接缝：条件（变化或强制）已实现且有测试，
+  四个具体副作用（IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播）都还没有实现方。
+* 探针屏加了一行**真机能验**的检查：`GET api/user/info` 之后打印
+  `cached userId / mainUser / isVip / tokenStored`。这样 #16 的闭环不依赖我也不能碰的 `/api/sms/send`。
+
+### 不在这一轮里的事（别误会成已完成）
+
+短信/一键登录那几个屏**没重建**：`pages/login/LoginActivity` 及其 `manager/z0`（1969 行）还牵着
+号码认证 SDK（`GYManager.preLogin/ePreLogin`）、`/api/sms/send`、个推 bindAlias、Umeng sign-in。
+所以现在的状态是：**写入通道与身份打通了，但真机上要让它真的有值，要么等登录屏，要么先用探针屏灌一个 token。**
+探针屏那条 `token` 只能靠 `adb` 写 MMKV 或等 `#18 登录屏`（见 #15/登录流后续）。
+
+包体从 60.6MB 涨到 61.3MB，是 MMKV 带进来的 native 库（不是代码量）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -598,8 +634,9 @@ JSON 坏了或缺键 → 回落到默认 `User()`，不抛。
 | 6 | 服务端 Go 源码在内网哪台机 | 公网探不到 Jenkins（`8080` 不可达、`/login` 404），只能内网找 CI 与仓库 |
 | 7 | BRVAH 的确切小版本 | APK 内只留下 `com.chad.library.adapter4` 类结构，版本字符串没提取出来；现按 4.1.7 编，若线上列表行为（动画/复用/加载更多）与真机对不上，先怀疑这里 |
 | 8 | 好友申请屏在真机上的滚动分页与 28dp 圆角效果 | Robolectric 里是我手动 measure/layout 的；真实手指滚动、末行圆角与白卡阴影必须装包看屏 |
-| 9 | ~~三个读数是写死的默认值~~ → 现在还剩什么 | **读已按原样接上**（五点十四：MMKV 键 `user2`/`friendList`、isVip 规则、渠道通配规则，9 条测试钉住）；仍待的是**写入方**：登录流没重建 → `user2` 没人写；IM 缓存没重建 → `friendList` 没人写；渠道段与远程配置 SDK 没接 → 装包后这三个值今日仍是 false/0/false，但不再因为代码写死 |
-| 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有 |
+| 9 | ~~三个读数是写死的默认值~~ → 现在还剩什么 | 读已按原样接上（五点十四：MMKV 键 `user2`/`friendList`、isVip 规则、渠道通配规则，9 条测试钉住）；仍待的是**写入方**：登录流没重建 → `user2` 没人写；IM 缓存没重建 → `friendList` 没人写；渠道段与远程配置 SDK 没接 → 装包后这三个值今日仍是 false/0/false，但不再因为代码写死 |
+| 25 | 真机上让 `user2` 真的有值 | 写入通道已通（#16），但**登录屏没重建**：短信/一键登录还牵着号码认证 SDK（`GYManager.preLogin`）与 `/api/sms/send`——后者我不会去碰（会发真短信）。过渡办法是探针屏那条 `GET api/user/info`，前提是先灌进一个有效 token |
+| 26 | VIP 状态变化的四个副作用 | `AccountSideEffects.onVipStateChanged` 只有条件被测试钉住；IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播，都要等 IM/widget 那两张卡 || 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有 |
 | 11 | 头像加载的占位/圆角/淡入 | 原版是 `fastkit.widget.i.f(view, url, null)`，参数在混淆体里取不出来，本轮用 Glide 直连，只保证"显示出来" |
 | 12 | `normalButtonStyle` 在 `isEnabled=false` 时的实际观感 | 逻辑已按原版还原（非 0 态禁用并改文案），效果要装包看屏 |
 | 13 | 「我的好友」的真实数据、被删好友后的刷新、空列表自关屏这条路径 | 数据源是 IM manager（卡片未做），当前只能由测试喂列表与命令；真机上这三条都要走一遍 |

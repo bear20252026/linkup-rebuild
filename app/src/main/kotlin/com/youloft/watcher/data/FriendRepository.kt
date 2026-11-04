@@ -77,8 +77,22 @@ class NetworkFriendRepository(private val api: LinkUpApi) : FriendRepository {
 open class LinkUpApplication : Application() {
 
     open val friends: FriendRepository by lazy {
-        NetworkFriendRepository(LinkUpClient(context = AndroidDeviceContext(this)).api)
+        NetworkFriendRepository(LinkUpClient(context = deviceContext()).api)
     }
+
+    open val userRepository: UserRepository by lazy {
+        NetworkUserRepository(LinkUpClient(context = deviceContext()).api)
+    }
+
+    /** `manager/s2` + `manager/z0`: the single owner of the account record and its cache write. */
+    open val users: UserManager by lazy { UserManager(userRepository, accountCache) }
+
+    /** The cached account record, shared by the app graph readers and the user manager. */
+    open val accountCache: UserCache by lazy { UserCache(keyValueStores) }
+
+    private val friendCache by lazy { FriendCache(keyValueStores, accountCache) }
+
+    private fun deviceContext() = AndroidDeviceContext(this, accountCache)
 
     /**
      * The live friend list and push channel the friend screens observe. The IM manager behind it is a
@@ -98,12 +112,10 @@ open class LinkUpApplication : Application() {
     /** The vendor config SDK (`of.b.f("android-watcher", "156")`) is not reintegrated yet. */
     open val remoteConfig: RemoteConfig get() = PendingRemoteConfig
 
-    private val userCache by lazy { UserCache(keyValueStores) }
-    private val friendCache by lazy { FriendCache(keyValueStores, userCache) }
     private val permissionChannels by lazy { PermissionChannelGate(installChannel, remoteConfig) }
 
     /** `CacheUtils.isVip()` — cached account record, gates the friend-quota upsell. */
-    open val isVip: Boolean get() = userCache.isVip()
+    open val isVip: Boolean get() = accountCache.isVip()
 
     /** `CacheUtils.friendList.size` — used to re-derive the quota after a confirmed add. */
     open val cachedFriendCount: Int get() = friendCache.cachedCount()
