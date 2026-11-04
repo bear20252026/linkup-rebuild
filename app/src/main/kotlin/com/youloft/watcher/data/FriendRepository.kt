@@ -10,6 +10,15 @@ import com.youloft.linkup.net.ApiResponse
 import com.youloft.linkup.net.LinkUpApi
 import com.youloft.linkup.net.LinkUpClient
 import com.youloft.watcher.AndroidDeviceContext
+import com.youloft.watcher.data.local.FriendCache
+import com.youloft.watcher.data.local.InstallChannel
+import com.youloft.watcher.data.local.FallbackInstallChannel
+import com.youloft.watcher.data.local.KeyValueStores
+import com.youloft.watcher.data.local.MmkvKeyValueStores
+import com.youloft.watcher.data.local.PermissionChannelGate
+import com.youloft.watcher.data.local.PendingRemoteConfig
+import com.youloft.watcher.data.local.RemoteConfig
+import com.youloft.watcher.data.local.UserCache
 
 /**
  * `repository/FriendRepository` in the recovered app: one class covers every relation endpoint,
@@ -77,14 +86,30 @@ open class LinkUpApplication : Application() {
      */
     open val friendList: FriendListSource by lazy { PendingFriendListSource() }
 
-    /** `CacheUtils.isVip()` — gates the friend-quota upsell. */
-    open val isVip: Boolean get() = false
+    /**
+     * Local key-value storage. Production is MMKV; tests inject the in-memory double so nothing here
+     * needs the native library.
+     */
+    open val keyValueStores: KeyValueStores by lazy { MmkvKeyValueStores(this) }
+
+    /** `hc.i` read the channel out of the APK's signing block; that reader is its own card. */
+    open val installChannel: InstallChannel get() = FallbackInstallChannel()
+
+    /** The vendor config SDK (`of.b.f("android-watcher", "156")`) is not reintegrated yet. */
+    open val remoteConfig: RemoteConfig get() = PendingRemoteConfig
+
+    private val userCache by lazy { UserCache(keyValueStores) }
+    private val friendCache by lazy { FriendCache(keyValueStores, userCache) }
+    private val permissionChannels by lazy { PermissionChannelGate(installChannel, remoteConfig) }
+
+    /** `CacheUtils.isVip()` — cached account record, gates the friend-quota upsell. */
+    open val isVip: Boolean get() = userCache.isVip()
 
     /** `CacheUtils.friendList.size` — used to re-derive the quota after a confirmed add. */
-    open val cachedFriendCount: Int get() = 0
+    open val cachedFriendCount: Int get() = friendCache.cachedCount()
 
     /** `ConfigUtils.showPermissionChannel` matched against the install channel. */
-    open val askPermissionsAfterAdd: Boolean get() = false
+    open val askPermissionsAfterAdd: Boolean get() = permissionChannels.asksAfterAddFriend()
 }
 
 fun appGraph(context: Context): LinkUpApplication = context.applicationContext as LinkUpApplication

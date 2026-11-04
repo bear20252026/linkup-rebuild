@@ -467,6 +467,56 @@ ViewBinding）→ app 侧 `BaseFrameDialog` → 具体弹窗。
 3. 权限弹窗的按-source 埋点有映射、没有汇（汇本身是另一张卡），只有测试钉住映射。
 4. VIP 购买页 / 会话页 / AddFriend 三个入口仍是空位。
 
+## 五点十四、本地缓存与配置读数（#11，2026-11-04）
+
+把前三屏留着的三个"假默认值"换成真读数。**读的那一半接上了，写的那一半还没有**——这句是本节的重点，
+别让后面的人以为装了包这三个值就自动对了。
+
+### 存储地图（按原样核出来的键与实例）
+
+| 值 | 存在哪 | 键 | 出处 |
+|---|---|---|---|
+| 账号记录 | `MMKV.defaultMMKV(MULTI_PROCESS_MODE, null)` | **`user2`**（Gson JSON） | `CacheUtils.y0()` |
+| 好友列表 | `MMKV.mmkvWithID(userId.toString(), MULTI_PROCESS_MODE, null)` | **`friendList`** | `CacheUtils.r()` |
+| 当前用户 id | 就是 `user2` 里的 `userId`（`CacheUtils.z0()`），per-user 实例的名字由它决定 | — | `z0()` |
+
+规则也照抄：`isVip = vipSubType > 0 || shareToMeList.any { vipSubType > 0 }`（`User.isVip()`）；
+好友数缺失记 0，调用方自己 `-1` 去掉本机账号（`C0()` 里那句 `(size ?: 0) - 1`）。
+JSON 坏了或缺键 → 回落到默认 `User()`，不抛。
+
+**没接的一条**：原版在 `user2` 读不到时还会回读一个**旧的 Parcelable blob**（给很早的升级路径用）。
+我们的 DTO 不是 Parcelable，这段不搬——后果写明白：那批老用户装上新包会显示成未登录，
+等登录流那张卡接管写入时一并处理。
+
+### 两个"值从哪来"的真相
+
+1. **渠道号**不在 MMKV 里，也不在 BuildConfig 里：原版 `hc.i/hc.d` 把**自己的 APK 当 zip 打开**，
+   从 **APK 签名块里一段魔数为 `1903654775` 的自定义 section** 读出 JSON，取 `channel` 键，读不到时回 `"0"`。
+   我们重建出来的 APK 里现在**没有**这一段 → 当前走 `"0"`。要真跑对，需要"读写这段"两件事一起做
+   （打包时写入 + 安装后读出），那是独立一张卡。
+2. **`showPermissionChannel` 不来自我们自己的后端**：`ConfigUtils` 全部走三方远程配置 SDK
+   （`of.b.f("android-watcher", "156")`，段名 `Parameter_Map`，fastjson 解析）。
+   当场用生产抓包样本核过：我们自己的 `clientConfig` 回包**没有** `Parameter_Map`，也没有 `showPermissionChannel`
+   → 这条不能靠自家路由凑。SDK 未接回，先留 `RemoteConfig` 接缝。
+   规则照抄：`entries.any { it == 当前渠道 } || entries.any { it == "-1" }`（`"-1"` 是原版写死的通配，来自 `p.b()`）。
+
+### 新增的依赖
+
+`com.tencent:mmkv:2.2.2`（APK 里只留下 `FLAVOR = "DefaultCpp"`，**没有版本字符串**，所以按公开最新版接，
+与 BRVAH 一样进待验清单：真机若出现"读不到老数据/多进程读写不一致"，先怀疑这里）。
+
+### 接线方式与验收
+
+`LinkUpApplication` 上三个 `open val` 不再写死：`keyValueStores` / `installChannel` / `remoteConfig` 全部可注入，
+`isVip`、`cachedFriendCount`、`askPermissionsAfterAdd` 变成对它们的真实读取。
+新增 `LocalCacheTest` **9 条**，其中一条专门钉住三个键名（`user2` / `friendList` / `showPermissionChannel`）——
+键名是这次恢复的产物，写错不会报错，只会永远读成默认值。
+
+全套：`:app` 92 tests / 0 failures、`:net` 7 / 0（合计 **99**），`assembleDebug` 通过，业务布局 inflate 仍 306/335。
+
+**装包后的真实状态**（不等真机也说得清）：写入方（登录流、IM 好友缓存）还没重建，渠道段与远程配置 SDK 也还没接，
+所以现在装上包这三个读数仍然是 `false / 0 / false`——**只是不再是因为代码写死了**。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -548,18 +598,22 @@ ViewBinding）→ app 侧 `BaseFrameDialog` → 具体弹窗。
 | 6 | 服务端 Go 源码在内网哪台机 | 公网探不到 Jenkins（`8080` 不可达、`/login` 404），只能内网找 CI 与仓库 |
 | 7 | BRVAH 的确切小版本 | APK 内只留下 `com.chad.library.adapter4` 类结构，版本字符串没提取出来；现按 4.1.7 编，若线上列表行为（动画/复用/加载更多）与真机对不上，先怀疑这里 |
 | 8 | 好友申请屏在真机上的滚动分页与 28dp 圆角效果 | Robolectric 里是我手动 measure/layout 的；真实手指滚动、末行圆角与白卡阴影必须装包看屏 |
-| 9 | `isVip` / 好友数缓存 / `showPermissionChannel` 三个读数的真实值 | MMKV 层（`CacheUtils`/`ConfigUtils`）尚未重建，当前是 `LinkUpApplication` 上的 open 默认值，装包后走的是错分支，需接回后复验 |
+| 9 | ~~三个读数是写死的默认值~~ → 现在还剩什么 | **读已按原样接上**（五点十四：MMKV 键 `user2`/`friendList`、isVip 规则、渠道通配规则，9 条测试钉住）；仍待的是**写入方**：登录流没重建 → `user2` 没人写；IM 缓存没重建 → `friendList` 没人写；渠道段与远程配置 SDK 没接 → 装包后这三个值今日仍是 false/0/false，但不再因为代码写死 |
 | 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有 |
 | 11 | 头像加载的占位/圆角/淡入 | 原版是 `fastkit.widget.i.f(view, url, null)`，参数在混淆体里取不出来，本轮用 Glide 直连，只保证"显示出来" |
 | 12 | `normalButtonStyle` 在 `isEnabled=false` 时的实际观感 | 逻辑已按原版还原（非 0 态禁用并改文案），效果要装包看屏 |
 | 13 | 「我的好友」的真实数据、被删好友后的刷新、空列表自关屏这条路径 | 数据源是 IM manager（卡片未做），当前只能由测试喂列表与命令；真机上这三条都要走一遍 |
 | 14 | 体验好友角标 | 本屏把 `userId<=0` 过滤掉了，这条分支只有用同一 decoration 但不过滤的那些屏才会出现，需连那些屏一起验 |
 | 15 | 推送命令"等 RESUMED 消费一次"的真实行为 | 原版 `launchWhenResumed` 在 lifecycle 2.7 已删除，我用 `whenStateAtLeast(RESUMED)` 等价替换；退后台再回前台是否会重复处理同一条命令，只能真机确认 |
-| 16 | 四个弹窗的真实交互（ConfirmDialog / UpdateRelationDialog / UpdateUsernameDialog / FriendPermissionsSettingsDialog） | 本轮用 `FriendInfoDialogs` 接口 + 假实现把回调打出来，动作链路已全绿；弹窗本体是单独一张卡，做完它这一屏与申请流的两处才算真能点 |
+| 16 | 四个弹窗的真实交互 | 弹窗本体已落地并用真视图树测过（点哪键、回报什么、✕ 传什么）；剩下的**观感**——300ms 动画、键盘 300ms 延迟、遮罩色、圆角卡片——要装包看 |
 | 17 | 权限更新的两阶段流程（先 POST friend_sens，失败再逐类型回灌） | 有意**没有**半接线，见五点十二末段 |
 | 18 | 聊天入口 | `ChatActivity` 属 IM 卡片，只留了 `openChat` 意图 |
 | 19 | "friend_delete" 广播的订阅方 | 已按原版主题名发出，但接收方（会话列表等）还没重建，端到端要等那些屏 |
 | 20 | 两条硬编码中文 toast 要不要进资源表 | 原版调用点就是字面量（"你们已不是好友" / "该账号已注销"），改不改是 i18n 决定 |
+| 21 | MMKV 的确切版本 | APK 里只留 `FLAVOR = "DefaultCpp"`、没有版本字符串，现接公开最新 2.2.2；真机若出现"读不到旧数据 / 多进程读写不一致"先怀疑这里 |
+| 22 | 渠道号 | 原版从 APK 签名块中魔数 `1903654775` 的自定义 section 读；我们现在的包没这段 → 走默认 `"0"`。要配套做"打包写入 + 安装读出"，属发布链那张卡 |
+| 23 | `showPermissionChannel` 这类远程配置 | 走三方配置 SDK（`of.b.f("android-watcher","156")` + fastjson），**不是**我们自己的 `clientConfig`（已用生产回包样本核过没有这个键）；SDK 未接回前恒 false |
+| 24 | 老用户升级时 `user2` 读不到之后的旧 Parcelable 回读 | 我们的 DTO 不是 Parcelable，这段没搬；那批老用户装新包会显示成未登录，等登录流接管写入时一并定 |
 
 ## 十、下一步顺序（建议）
 

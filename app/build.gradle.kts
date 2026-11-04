@@ -62,6 +62,7 @@ dependencies {
     implementation("com.google.android.material:material:1.10.0")
     implementation("com.airbnb.android:lottie:6.4.0")
     implementation("io.github.cymchad:BaseRecyclerViewAdapterHelper4:4.1.7")
+    implementation("com.tencent:mmkv:2.2.2")
 
 
     // --- recovered third-party UI dependencies (probe batch) ---
