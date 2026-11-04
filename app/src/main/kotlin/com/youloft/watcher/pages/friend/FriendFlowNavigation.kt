@@ -29,7 +29,10 @@ interface FriendFlowNavigation {
     /** `ContactInfoListActivity`, reached only after READ_CONTACTS has been granted. */
     fun openContactList()
 
-    /** `QRCodeScanActivity`, reached only after CAMERA has been granted; its result goes back to the caller. */
+    /**
+     * `QRCodeScanActivity`, reached only after CAMERA has been granted. Screens that need the payload
+     * launch it through their own result launcher instead (as the recovered add-friend screen did).
+     */
     fun openQrScanner()
 
     /** The membership page, reached from a friend-quota wall. `source`/`label` are what the caller reported. */
@@ -42,7 +45,7 @@ interface FriendFlowNavigation {
     fun showPermissionSettings(friendUserId: Long)
 }
 
-/** Not rebuilt yet: `ChatActivity`, `QRCodeScanActivity`, `AgreeAddActivity`. */
+/** Not rebuilt yet: `ChatActivity`, `AgreeAddActivity`. */
 class DefaultFriendFlowNavigation(
     private val activity: Activity,
 ) : FriendFlowNavigation {
@@ -63,7 +66,9 @@ class DefaultFriendFlowNavigation(
         ContactInfoListActivity.start(activity)
     }
 
-    override fun openQrScanner() = Unit
+    override fun openQrScanner() {
+        activity.startActivity(QRCodeScanActivity.intent(activity))
+    }
 
     override fun openVip(source: Int, label: String) = Unit
 

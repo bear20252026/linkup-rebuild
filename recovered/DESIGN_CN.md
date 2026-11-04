@@ -849,6 +849,82 @@ VM 的 `getContactInfoList` → `t()`：`Regex("(\+\d{1,3}\s*)|(\s+)").replace(r
 3. **空串号码要不要保留**：行为照搬了，判定留给产品/后端。
 4. 老几样：埋点汇、同意后 IM 侧效应、`AgreeAddActivity`、隐私两阶段回灌。
 
+## 五点十九、扫码屏（#20 后半，2026-11-04）
+
+`QRCodeScanActivity` 是"扫一扫"那条线的落地屏，也是 #15 留的最后一条空跳转。做完它，
+**添加好友四条路径全部闭合**：手输匹配码、手输手机号、扫码、H5 深链。
+
+### 一个明确的取舍：**不引回 `com.king.zxing:zxing-lite`**
+
+原版 `extends com.king.zxing.BarcodeCameraScanActivity`（公开库，Maven Central 有 `com.king.zxing:zxing-lite`，
+依赖 CameraX）。这轮**没有把它接回来**，理由三条：
+
+1. **版本取不出来**：APK 里只有类名，MMKV/BRVAH/zxing-core 那一串"按公开最新接"的债不想再加一笔；
+2. **布局本来就写着 CameraX**：1.6.6 的 `activity_qr_code_scan.xml` 直接放
+   `androidx.camera.view.PreviewView`，CameraX 与 zxing-core 都已在依赖里；
+3. **这屏真正独有的东西很薄**：库替我们做的是"预览 + 逐帧解码循环"，其余（结果约定、遮罩、扫描线、
+   相册分支、闪光灯）全是本屏自己的代码。
+
+代价写清楚：**帧循环是我们自己接的，原版那套配置里的两个布尔没能对上名字**（见下）。
+
+### 从原版核出来的、照搬的行为
+
+| 事实 | 出处 |
+|---|---|
+| 结果键 `SCAN_RESULT`，`setResult(RESULT_OK, …)` 后 `finish()` | `f64728i` / `f63935i`，两版同名 |
+| **只解 QR**（`decodeFormats = QR_CODE_FILTER_DATA`） | `mb.c.f75453c = b(BarcodeFormat.QR_CODE)` |
+| **整帧分析**（`cropRatio = 1.0f`，库默认 0.8f） | `bVar.q(…).n(1.0f)`，setter 上有 `@FloatRange(0.5,1.0)` |
+| 命中一次就**停止分析**（再回前台才恢复） | `h(result)` 里先 `s().o(false)`；`onPause/onResume` 成对开关 |
+| 扫描线 **2000ms**、REVERSE、无限循环、从当前 translationY 到父容器高 | `S()`，时长取自 `com.blankj.utilcode.util.q.f20405k = 2000L` |
+| 遮罩 = `Color.argb(153,0,0,0)` 的 ColorDrawable 套 `utils.t`，**用 CLEAR 在 `fl_qr_scan` 矩形上挖洞**，且在 `post{}` 里建（要等布局完成） | `U()` + `utils/t.java` |
+| 相册走**系统 `ACTION_PICK` + `image/*`**（不是自家 PictureSelector 屏） | `c.onGranted` |
+| 权限按 **SDK≥29 分叉**：`READ_MEDIA_IMAGES` / `READ_EXTERNAL_STORAGE` | `W()` |
+| 相册图走**两遍解码**：先 `inJustDecodeBounds` 量尺寸，再按 **800×800** 定 `inSampleSize` | `b.C0867b` + `O(options,800,800)` |
+| 命中后震动（`VIBRATE` 在 1.6.6 清单里） | 配置链里 `s(true)`；60ms 是我们的取值 |
+
+`O()` 那条降采样循环有个反直觉点：**它比的是"一半"的尺寸**（`outHeight/2 / sample >= reqHeight`），
+所以 4000×3000 对 800×800 只给到 **2**，不是 4。已按实际值钉住。
+
+### 没对上名字的两个布尔（诚实记账）
+
+原版配置链是 `q(QR_FORMATS).p(false).n(1.0f).m(0).s(true).u(true)`。`n()` 是 cropRatio（有
+`@FloatRange` 佐证）、`q()` 是 decodeFormats（类型对上）；`p(false)`、`m(0)`、`s(true)`、`u(true)`
+落到 `f75447h/f75450k/f75442c/f75443d` 四个字段上，**没有库源码就定不了名**（可能是 beep / vibrate /
+连续扫描 / 查重 / 期望帧率里的几个）。我没猜：只实现了"命中震动"这一条（有 `VIBRATE` 权限作旁证），
+其余三个开关留作待验第 38 条。
+
+### 本机测不了像素这件事，这轮又撞上一次
+
+扫码测试本来该直接喂 `MatchCodeQrPainter.render()` 出来的位图给解码器，但**上一轮记下的那条
+Robolectric 光栅化缺陷让它解不出**（Canvas 画的东西不进像素缓冲）。所以测试端把 #19 的
+"版面 → int[]"栅格化提成共享工具 `app/src/test/.../view/QrPlanRaster.kt`，扫码测试走
+`Bitmap.createBitmap(pixels…)`（`setPixels` 路径可靠）再喂 `QrDecoder`。
+于是有了一条真正的端到端：**画码器排的版面 → 像素 → 解码器解回同一串 URL**。
+`zxing-lite` 已确认不在包里（`com/king` 无匹配）。
+
+### 接线
+
+- `AddFriendActivity` 恢复用**结果启动器**发扫码（原版 `B.launch(...)` 就是这个形状）：相机授权通过 →
+  `scanLauncher.launch(QRCodeScanActivity.intent(this))` → 回调喂给已测过的 `onQrResult(raw)`；
+- `FriendFlowNavigation.openQrScanner()` 同时换成真 `startActivity`（给"只要扫、不要结果"的调用方用）；
+- 清单加本屏条目（`screenOrientation="portrait"`，与原版一致）与 `CAMERA` / `READ_MEDIA_IMAGES` /
+  `READ_EXTERNAL_STORAGE(maxSdk=32)` / `VIBRATE` —— **四条都在 1.6.6 清单里核过原样**。
+
+### 数字
+
+新增 **14 条测试**（扫码屏 11 + 权限分叉 2 + 添加好友回路 1），`:app` **190 / 0 failures**、
+`:net` **10 / 0**，合计 **200 全绿**。`assembleDebug` 通过，APK 61,848,174 B；已核 `QRCodeScanActivity`、
+`QrDecoder`、`ScanMaskDrawable`、布局都在包里，`com/king` 不在。业务布局 inflate **仍 306/335**。
+
+### 不在本卡里的
+
+1. **真机预览与逐帧解码**：`ProcessCameraProvider` 在 Robolectric 下不可用，相机绑定整个走
+   `CameraBinder` 缝，测试里不绑。所以"打开就能扫、光线差时的表现、预览方向/镜像"必须装包验。
+2. **闪光灯实际效果**：`enableTorch` 已接，但没相机就无从断言。
+3. **遮罩挖洞的观感**：`ScanMaskDrawable` 用 `PorterDuff.CLEAR` + `saveLayer`，像素类断言本机不可信 → 看屏。
+4. **系统相册选图那一条端到端**：`ACTION_PICK` 在真机才有回包，测试只覆盖了"无 uri 就忽略"。
+5. `p/m/u` 三个配置开关、埋点汇、渠道号（仍等你拍板）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -959,6 +1035,9 @@ VM 的 `getContactInfoList` → `t()`：`Regex("(\+\d{1,3}\s*)|(\s+)").replace(r
 | 34 | 加载遮罩的观感 | 本体已落地（非聚焦窗口、SVGA 起停、最短显示规则都有测试）；`loading.svga` 的实际动画、遮罩透明度、100dp 卡片圆角要装包看。**另注**：本机 Robolectric 光栅化不可信（画红方块读回是白的），所以任何"像素对不对"的判断都只能上人眼 |
 | 35 | zxing 的确切版本 | APK 里只有类名、没有版本串，现接公开 `com.google.zxing:core:3.5.3`；`Encoder`/`ByteMatrix` 是 zxing 内部 API（不是 `MultiFormatWriter` 那条公共面），若将来对齐不上老版本的模块排布，先怀疑这里 |
 | 36 | 真机上读通讯录的那段游标遍历 | 子句（投影/选择/排序/"一人只取第一个号码"/收录规则）是照搬并有单测的，但本机没有可注入的 `ContentResolver` 假提供者，遍历本身只能上真机；MIUI/原生通讯录的 `has_phone_number` 与邮箱列行为差异也要在这一步看 |
+| 37 | 扫码屏的真机预览与逐帧解码 | Robolectric 下 `ProcessCameraProvider` 不可用，相机绑定整条走 `CameraBinder` 缝、测试里不绑。装包要看：打开即出画面、预览方向/镜像、光线差与远距离时的识别率、退出后相机是否真释放 |
+| 38 | 原版配置链里 `p(false)` / `m(0)` / `u(true)` 三个开关的语义 | 那四个布尔/整型字段落在 `com.king.zxing:zxing-lite` 里，没有库源码定不了名（可能是 beep / 连续扫描 / 查重 / 期望帧率）。我们只实现了有旁证的"命中震动"，其余**没猜** |
+| 39 | 闪光灯与遮罩挖洞的实际观感 | `enableTorch` 已接、`ScanMaskDrawable` 用 `PorterDuff.CLEAR`+`saveLayer` 已接；一个没相机没法断言，一个是像素类断言本机不可信（见五点十九） |
 
 ## 十、下一步顺序（建议）
 

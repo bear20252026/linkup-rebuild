@@ -551,6 +551,17 @@ class AddFriendActivityTest {
     }
 
     @Test
+    fun `the scanner is launched through a result launcher, as in the original`() {
+        val activity = launch()
+
+        activity.launchScanner()
+        idle()
+
+        val started = shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>()).nextStartedActivity
+        assertEquals(QRCodeScanActivity::class.java.name, started.component?.className)
+    }
+
+    @Test
     fun `the contacts entry launches the real screen now`() {
         val activity = launch()
 

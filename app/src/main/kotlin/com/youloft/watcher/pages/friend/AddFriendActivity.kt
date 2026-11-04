@@ -68,8 +68,12 @@ class AddFriendActivity : AppCompatActivity() {
 
     private var myUserId = 0L
 
+    private val scanLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) onQrResult(result.data?.getStringExtra(QRCodeScanActivity.EXTRA_SCAN_RESULT))
+    }
+
     private val cameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) navigation.openQrScanner()
+        if (granted) scanLauncher.launch(QRCodeScanActivity.intent(this))
     }
 
     private val contactsPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -280,6 +284,11 @@ class AddFriendActivity : AppCompatActivity() {
     private fun requestScan() {
         lastSearch = null
         cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+    }
+
+    /** The launcher's other half; kept separate so a test can deliver a scanned payload. */
+    internal fun launchScanner() {
+        scanLauncher.launch(QRCodeScanActivity.intent(this))
     }
 
     private fun requestContacts() {
