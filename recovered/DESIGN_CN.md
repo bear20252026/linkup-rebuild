@@ -925,6 +925,126 @@ Robolectric 光栅化缺陷让它解不出**（Canvas 画的东西不进像素�
 4. **系统相册选图那一条端到端**：`ACTION_PICK` 在真机才有回包，测试只覆盖了"无 uri 就忽略"。
 5. `p/m/u` 三个配置开关、埋点汇、渠道号（仍等你拍板）。
 
+## 五点二十、渠道段与远程配置（#17，2026-11-04）
+
+一句结论：**这两件"外部依赖"都不是外部依赖**。渠道段是自家打包环节写进 APK 签名块的一段 JSON，
+配置服务是自家的一个 HTTP GET。两个原包都实测过，重建工程两侧都写完了，剩下的只有装机确认。
+
+### 读侧家底：`hc.a` 就是 Walle 的 `ApkUtil`
+
+原版渠道读取链（1.5.6 → 1.6.6 只换包名 `hc`→`kc`，逐条照搬）：
+
+```
+utils.p.d() → hc.i.d(context, "0") → hc.d.a(File) → hc.f.d(file, 1903654775)
+            → hc.a.f(pairs) 解析签名块全部 pair → new String(bytes, "UTF-8")
+            → hc.d.b 用 org.json 摊平成 Map<String,String>
+            → hc.c(channel, 其余键)
+```
+
+`hc.a` 里的常量我 2026-11-04 与美团开源的 Walle `payload_reader/…/ApkUtil.java` 逐个对过，全中：
+
+| 原版常量 | 值 | Walle 里叫什么 |
+|---|---|---|
+| `f71818g` | `1903654775` = `0x71777777` | `APK_CHANNEL_BLOCK_ID` —— **渠道段** |
+| `f71815d` | `1896449818` = `0x7109871A` | `APK_SIGNATURE_SCHEME_V2_BLOCK_ID`（app 没用，只是抄进来的） |
+| `f71816e` | `1114793335` = `0x42726577` | `VERITY_PADDING_BLOCK_ID`（同上，app 没用） |
+| `f71812a/f71813b` | 两个 long | `APK Sig Block 42` 的小端高低半 |
+| `f71820i/f71821j/f71823l/f71814c/f71817f/f71822k` | 22 / `0x06054b50` / 20 / 32 / 4096 / 65535 | EOCD 最小长、EOCD 魔数、注释长字段偏移、块最小长、页对齐、uint16 上限 |
+
+**但 payload 不是 Walle 的**。Walle 往这个段里写它自己的二进制 payload（长度前缀的 key/value），
+而 `hc.d` 是把这段字节直接 `new JSONObject(...)`。所以打包端一定是**自己写 JSON 进去**的那一步，
+不能用 Walle 插件——这也是重建里写入端（`:net:tagChannel`）自己实现的原因。
+
+### 决定性的一条：**两个原包都真的带这段**，18 字节
+
+2026-11-04 直接在盘上量 `_raw/com.youloft.watcher1.6.6.apk` 与 `1.5.6.rebuilt.apk` 的签名块，
+两包的 pair 列表都是 4 段，且渠道段内容**一模一样**：
+
+```
+0x7109871A  v2 签名        1306 B
+0x504B4453  未知段         14527 B / 14439 B（文件内字节序 "SDKP"，归属待查）
+0x42726577  verity padding 483 B / 571 B
+0x71777777  {"channel":"3305"}   18 B   ← 两包相同
+```
+
+这一条值三个钱：
+
+1. 打包环节确实存在（在丢掉的那台 CI 里），**格式已完整还原**，我们能逐字节复现；
+2. **线上包的渠道号是 `3305`**，而 `utils.p` 里比较的是 3801 / 3300 / 3301 / 3302 / 3303 / 3304 / 4000
+   ——**一个都没命中**：线上包既没有加友页底提示（`AddFriendTipsPolicy` 返回 null），也不走任何特判；
+3. 权限门那条由此有了真值。1.5.6 的规则是"配置列表里含本渠道或含 `-1`"
+   （`ConfigUtils.n()`：`l0.g(channel, item) || l0.g(item, p.b())`，`p.b()` 恒 `"-1"`），
+   今天的配置回包列表正是 `["3300","3301","-1"]` ⇒ **通配命中，会弹**；
+   1.6.6 换成 `channel == "3301"` ⇒ 3305 **不弹**。
+   也就是说：换判据这件事，让线上所有包从此不再问权限。这条是本轮才算钉住的，#15 当时只能记成"改判了"。
+
+`0x504B4453` 那个 14 KB 的段我没认出归属（两包都有、内容高熵、非 Walle 非 apksig 已知号段），
+不猜，列进待查。
+
+### 写侧实测：签完再打段，**不用重签**
+
+拿我们自己的 `app/build/outputs/apk/debug/app-debug.apk` 走一遍 `gradle :net:tagChannel`：
+
+```
+tagged demo-debug.apk: channel=3305 extras={}
+apksigner verify -v → Verifies / v2 = true / v3 = false，证书仍是 CN=Android Debug
+unzip -t          → No errors detected
+签名块            → 0x7109871A(1390) + 0x42726577(2650, AGP 自己加的 verity padding) + 0x71777777(18)
+```
+
+原理与原版一致：v2/v3 的摘要只覆盖平台自己的段，额外 pair 在签名数据之外。
+注意 AGP 打的包本来就有 verity padding 段，所以打完只剩"多一段渠道"，结构与原包对齐。
+
+### 配置服务：`of.b`（1.5.6）/ `nf.b`（1.6.6）是我们自己写的 OkHttp 客户端
+
+不是三方 SDK。逐条还原（`of/b.java` 300 行，读侧 `ConfigUtils`）：
+
+| 事实 | 出处 / 实测 |
+|---|---|
+| 地址 `https://cfg.51wnl-cq.com/api/getallconfig.ashx`，**现在 302 到** `configsys.51wnl-cq.com/api/config/getconfigs?appid&appver&lastupdate` | `of.b.f76660d`；302 保留 query，实测 |
+| `appid` 恒 `android-watcher`；**`appver` 1.5.6 发 `"156"`、1.6.6 发 `"166"`** | `ConfigUtils.c()` vs 1.6.6 `ConfigUtils.b()`；两种 appver 实测回同一份 `Parameter_Map` |
+| `msg` 里**每个值都是 base64**，逐键摊进设置 | `of.b.d` = `Base64.decode(str, DEFAULT)`；`SettingProvider.E(context, key, d(value))` |
+| 令牌就是回包的 **`r`**，存在 `online_lastupdate` | `of.b.o()` 里 `getString("r")` 立刻被 `getLongValue("r")+""` 覆盖（原版这行是废的）；实测带 `lastupdate=<r>` 服务器回 `{"msg":{},"status":1}` |
+| 节流两条：存的 `online_lastrequest_ver` ≠ 当前 appver ⇒ 清令牌重全量；否则 10 分钟内直接 return | `of.b.o()`，`600000` |
+| 设备身份参数（拦截器 `of.b.l` + `of.c`）：`bd`=包名、`cid`=常量 `Youloft_Android`、`av`=版本名、`chn`=渠道**加 `"-0"` 后缀**、`ov`=`Build.VERSION.RELEASE`；`did`/`cityCode` 原版留空 | `ConfigUtils$a.c()`；都不带也回全量，只影响定向 |
+| 拉取时机：**启动**。`SdkInitManager:435` → `ConfigUtils.m()` → `of.b.j(...)` + `n()`（`f76659c` 防重入） | 重建**没有**照搬，见下"落在代码里" |
+| `showPermissionChannel` 在 1.6.6 已是**死键**：`ConfigUtils` 只剩通用 `j(key)`，`o()/n()` 整条没了，全 APK 搜不到该串；`registerAfterShowPermission` 两版都没读过 | 1.6.6 `ConfigUtils.java` 183 行 vs 1.5.6 209 行；grep 两版源码 |
+
+18 个键里真被代码引用的（1.5.6）：`showPermissionChannel`（仅 1.5.6）、`guard_triggerCount`、`im_triggerDays`、
+`linkupCooldown`、`chargingDelay`、`wifiConnectionDelay`、`screenLockUnlockDelay`、`enableAniWhenMarkerMoveDistance`、
+`scheduleReportPeriod` 等——默认值都写死在调用点，配置只是覆盖。
+
+### 落在代码里
+
+- `:net`：**`ApkSigningBlock`**（读 + 写 + 自检，`pairs`/`jsonSection`/`stamp`/`zipComment`）、
+  **`ChannelTagger`**（CLI：`gradle :net:tagChannel --args=<apk> <渠道> [k=v…]`，打完立刻读回来自检）、
+  **`ConfigService`**（URL、base64 摊平、`r` 令牌、两条节流、设备参数）；
+- `:app`：**`SigningBlockInstallChannel`**（对应 `hc.c`：`channel` 单拎、其余进 `extras()`，
+  段缺失回 `"0"`）、**`StoredRemoteConfig`** + `writeConfigFetch` + `refreshRemoteConfig`
+  （三个原版存储键名照搬 `online_lastupdate` / `online_lastrequest` / `online_lastrequest_ver`；
+  空 `msg` 只盖时间戳、不动 `Parameter_Map`，与 `of.b.o` 同）、
+  **`PermissionChannelGate`** 两条规则并存（`asksAfterAddFriend` = 1.6.6 在跑的那条）；
+- 探针屏新增两行读数：本机 APK 的渠道段（`channel.id` + `extras` + 页底提示 + 1.6.6 判据）与
+  一次真配置拉取（URL、是否该拉、令牌回显、存下来的 `showPermissionChannel`、1.5.6 判据）。
+  **启动自动拉取没有照搬**——原版在 `SdkInitManager` 里启动就拉；要不要跟，等你拍板（待验第 41 条）。
+
+### 数字
+
+`:net` **29 / 0**（`ApkSigningBlockTest` 9 —— 含一条"打完之后块的首尾 size 一致、CD 紧跟块尾"的字节级
+格式断言；`ConfigServiceTest` 10 —— 含 `r` 令牌、空 `msg`、设备参数、两条节流；其余 10 条是前几轮的）、
+`:app` **197 / 0**（`SigningBlockInstallChannelTest` 4、`LocalCacheTest` 13，本卡 +7），合计 **226 全绿**。
+`assembleDebug` 通过，APK 61,848,174 B；本卡没有新增布局，业务布局 inflate 仍 **306/335**。
+打标回路实测跑通两遍（09:56 与 10:01 各一次）：`:net:tagChannel` → `apksigner verify -v` v2=true →
+`unzip -t` 无错 → 签名块里 `0x71777777` 读出 `{"channel":"3305"}`。
+
+### 不在本卡里的
+
+1. **装机读出**：`context.applicationInfo.sourceDir` 在 Robolectric 下不是真 APK，签名块只能在真机上读；
+2. **`0x504B4453` 那 14 KB 段的归属**；
+3. **`3305` 是哪个商店/分发渠道**：代码里查不到，只有 CI 或运营知道；
+4. 打包环节是否还有别的步骤（对齐、verity、二次签名）只能从签名块结构反推，脚本已丢；
+5. 启动拉取与 10 分钟刷新要不要照搬；渠道写进发布链（`assembleRelease` 之后自动打标）要不要接。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1007,7 +1127,7 @@ Robolectric 光栅化缺陷让它解不出**（Canvas 画的东西不进像素�
 | 6 | 服务端 Go 源码在内网哪台机 | 公网探不到 Jenkins（`8080` 不可达、`/login` 404），只能内网找 CI 与仓库 |
 | 7 | BRVAH 的确切小版本 | APK 内只留下 `com.chad.library.adapter4` 类结构，版本字符串没提取出来；现按 4.1.7 编，若线上列表行为（动画/复用/加载更多）与真机对不上，先怀疑这里 |
 | 8 | 好友申请屏在真机上的滚动分页与 28dp 圆角效果 | Robolectric 里是我手动 measure/layout 的；真实手指滚动、末行圆角与白卡阴影必须装包看屏 |
-| 9 | ~~三个读数是写死的默认值~~ → 现在还剩什么 | 读已按原样接上（五点十四：MMKV 键 `user2`/`friendList`、isVip 规则、渠道通配规则，9 条测试钉住）；仍待的是**写入方**：登录流没重建 → `user2` 没人写；IM 缓存没重建 → `friendList` 没人写；渠道段与远程配置 SDK 没接 → 装包后这三个值今日仍是 false/0/false，但不再因为代码写死 |
+| 9 | ~~三个读数是写死的默认值~~ → 现在还剩什么 | 读已按原样接上（五点十四：MMKV 键 `user2`/`friendList`、isVip 规则、渠道通配规则，9 条测试钉住）；仍待的是**写入方**：登录流没重建 → `user2` 没人写；IM 缓存没重建 → `friendList` 没人写；渠道段与配置拉取**代码已接齐**（#17，五点二十），但我们的包默认没打标、也没人调用拉取 → 装包后这三个值今日仍是 false/0/false，且都不再因为代码写死 |
 | 10 | 详情屏同意键的"手感"（500ms 间隔 + 点击反馈） | 原版走 fastkit 的 `g0.x` 与 `ext.o.b`，ext 点击层没重建；间隔用活动内时间戳复现了，反馈（震动或音效）没有
 | 11 | 头像加载的占位/圆角/淡入 | 原版是 `fastkit.widget.i.f(view, url, null)`，参数在混淆体里取不出来，本轮用 Glide 直连，只保证"显示出来" |
 | 12 | `normalButtonStyle` 在 `isEnabled=false` 时的实际观感 | 逻辑已按原版还原（非 0 态禁用并改文案），效果要装包看屏 |
@@ -1020,13 +1140,13 @@ Robolectric 光栅化缺陷让它解不出**（Canvas 画的东西不进像素�
 | 19 | "friend_delete" 广播的订阅方 | 已按原版主题名发出，但接收方（会话列表等）还没重建，端到端要等那些屏 |
 | 20 | 两条硬编码中文 toast 要不要进资源表 | 原版调用点就是字面量（"你们已不是好友" / "该账号已注销"），改不改是 i18n 决定 |
 | 21 | MMKV 的确切版本 | APK 里只留 `FLAVOR = "DefaultCpp"`、没有版本字符串，现接公开最新 2.2.2；真机若出现"读不到旧数据 / 多进程读写不一致"先怀疑这里 |
-| 22 | 渠道号 | 原版从 APK 签名块中魔数 `1903654775` 的自定义 section 读；我们现在的包没这段 → 走默认 `"0"`。要配套做"打包写入 + 安装读出"，属发布链那张卡 |
-| 23 | `showPermissionChannel` 这类远程配置 | 走三方配置 SDK（`of.b.f("android-watcher","156")` + fastjson），**不是**我们自己的 `clientConfig`（已用生产回包样本核过没有这个键）；SDK 未接回前恒 false |
+| 22 | ~~渠道号~~ → **已由 #17 还原**：两个原包实测都带 `0x71777777` 段、内容 `{"channel":"3305"}`；读侧 `SigningBlockInstallChannel` + 写侧 `gradle :net:tagChannel` 都已落地并自检 | 本机已把自家 debug 包打上 3305 并验回（`apksigner verify` 仍 v2=true、`unzip -t` 无错）；**只剩"装到真机上 app 自己读出来"这一步**，见第 40 条 |
+| 23 | ~~`showPermissionChannel` 走三方配置 SDK~~ → **更正（#17）**：是我们自己的一个 OkHttp GET（`cfg.51wnl-cq.com` 302 → `configsys.51wnl-cq.com/api/config/getconfigs`），值全 base64，`Parameter_Map` 摊进设置 | 客户端已重建并用 2026-11-04 真回包钉住（18 个键、`showPermissionChannel=["3300","3301","-1"]`、令牌 `r` 已实测）。**另注**：1.6.6 已不读这个键，判据见第 28 条 |
 | 24 | 老用户升级时 `user2` 读不到之后的旧 Parcelable 回读 | 我们的 DTO 不是 Parcelable，这段没搬；那批老用户装新包会显示成未登录，等登录流接管写入时一并定 |
 | 25 | 真机上让 `user2` 真的有值 | 写入通道已通（#16），但**登录屏没重建**：短信/一键登录还牵着号码认证 SDK（`GYManager.preLogin`）与 `/api/sms/send`——后者我不会去碰（会发真短信）。过渡办法是探针屏那条 `GET api/user/info`，前提是先灌进一个有效 token |
 | 26 | 服务端公钥 PEM 的**页脚到底是四个还是五个横杠** | 原版按 `----END PUBLIC KEY-----`（四横杠）字面剥离；标准五横杠会残留 `-` → Base64 解不出 → 走 10086"匹配码无效都不弹"的静默分支。装包后打一次通讯录搜索即可判定 |
 | 27 | VIP 状态变化的四个副作用 | `AccountSideEffects.onVipStateChanged` 只有条件被测试钉住；IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播，都要等 IM/widget 那两张卡
-| 28 | 加完好友后弹不弹权限设置，真机上按哪条判据 | 已按 1.6.6 改成"渠道号==3301"；我们的包没有渠道段（第 22 条）会恒 false。要么先补渠道段，要么临时按 1.5.6 配置规则验 |
+| 28 | 加完好友后弹不弹权限设置，真机上按哪条判据 | **判据差异 #17 已量清**：线上包渠道是 `3305`，1.6.6 规则（`==3301`）恒不弹；1.5.6 规则在今天配置 `["3300","3301","-1"]` 下有 `-1` 通配 ⇒ 恒弹。剩下的是决定：重建包按哪条、打标打哪个号（第 22 条） |
 | 29 | 匹配码"四位一组"的显示与"裸 id"的复制 | 逻辑与文案已由测试钉住；实际观感（等宽字体 `sf_pro_rounded_bold_subset`、超长 id 换行、复制后系统剪贴板提示）要装包看 |
 | 30 | ~~二维码卡片是真空的~~ → **已由 #19 接上真绘制器**；剩下的是**真人拿手机扫这块屏** | 本机已用真 zxing 解码证明版面可读（含环形定位眼的 1:1:3:1:1），但相机抗畸变、透明底在不同主题下的对比度、130dp 显示尺寸够不够，只能装包扫一次 |
 | 31 | 键盘遮罩（`view_input_mask`）与输入框 focus 的联动 | 判定式已测（focus ∧ keyboardVisible）；fastkit 的 `KeyboardUtils` 只搬了全局布局监听 + 250/200 阈值，真实 IME 下的高度/时机要装包验，`adjustResize` 也没在清单里（原版就没有） |
@@ -1038,6 +1158,9 @@ Robolectric 光栅化缺陷让它解不出**（Canvas 画的东西不进像素�
 | 37 | 扫码屏的真机预览与逐帧解码 | Robolectric 下 `ProcessCameraProvider` 不可用，相机绑定整条走 `CameraBinder` 缝、测试里不绑。装包要看：打开即出画面、预览方向/镜像、光线差与远距离时的识别率、退出后相机是否真释放 |
 | 38 | 原版配置链里 `p(false)` / `m(0)` / `u(true)` 三个开关的语义 | 那四个布尔/整型字段落在 `com.king.zxing:zxing-lite` 里，没有库源码定不了名（可能是 beep / 连续扫描 / 查重 / 期望帧率）。我们只实现了有旁证的"命中震动"，其余**没猜** |
 | 39 | 闪光灯与遮罩挖洞的实际观感 | `enableTorch` 已接、`ScanMaskDrawable` 用 `PorterDuff.CLEAR`+`saveLayer` 已接；一个没相机没法断言，一个是像素类断言本机不可信（见五点十九） |
+| 40 | 打上 3305 的包，app 自己在真机上把渠道读出来 | Robolectric 里 `applicationInfo.sourceDir` 不是真 APK，签名块只能在设备上读。做法：`gradle :net:tagChannel --args=<apk> 3305` → 装 → 探针页应显示 `channel.id=3305`、`addFriendTips=null`、`askPermissionsAfterAdd=false` |
+| 41 | 远程配置要不要在启动时自动拉（原版 `SdkInitManager` 会拉、10 分钟节流） | 代码两侧都齐（`refreshRemoteConfig`），但**有意没接到启动流程**——这是产品/合规决定（未同意隐私政策前是否允许打这个域名），等你拍板 |
+| 42 | `0x504B4453` 那个 14 KB 段的归属；发布链是否还写了别的东西 | 两个原包都有、内容高熵、既不是 Walle 也不是 apksig 的已知号段，打包脚本已丢 → 只有 CI 或运维能认 |
 
 ## 十、下一步顺序（建议）
 

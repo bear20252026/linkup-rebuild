@@ -23,6 +23,17 @@ kotlin {
     }
 }
 
+/**
+ * Stamps the install-channel section into an APK the same way the recovered app reads it.
+ * Run: gradle :net:tagChannel --args=<apk> <channel>
+ */
+tasks.register<JavaExec>("tagChannel") {
+    group = "recovery"
+    description = "Writes the 0x71777777 channel section into an already-signed APK (extra pairs sit outside the v2/v3 digest)"
+    mainClass.set("com.youloft.linkup.net.ChannelTagger")
+    classpath = sourceSets.main.get().runtimeClasspath
+}
+
 tasks.register<JavaExec>("liveVerify") {
     group = "verification"
     description = "Signs a real request with the recovered algorithm and calls the live backend"

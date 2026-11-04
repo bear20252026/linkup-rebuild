@@ -19,23 +19,18 @@ class FallbackInstallChannel(private val id: String = DEFAULT) : InstallChannel 
 }
 
 /**
- * The vendor remote-config service the recovered `ConfigUtils` read through
- * (`of.b.f("android-watcher", "156")` → section `Parameter_Map`). That SDK is not in the rebuilt
- * dependency set yet, so this seam returns nothing until it is reintegrated.
+ * The app's own settings-backed config (`Parameter_Map`), as recovered from `ConfigUtils`: reads come
+ * out of the store the config service wrote into, never out of the network. See `StoredRemoteConfig`.
  */
 interface RemoteConfig {
     fun stringList(key: String): List<String>
 }
 
-object PendingRemoteConfig : RemoteConfig {
-    override fun stringList(key: String): List<String> = emptyList()
-}
-
 /**
  * `ConfigUtils.showPermissionChannel` matched against the install channel.
  *
- * Both rules are recovered facts, one per shipped version: 1.5.6 asked its vendor config service for
- * a list of channels, 1.6.6 dropped that and compares the channel against `3301` in code — at all
+ * Both rules are recovered facts, one per shipped version: 1.5.6 asked the config service for a list
+ * of channels, 1.6.6 dropped that and compares the channel against `3301` in code — at all
  * four call sites (add friend, contacts, request list, request detail). The rebuilt app is the 1.6.6
  * build, so [asksAfterAddFriend] is the shipping rule and [asksAfterAddFriendByConfig] is kept as
  * the older one because it explains what the config key was for.

@@ -1,0 +1,44 @@
+{
+  "endpoint": "https://configsys.51wnl-cq.com/api/config/getconfigs?appid=android-watcher&appver=156&lastupdate=0",
+  "redirected_from": "https://cfg.51wnl-cq.com/api/getallconfig.ashx",
+  "observed_at": "2026-11-04",
+  "envelope_note": "literal response keys; every value under msg is base64 (of.b.d decodes it). 2026-11-04 correction: an earlier copy of this file wrote the key as 'msg.Parameter_Map', which was a label of mine, not the server's key.",
+  "envelope": {
+    "msg": {
+      "Parameter_Map": "<base64, decoded below>"
+    },
+    "status": 1,
+    "r": 17533440860101,
+    "rver": "156_1753344086_101010100"
+  },
+  "parameter_map": {
+    "registerAfterShowPermission": true,
+    "showPermissionChannel": [
+      "3300",
+      "3301",
+      "-1"
+    ],
+    "enableAniWhenMarkerMoveDistance": 100,
+    "sendCmdLocationDistanceThreshold": 10,
+    "autoReportStayTimeThreshold": 7200,
+    "distanceToStayPoint": 250,
+    "guard_triggerCount": 5,
+    "im_triggerDays": 3,
+    "canStepOver": true,
+    "requestTimeWhenNoLoc": 600,
+    "lowSpeedThreshold": 5,
+    "lowSpeedTimesAsWalk": 90,
+    "lowSpeedLocInterval": 5000,
+    "movingTrackDelay": 180,
+    "linkupCooldown": 300,
+    "wifiConnectionDelay": 5,
+    "chargingDelay": 5,
+    "screenLockUnlockDelay": 5
+  },
+  "also_measured_2026-11-04": {
+    "lastupdate_is_the_r_token": "GET with lastupdate=17533440860101 answered {\"msg\":{},\"status\":1,\"r\":17533440860101,\"rver\":\"156_1753344086_101010100\"}",
+    "appver_166": "appver=166 returns the same Parameter_Map; rver echoes the requested appver ('166_...')",
+    "device_params_optional": "the answer came back complete without bd/cid/av/chn/ov, which the recovered interceptor appended (of.b.l + of.c)",
+    "legacy_redirect": "cfg.51wnl-cq.com/api/getallconfig.ashx -> 302, Location keeps the whole query string"
+  }
+}

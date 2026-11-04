@@ -2,6 +2,7 @@ package com.youloft.watcher.data
 
 import android.app.Application
 import android.content.Context
+import android.os.Build
 import com.youloft.linkup.api.dto.ConfirmAdd
 import com.youloft.linkup.api.dto.Friend
 import com.youloft.linkup.api.dto.FriendApply
@@ -16,13 +17,14 @@ import com.youloft.linkup.net.LinkUpClient
 import com.youloft.watcher.AndroidDeviceContext
 import com.youloft.watcher.data.local.FriendCache
 import com.youloft.watcher.data.local.InstallChannel
-import com.youloft.watcher.data.local.FallbackInstallChannel
+import com.youloft.watcher.data.local.SigningBlockInstallChannel
 import com.youloft.watcher.data.local.KeyValueStores
 import com.youloft.watcher.data.local.MmkvKeyValueStores
 import com.youloft.watcher.data.local.AddFriendTipsPolicy
 import com.youloft.watcher.data.local.AddFriendTips
 import com.youloft.watcher.data.local.PermissionChannelGate
-import com.youloft.watcher.data.local.PendingRemoteConfig
+import com.youloft.linkup.net.ConfigService
+import com.youloft.watcher.data.local.StoredRemoteConfig
 import com.youloft.watcher.data.local.RemoteConfig
 import com.youloft.watcher.data.local.UserCache
 import com.youloft.watcher.view.MatchCodeQrPainter
@@ -128,7 +130,7 @@ open class LinkUpApplication : Application() {
 
     private val friendCache by lazy { FriendCache(keyValueStores, accountCache) }
 
-    private fun deviceContext() = AndroidDeviceContext(this, accountCache)
+    private fun deviceContext() = AndroidDeviceContext(this, accountCache, installChannel)
 
     /**
      * The live friend list and push channel the friend screens observe. The IM manager behind it is a
@@ -142,11 +144,38 @@ open class LinkUpApplication : Application() {
      */
     open val keyValueStores: KeyValueStores by lazy { MmkvKeyValueStores(this) }
 
-    /** `hc.i` read the channel out of the APK's signing block; that reader is its own card. */
-    open val installChannel: InstallChannel get() = FallbackInstallChannel()
+    /**
+     * `kc.i` (1.6.6; `hc.i` in 1.5.6) read the install channel out of this APK's own signing block
+     * (`0x71777777`, JSON, `channel` key, fallback `"0"`), once per process. The reader is ported; our
+     * builds have no such section until `gradle :net:tagChannel` runs, so this answers `0` and every
+     * channel gate falls back.
+     */
+    open val installChannel: InstallChannel get() = SigningBlockInstallChannel.from(this)
 
-    /** The vendor config SDK (`of.b.f("android-watcher", "156")`) is not reintegrated yet. */
-    open val remoteConfig: RemoteConfig get() = PendingRemoteConfig
+    /**
+     * `nf.b.f("android-watcher","166")` turned out to be **our own config service**, not a vendor SDK
+     * (#17): a plain GET on `cfg.51wnl-cq.com`, which now 302s to `configsys.51wnl-cq.com`. Reads come
+     * from the stored `Parameter_Map`, exactly like the recovered `ConfigUtils.j` did — in 1.6.6 that is
+     * the only reader left, because `showPermissionChannel` lost its accessor along with the gate
+     * (five-point sixteen).
+     */
+    open val remoteConfig: RemoteConfig get() = StoredRemoteConfig(keyValueStores)
+
+    /**
+     * The recovered client plus the identity `ConfigUtils$a.c()` handed to its interceptor: `bd` package
+     * name, `cid` the constant, `av` version name, `chn` the channel with a `"-0"` suffix, `ov` the OS
+     * release. Nothing required them — the same answer came back without — they steer targeting only.
+     */
+    open val configService: ConfigService
+        get() = ConfigService(
+            params = mapOf(
+                "bd" to packageName,
+                "cid" to ConfigService.CLIENT_ID,
+                "av" to deviceContext().appVersion,
+                "chn" to installChannel.id() + "-0",
+                "ov" to Build.VERSION.RELEASE,
+            ),
+        )
 
     private val permissionChannels by lazy { PermissionChannelGate(installChannel, remoteConfig) }
 
