@@ -673,7 +673,9 @@ platform.copy(userIdText)                                                    // 
   `fastkit/.../utils/KeyboardUtils.kt`、`net/.../ContactSearchEnvelope.kt`；两个布局
   （`activity_add_friend`、`dialog_verify_info`）按惯例复制进 `:app`；清单注册了 Activity，并补了
   `<queries>`（Android 11+ 包可见性，否则"装没装微信"永远假）。
-- 测试：`:app` **140 条全绿**（本轮 +32 屏 +6 弹窗），`:net` **10 条全绿**（+3 封套）。
+- 测试：`:app` **140 条全绿**（本轮 +32 屏 +6 弹窗），`:net` **10 条全绿**（+3 封套），合计 150。
+  业务布局 inflate **仍 306/335**（`tools/summarize_inflate.py` 重跑：仍失败 29 个，缺的还是那 5 个自有 View
+  类）—— 这两个布局本就在银行里能吹开，复制进 `:app` 只为接 ViewBinding，不动这个数。
 - fastkit 顺带补的 `KeyboardUtils` 只搬了这屏要的三件事（hide / isShown / 全局布局监听），阈值 250 与 200
   是原样数字。**发现一个既有缺口**：`:fastkit:test` 的单测资源合并本来就跑不过（合并出的 values 引用
   material 属性而 fastkit 不依赖 material），与本轮无关，未修。
