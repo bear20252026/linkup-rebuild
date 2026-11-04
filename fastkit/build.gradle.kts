@@ -11,6 +11,12 @@ android {
         minSdk = 26
     }
 
+    // Enabled so the dialog base can compile against androidx.viewbinding.ViewBinding; this module
+    // holds no layouts, so nothing is generated here.
+    buildFeatures {
+        viewBinding = true
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

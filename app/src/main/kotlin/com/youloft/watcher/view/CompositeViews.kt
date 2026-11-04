@@ -66,17 +66,6 @@ class PswInputView @JvmOverloads constructor(
     }
 }
 
-class RelationButton @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0,
-) : ConstraintLayout(context, attrs, defStyleAttr) {
-
-    init {
-        LayoutInflater.from(context).inflate(R.layout.view_relation_button, this, true)
-    }
-}
-
 class AutoReportSettingsView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,

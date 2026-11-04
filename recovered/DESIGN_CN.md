@@ -420,6 +420,53 @@ GET/POST/Query/Body 再按"最近的注解"配对才拿得到路径）：
 location/…）分别回灌。这一整块属于隐私权限卡片，本轮只在权限行留了"打开弹窗"这一步的真实调用与
 回调空位，**没有**为了让代码看起来完整而先接上半个端点。
 
+## 五点十三、共用弹窗层（第五步，2026-11-03）
+
+解掉 `FriendInfoDialogs` / `showFriendNumLimitDialog` / `showPermissionSettings` 三个空位，一次把
+六个动作的真实交互接上：删除确认、改关系、改备注、改权限、配额提示 ×2。
+
+### 弹窗口库是真·子集，不是原样 1:1
+
+原版链路：`dialog.e`（接口，~30 个链式 setter）→ `dialog.XDialog`（**2013 行**：宿主 Lifecycle、
+键盘跟随、动画集、状态栏/导航栏、重复弹出守卫、tag 规则）→ `dialog.BindingDialog<V,T>`（反射 inflate
+ViewBinding）→ app 侧 `BaseFrameDialog` → 具体弹窗。
+
+本轮只重建了**这五个弹窗真正用到的那一层**：`BindingDialog<V>`（反射 inflate + `post` 弹回，
+使 `setOnDismissListener` 在 `show()` 之后落地）。**明确没重建**的：XDialog 的 Lifecycle 宿主、键盘跟随、
+动画集、状态栏控制、以及原版 `show()` 的三道守卫（宿主正在 finish/destroyed、已经在显示、状态位处于过渡中）。
+所以本轮的弹窗是「行为对了、外壳薄」：`DESIGN` 第九号清单当场记这条，不许后面把它当成完整版复用。
+
+原版 `e.a.a(dialog, 0)` 走 `b0(millis)` → `lifecycleScope` 协程；本轮用 `contentContainer.post{ dismiss() }`
+代替（弹窗没有协程宿主），差别只在极短的排程时机，按钮点击的先后次序不变。
+
+### 五个弹窗 + 一个选择器：当场读出来的事实
+
+| 组件 | 事实 | 出处 |
+|---|---|---|
+| `pages.common.ConfirmDialog` | 默认 cancel=`cancel`、confirm=`confirm`、内容不设就隐藏；两个按钮都走「间隔点击」；任一键都收起，但**只有确认键回报决策**；遮罩默认 `color_7f000000`、可取消 | `ConfirmDialog.java` 构造 + `L1()` + `O1/P1` |
+| `view.RelationButton` | 四张磁贴由 `bean.friend.RelationView` 四元组驱动（磁贴/对勾/文字/角标）；选中=宽 80→100dp、着色 `colorCardVariant`→`colorBrand`、角角淡入、对勾显示；值不变直接 return；默认回调空 | `RelationButton.setRelation/c0` |
+| `friend.dialog.UpdateRelationDialog` | 磁贴点击只改内部选择，**不回报**；✕ 收起不回报；确认键**先收起再回报**（先 `e.a.a` 后 `X.invoke(W)`） | `Q1/R1` |
+| `user.dialog.UpdateUsernameDialog` | `InputFilter.LengthFilter`（默认 10）+ `%d/%d` 计数；空输入禁用确认（除非 `alwaysEnabled`）；预填时光标到末尾；内容设置后 **300ms** 弹键盘 | `L1()` + 内部 `a` + `h0()` |
+| `friend.dialog.FriendPermissionsSettingsDialog` | 9 个勾选按 location/track/phoneUse/call/phoneState/sensitive/appUse/lockPhone/realtimeVoice 对位；**`cb_sens_screen_shot` 在布局里有、原版从不读写** → 保持不动，新 Permission 的第 10 个保持 false；**在收起时回报**（所以 ✕ 回报 null，调用方读作「用户走开」）；传进 null 权限就自己收起；`showClose=false` 收起 ✕；按 source 埋点 1/2/3/4/5/6，其它空 | `L1()`/`h0()`/`b0()` |
+| `friend.dialog.FriendNumLimitDialog` | 只有两个动作：`tv_vip` → 回报 + 收起；✕ → 只收起（原版此处还先开 VIP 购买页 `manager.s.b(context,15)`） | `O1/P1` |
+
+### 接上线的地方
+
+* `FriendInfoActivity.dialogs` 默认改成 `RealFriendInfoDialogs`（真弹窗）；新增一条测试**当场点删除键 → 当场量出真
+  ConfirmDialog 的标题 → 当场点确认 → 请求发出 + 收起 + finish**，这条测的是生产路径，不是 mock。
+* 申请流 `showPermissionSettings` 改成真弹窗（按原种子：全开、收起 ✕、source=1）；回报 null 才走
+  「开 AddResult + finish」。非 null 的分支**没有**半接线（`PrivacyRepository.updatePermissions` 的两阶段
+  逐类型回灌仍属隐私权限那张卡）。
+* `showFriendNumLimitDialog` 改成真弹窗；VIP 购买页（`manager.s`）仍是空位。
+
+### 本窗口库的已知限制（不当完整版用）
+
+1. 薄外壳：XDialog 的宿主 Lifecycle、键盘跟随、动画集、状态栏、重复弹出守卫**没**搬；本轮五个弹窗用到的行为都在，
+   但复用前必须先读第九号清单，别把「五个弹窗可用」读成「组件库可用」。
+2. 用 `post` 代替协程排程收起，时机与原版差一帧。
+3. 权限弹窗的按-source 埋点有映射、没有汇（汇本身是另一张卡），只有测试钉住映射。
+4. VIP 购买页 / 会话页 / AddFriend 三个入口仍是空位。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。

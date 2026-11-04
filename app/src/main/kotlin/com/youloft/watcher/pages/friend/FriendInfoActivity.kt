@@ -41,7 +41,7 @@ class FriendInfoActivity : AppCompatActivity() {
     private var permission: Permission? = null
 
     var navigation: FriendFlowNavigation = DefaultFriendFlowNavigation(this)
-    var dialogs: FriendInfoDialogs = NoopFriendInfoDialogs
+    var dialogs: FriendInfoDialogs = RealFriendInfoDialogs(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

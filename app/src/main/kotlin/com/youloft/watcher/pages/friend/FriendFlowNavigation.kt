@@ -2,6 +2,8 @@ package com.youloft.watcher.pages.friend
 
 import android.app.Activity
 import com.youloft.linkup.api.dto.FriendRequest
+import com.youloft.watcher.pages.friend.dialog.FriendNumLimitDialog
+import com.youloft.watcher.pages.friend.dialog.FriendPermissionsSettingsDialog
 
 /**
  * Screens the friend flow hands control to. The mode/type integers are the ones each recovered
@@ -30,8 +32,7 @@ interface FriendFlowNavigation {
     fun showPermissionSettings(friendUserId: Long)
 }
 
-/** Not rebuilt yet: `AddFriendActivity`, `FriendInfoActivity`, `AgreeAddActivity`,
- * `FriendNumLimitDialog`, `FriendPermissionsSettingsDialog`. */
+/** Not rebuilt yet: `AddFriendActivity`, `AgreeAddActivity`, `ChatActivity`. */
 class DefaultFriendFlowNavigation(
     private val activity: Activity,
 ) : FriendFlowNavigation {
@@ -50,7 +51,29 @@ class DefaultFriendFlowNavigation(
 
     override fun openAgreeAdd() = Unit
 
-    override fun showFriendNumLimitDialog() = Unit
+    override fun showFriendNumLimitDialog() {
+        FriendNumLimitDialog(activity).show()
+    }
 
-    override fun showPermissionSettings(friendUserId: Long) = Unit
+    override fun showPermissionSettings(friendUserId: Long) {
+        // Recovered seed is "everything on", the ✕ is hidden, and source 1 names the request-agree
+        // entry. A null result means the user walked away, which the original read as "just finish".
+        FriendPermissionsSettingsDialog(
+            activity,
+            SOURCE_REQUEST_AGREE,
+            allSelectedPermissions(),
+            showClose = false,
+        ) { result ->
+            if (result == null) {
+                openAgreeAdd()
+                activity.finish()
+            }
+            // A chosen set feeds `PrivacyRepository.updatePermissions`, whose two-phase per-type
+            // sync is the privacy card's work; nothing partial is invented here.
+        }.show()
+    }
+
+    private companion object {
+        const val SOURCE_REQUEST_AGREE = 1
+    }
 }

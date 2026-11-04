@@ -16,6 +16,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -346,6 +348,52 @@ class FriendInfoActivityTest {
         val logout = launch()
         logout.window.decorView.findViewById<View>(R.id.view_delete_or_logout).performClick()
         assertEquals("该账号已注销", ShadowToast.getTextOfLatestToast()?.toString())
+    }
+
+    @Test
+    fun `the production dialog wiring really puts up a confirm before deleting`() {
+        succeed(info())
+        repository.deleteResponse = ApiResponse(200, "success")
+        // No FakeDialogs assigned: this is the default RealFriendInfoDialogs path.
+        val activity = launch()
+
+        activity.window.decorView.findViewById<View>(R.id.iv_delete).performClick()
+        val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+        assertNotNull(dialog)
+        assertTrue(dialog.isShowing)
+        assertEquals(
+            activity.getString(R.string.are_you_sure_to_delete_this_friend),
+            dialog.findViewById<android.widget.TextView>(R.id.tv_title).text.toString(),
+        )
+
+        dialog.findViewById<android.widget.TextView>(R.id.tv_confirm).performClick()
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+
+        assertEquals(listOf(77L), repository.deletions)
+        assertTrue(!dialog.isShowing)
+    }
+
+    @Test
+    fun `the permission dialog the screen really opens hides its close button`() {
+        succeed(info(permission = Permission(sensLocation = true, sensTrack = true)))
+        // Default dialogs: this is the production wiring, where the recovered call site passed false.
+        val activity = launch()
+
+        activity.window.decorView.findViewById<View>(R.id.ll_permissions).performClick()
+        val dialog = org.robolectric.shadows.ShadowDialog.getLatestDialog()
+        assertNotNull(dialog)
+        assertEquals(
+            View.GONE,
+            dialog.findViewById<View>(R.id.iv_close).visibility,
+            "the recovered friend-info entry hid the ✕, leaving outside-tap as the only exit",
+        )
+        assertTrue(
+            dialog.findViewById<android.widget.CheckBox>(R.id.cb_sens_location).isChecked,
+        )
+
+        dialog.findViewById<TextView>(R.id.tv_confirm).performClick()
+        shadowOf(android.os.Looper.getMainLooper()).idle()
+        assertFalse(dialog.isShowing)
     }
 
     @Test
