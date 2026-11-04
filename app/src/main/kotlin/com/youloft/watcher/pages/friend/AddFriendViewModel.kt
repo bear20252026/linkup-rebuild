@@ -12,6 +12,7 @@ import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.api.dto.SearchFriend
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.linkup.net.ContactSearchEnvelope
+import com.youloft.watcher.data.ContactSource
 import com.youloft.watcher.data.FriendRepository
 import com.youloft.watcher.view.MatchCodeQrPainter
 import com.youloft.watcher.view.QrCodeRenderer
@@ -82,6 +83,22 @@ class AddFriendViewModel(
         }
     }
 
+    /**
+     * `l()` + `t()` of the original: read the address book, strip country codes and whitespace, drop
+     * duplicates, then search. A contact without a phone number still contributes an empty string —
+     * the recovered mapping produced `""` for those and `distinct()` kept one, so that is reproduced.
+     */
+    fun searchDeviceContacts(contacts: ContactSource, keyId: Long) {
+        viewModelScope.launch {
+            searchPhones(normalizePhoneNumbers(contacts.entries().map { it.phone }), keyId)
+        }
+    }
+
+    /** The recovered sizing arithmetic, so the list can be asserted without a device's contacts. */
+    internal fun normalizePhoneNumbers(raw: List<String?>): List<String> = raw
+        .map { number -> number?.let { PHONE_CLEANUP.replace(it, "").trim() } ?: "" }
+        .distinct()
+
     /** `o(shareUrl)` — the QR is drawn off the main thread, as in the original. */
     fun matchQrCode(shareUrl: String, sizePx: Int) {
         viewModelScope.launch {
@@ -94,6 +111,9 @@ class AddFriendViewModel(
         const val MATCH_CODE_LENGTH = 8
         const val SHORT_CODE_LENGTH = 6
         const val NO_SERVER_KEY = 10086
+
+        /** The recovered country-code / whitespace stripper, kept verbatim. */
+        val PHONE_CLEANUP = Regex("""(\+\d{1,3}\s*)|(\s+)""")
 
         fun factory(
             repository: FriendRepository,

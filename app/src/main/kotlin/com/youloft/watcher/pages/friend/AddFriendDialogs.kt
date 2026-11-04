@@ -24,8 +24,11 @@ interface AddFriendDialogs {
         onConfirm: (Int, () -> Unit) -> Unit,
     )
 
-    /** Seeded with "everything on", and the ✕ stays visible here — unlike the request-agree entry. */
-    fun permissionSettings(source: Int, onResult: (Permission?) -> Unit, onDismissed: () -> Unit)
+    /**
+     * Seeded with "everything on", and the ✕ stays visible here — unlike the request-agree entry.
+     * Only the add-friend screen passes `onDismissed`; the contacts screen toasts before opening it.
+     */
+    fun permissionSettings(source: Int, onResult: (Permission?) -> Unit, onDismissed: () -> Unit = {})
 }
 
 class RealAddFriendDialogs(

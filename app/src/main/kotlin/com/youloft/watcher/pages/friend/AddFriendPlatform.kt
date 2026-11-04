@@ -11,20 +11,37 @@ import com.youloft.watcher.pages.common.LoadingDialog
 import java.net.URLEncoder
 
 /**
+ * The modal sheet the recovered base class showed over a screen while a request ran: one cached
+ * `LoadingDialog` per activity, non-focusable, playing `assets/loading.svga`. The friend screens that
+ * need nothing but this take the narrow interface.
+ */
+interface LoadingOverlay {
+    fun showLoading()
+    fun hideLoading()
+}
+
+class ActivityLoadingOverlay(private val activity: Activity) : LoadingOverlay {
+
+    private var sheet: LoadingDialog? = null
+
+    override fun showLoading() {
+        if (activity.isFinishing || activity.isDestroyed) return
+        val dialog = sheet ?: LoadingDialog(activity, minShownMillis = 0L).also { sheet = it }
+        dialog.show()
+    }
+
+    override fun hideLoading() {
+        sheet?.dismissAfterMinimum()
+    }
+}
+
+/**
  * Everything this screen touches outside its own view tree: clipboard, soft keyboard, the share SDKs
  * and the H5 upload of the rendered QR. Bundled into one seam so a test can drive the screen without
  * a camera, WeChat, or a running IME.
  */
-interface AddFriendPlatform {
+interface AddFriendPlatform : LoadingOverlay {
     fun copy(text: String)
-
-    /**
-     * The modal sheet the original showed over this screen while a lookup ran: one cached
-     * `LoadingDialog` per activity, non-focusable, playing `assets/loading.svga`.
-     */
-    fun showLoading()
-
-    fun hideLoading()
 
     fun hideKeyboard(view: View)
 
@@ -60,24 +77,16 @@ class RealAddFriendPlatform(
     private val activity: Activity,
 ) : AddFriendPlatform {
 
+    private val overlay = ActivityLoadingOverlay(activity)
+
     override fun copy(text: String) {
         val clipboard = activity.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager ?: return
         clipboard.setPrimaryClip(ClipData.newPlainText("match_code", text))
     }
 
-    // The recovered base class caches one sheet per activity and reuses it; the 0L floor is exactly
-    // what `BaseFrameActivity.showLoading()` passes there.
-    private var loading: LoadingDialog? = null
+    override fun showLoading() = overlay.showLoading()
 
-    override fun showLoading() {
-        if (activity.isFinishing || activity.isDestroyed) return
-        val sheet = loading ?: LoadingDialog(activity, minShownMillis = 0L).also { loading = it }
-        sheet.show()
-    }
-
-    override fun hideLoading() {
-        loading?.dismissAfterMinimum()
-    }
+    override fun hideLoading() = overlay.hideLoading()
 
     override fun hideKeyboard(view: View) = KeyboardUtils.hideKeyboard(view)
 

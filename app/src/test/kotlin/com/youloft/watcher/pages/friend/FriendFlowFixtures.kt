@@ -13,6 +13,8 @@ import com.youloft.linkup.api.dto.PublicKey
 import com.youloft.linkup.api.dto.SearchFriend
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.watcher.bean.CmdFriendBean
+import com.youloft.watcher.data.ContactSource
+import com.youloft.watcher.data.ContactEntry
 import com.youloft.watcher.data.FriendListSource
 import com.youloft.watcher.data.FriendRepository
 import com.youloft.watcher.data.LinkUpApplication
@@ -37,12 +39,14 @@ object FriendFlowFixtures {
     var stores = InMemoryKeyValueStores()
     /** Tests that want a picture hand over their own renderer. */
     var qr: QrCodeRenderer = QrCodeRenderer { _, _ -> null }
+    var contacts = ContactSource.of()
 
     fun reset() {
         repository = FakeRepository()
         source = TestFriendListSource()
         stores = InMemoryKeyValueStores()
         qr = QrCodeRenderer { _, _ -> null }
+        contacts = ContactSource.of()
         flags.vip = false
         flags.cachedFriends = 0
         flags.askPermissions = false
@@ -141,6 +145,7 @@ object FriendFlowFixtures {
         override val installChannel: InstallChannel get() = FallbackInstallChannel(flags.channel)
         override val addFriendTips: AddFriendTips? get() = AddFriendTipsPolicy(installChannel).tips()
         override val qrRenderer: QrCodeRenderer get() = qr
+        override val contacts: ContactSource get() = FriendFlowFixtures.contacts
     }
 
     class FakeRepository : FriendRepository {

@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:name=".data.LinkUpApplication"
@@ -43,6 +44,11 @@
 
         <activity
             android:name=".pages.friend.AddFriendActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".pages.friend.ContactInfoListActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
     </application>

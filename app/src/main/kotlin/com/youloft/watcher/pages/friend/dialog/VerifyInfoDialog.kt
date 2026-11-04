@@ -102,6 +102,13 @@ class VerifyInfoDialog(
         const val VIP_SOURCE_MULTIPLE_FRIENDS = 16
         const val VIP_LABEL = "多个好友"
 
+        /** Which entry opened the sheet — the same numbers the two calling screens pass. */
+        const val SOURCE_SCAN = 1
+        const val SOURCE_MATCH_CODE = 2
+        const val SOURCE_PHONE = 3
+        const val SOURCE_CONTACTS = 4
+        const val SOURCE_H5 = 5
+
         /** The `type` each caller passed, and the label the dialog reported for it (sink is pending). */
         internal fun sourceLabel(type: Int): String = when (type) {
             1 -> "扫一扫"

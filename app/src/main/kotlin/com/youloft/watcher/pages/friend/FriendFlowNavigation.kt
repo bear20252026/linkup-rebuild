@@ -10,7 +10,7 @@ import com.youloft.watcher.pages.friend.dialog.FriendPermissionsSettingsDialog
  * call site passed to the target screen, so they are kept even where nothing reads them yet —
  * they are how the destination knows where the user came from.
  *
- * The detail, info and add-friend screens are rebuilt, so they launch for real; the rest stay empty
+ * The detail, info, add-friend and contact-match screens are rebuilt, so they launch for real; the rest stay empty
  * until their own cards land, which keeps the recovered control flow readable instead of pretending
  * they exist.
  */
@@ -42,7 +42,7 @@ interface FriendFlowNavigation {
     fun showPermissionSettings(friendUserId: Long)
 }
 
-/** Not rebuilt yet: `ChatActivity`, `ContactInfoListActivity`, `QRCodeScanActivity`, `AgreeAddActivity`. */
+/** Not rebuilt yet: `ChatActivity`, `QRCodeScanActivity`, `AgreeAddActivity`. */
 class DefaultFriendFlowNavigation(
     private val activity: Activity,
 ) : FriendFlowNavigation {
@@ -59,7 +59,9 @@ class DefaultFriendFlowNavigation(
 
     override fun openChat(userId: Long) = Unit
 
-    override fun openContactList() = Unit
+    override fun openContactList() {
+        ContactInfoListActivity.start(activity)
+    }
 
     override fun openQrScanner() = Unit
 

@@ -551,6 +551,17 @@ class AddFriendActivityTest {
     }
 
     @Test
+    fun `the contacts entry launches the real screen now`() {
+        val activity = launch()
+
+        DefaultFriendFlowNavigation(activity).openContactList()
+        idle()
+
+        val started = shadowOf(ApplicationProvider.getApplicationContext<android.app.Application>()).nextStartedActivity
+        assertEquals(ContactInfoListActivity::class.java.name, started.component?.className)
+    }
+
+    @Test
     fun `the close button leaves the screen`() {
         val activity = launch()
 

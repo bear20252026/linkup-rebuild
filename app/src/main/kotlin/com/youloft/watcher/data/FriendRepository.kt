@@ -159,6 +159,9 @@ open class LinkUpApplication : Application() {
     /** `ConfigUtils.showPermissionChannel` matched against the install channel. */
     open val askPermissionsAfterAdd: Boolean get() = permissionChannels.asksAfterAddFriend()
 
+    /** `datasource/c` — the device address book, read only after READ_CONTACTS has been granted. */
+    open val contacts: ContactSource get() = ResolverContactSource(this)
+
     /** The channel-specific hint under the add-friend screen; null on channels that show none. */
     open val addFriendTips: AddFriendTips? get() = AddFriendTipsPolicy(installChannel).tips()
 
