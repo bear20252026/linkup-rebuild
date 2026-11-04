@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.shape.ShapedFrameLayout android:layout_width="100.0dp" android:layout_height="100.0dp" android:layout_centerInParent="true" app:mc_contentColor="@color/colorWhite" app:mc_radius="24.0dp">
+        <com.opensource.svgaplayer.SVGAImageView android:layout_gravity="center" android:id="@id/iv_loading" android:layout_width="32.0dp" android:layout_height="20.0dp" android:src="@drawable/ic_loading" app:autoPlay="false" app:loopCount="-1" app:source="loading.svga" />
+    </com.mc.fastkit.view.shape.ShapedFrameLayout>
+</RelativeLayout>

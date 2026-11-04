@@ -534,6 +534,14 @@ class AddFriendActivityTest {
     }
 
     @Test
+    fun `the app graph hands out the recovered painter`() {
+        // The test fixture deliberately draws nothing; production must not.
+        val painter = com.youloft.watcher.view.MatchCodeQrPainter()
+
+        assertNotNull(painter.render("https://web-link.tttick.com/business/guard-report#/addMe?userid=1&av=1.6.6", 115))
+    }
+
+    @Test
     fun `a screen that cannot draw the qr leaves the card empty`() {
         val activity = launch()
         idle()

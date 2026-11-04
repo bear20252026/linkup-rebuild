@@ -25,6 +25,7 @@ import com.youloft.watcher.data.local.PermissionChannelGate
 import com.youloft.watcher.data.local.PendingRemoteConfig
 import com.youloft.watcher.data.local.RemoteConfig
 import com.youloft.watcher.data.local.UserCache
+import com.youloft.watcher.view.MatchCodeQrPainter
 import com.youloft.watcher.view.QrCodeRenderer
 
 /**
@@ -162,10 +163,10 @@ open class LinkUpApplication : Application() {
     open val addFriendTips: AddFriendTips? get() = AddFriendTipsPolicy(installChannel).tips()
 
     /**
-     * Draws the match-code QR. The original painted it with `com.google.zxing` plus its own rounded
-     * module painter; that dependency and painter are their own card, so the default draws nothing.
+     * Draws the match-code QR. Recovered as zxing plus the app's own rounded-module painter; the
+     * painter is rebuilt, so production draws for real and only tests opt out.
      */
-    open val qrRenderer: QrCodeRenderer get() = QrCodeRenderer.Pending
+    open val qrRenderer: QrCodeRenderer get() = MatchCodeQrPainter()
 }
 
 fun appGraph(context: Context): LinkUpApplication = context.applicationContext as LinkUpApplication

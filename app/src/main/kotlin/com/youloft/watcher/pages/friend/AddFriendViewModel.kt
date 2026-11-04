@@ -13,6 +13,7 @@ import com.youloft.linkup.api.dto.SearchFriend
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.linkup.net.ContactSearchEnvelope
 import com.youloft.watcher.data.FriendRepository
+import com.youloft.watcher.view.MatchCodeQrPainter
 import com.youloft.watcher.view.QrCodeRenderer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,7 +29,7 @@ import kotlinx.coroutines.withContext
 class AddFriendViewModel(
     private val repository: FriendRepository,
     private val envelope: ContactSearchEnvelope = ContactSearchEnvelope(),
-    private val qrRenderer: QrCodeRenderer = QrCodeRenderer.Pending,
+    private val qrRenderer: QrCodeRenderer = MatchCodeQrPainter(),
 ) : ViewModel() {
 
     private val _preConfirm = MutableLiveData<ApiResponse<Friend>>()
@@ -96,7 +97,7 @@ class AddFriendViewModel(
 
         fun factory(
             repository: FriendRepository,
-            qrRenderer: QrCodeRenderer = QrCodeRenderer.Pending,
+            qrRenderer: QrCodeRenderer = MatchCodeQrPainter(),
         ) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =

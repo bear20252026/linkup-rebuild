@@ -88,6 +88,7 @@ dependencies {
         exclude(group = "com.android.support")
     }
     implementation("com.github.bumptech.glide:glide:4.16.0")
+    implementation("com.google.zxing:core:3.5.3")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
 

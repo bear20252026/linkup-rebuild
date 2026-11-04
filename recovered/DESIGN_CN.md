@@ -682,19 +682,89 @@ platform.copy(userIdText)                                                    // 
 
 ### 本轮**没有**重建的（别误会成已完成）
 
-1. **二维码绘制**：原版 `utils/z0.d(url, scale, size, …)` 用 `com.google.zxing` + 自绘模块（H 纠错、UTF-8、
-   静区 0、圆角点阵、可选中心 logo）。zxing 不在依赖里 → `QrCodeRenderer.Pending` 返回 null，所以**装包后
-   QR 卡片是空的**，只有 `iv_code` 的位置留着。这条自成一张卡。
-2. **LoadingDialog**（播 `loading.svga`）→ 平台缝 `showLoading/hideLoading` 是空实现，只有时序对，没有画面。
-3. **微信/QQ 分享本体**（`utils/h1`、`utils/i0` 缩略图上传）：装没装用包查询等价复现了（原版本来就是包查询），
+1. ~~**二维码绘制**~~ / ~~**LoadingDialog 画面**~~：**已由五点十七（#19）重建并接线**。
+   顺带把上一轮写错的参数改正：那条调用用的是 `ErrorCorrectionLevel.Q`（不是 H，H 是另一条简易生成器
+   `g()` 用的）、字符集 `"utf-8"`（小写，来自个推常量类）、**方模块**（填充系数 1.0，不是圆角点阵）、
+   **环形定位眼**（点半径 1.5 模块 + 环半径 3 模块、线宽 1 模块）、透明底；1.5.6 会把头像嵌在中心，
+   1.6.6 传的是 `null`。
+2. **微信/QQ 分享本体**（`utils/h1`、`utils/i0` 缩略图上传）：装没装用包查询等价复现了（原版本来就是包查询），
    分享调用是空实现。
-4. **QR png 上传 H5**（`api/tool/uploadLog` + 上传 helper）：`uploadQrImage` 空实现。
-5. **`ContactInfoListActivity` / `QRCodeScanActivity` / `SearchFriendActivity`(仅 1.5.6)**：只留
+3. **QR png 上传 H5**（`api/tool/uploadLog` + 上传 helper）：`uploadQrImage` 空实现。
+4. **`ContactInfoListActivity` / `QRCodeScanActivity` / `SearchFriendActivity`(仅 1.5.6)**：只留
    `openContactList()`/`openQrScanner()` 意图；扫码结果由 `onQrResult(raw)` 收，真启动器待那屏落地。
-6. **埋点汇 `mf.b`**：21 条 source 标签、`add_type`/`relationship`/`add_result` 事件形状都由测试钉住，无处可发。
-7. **同意后 IM 侧效应**：IM 角标 `widget.im.e.w(userId,1)`、`AgreeAddActivity` 拉起、会话提示气泡 —— 属 IM 卡。
-8. **权限库**：XXPermissions 未接回，用 androidx `RequestPermission` 复刻；"永久拒绝跳系统设置"用
+5. **埋点汇 `mf.b`**：21 条 source 标签、`add_type`/`relationship`/`add_result` 事件形状都由测试钉住，无处可发。
+6. **同意后 IM 侧效应**：IM 角标 `widget.im.e.w(userId,1)`、`AgreeAddActivity` 拉起、会话提示气泡 —— 属 IM 卡。
+7. **权限库**：XXPermissions 未接回，用 androidx `RequestPermission` 复刻；"永久拒绝跳系统设置"用
    `shouldShowRequestPermissionRationale` 等价判定（原版第二个布尔 `neverAskAgain` 语义相近但不完全相同）。
+
+## 五点十七、二维码绘制与加载遮罩（#19，2026-11-04）
+
+这是把上一轮我自己列进"没重建"的头两项做成真东西，顺带**改掉一条已经发布出去的错话**。
+
+### 先纠错：那条 z0.d 调用的参数我上轮记错了
+
+读完 `utils/z0.java`（1.5.6，328 行；1.6.6 是同体量的 `utils/y0.java`）后逐条核：
+
+| 参数 | 我上轮写的 | 实际（已核） |
+|---|---|---|
+| 纠错等级 | H | **Q** —— H 是另一条简易生成器 `g()` 用的 |
+| 字符集 | UTF-8 | **`"utf-8"`（小写**，值取自个推常量 `com.igexin.push.f.r.f48119b`） |
+| 模块形状 | 圆角点阵 | **正方形**（`moduleShape=0`，填充系数 1.0） |
+| 定位眼 | 未提 | **样式 2 = 环形**：中心实心点半径 1.5 模块 + 环半径 3 模块、线宽 1 模块；7×7 区域内的模块一律不画 |
+| logo | 可选中心 logo | 1.5.6 确实传头像，**1.6.6 恒传 null**（随头像层一起删） |
+
+`z0.d(...)` 在两版里都**只有一个调用点**（添加好友屏），参数每次都一样，所以重建类只钉这一套配置；
+原版另有的圆形/多边形模块与其他眼样式在 1.6.6 已无调用点，不做（做了就是死代码）。
+
+### 绘制器分成"版面 + 刷图"两步，是因为本机测不了像素
+
+`app/.../view/MatchCodeQrPainter.kt`：`plan(content, sizePx)` 返回纯数据版面（画布尺寸、模块边长、
+居中偏移、要画的暗模块清单、三只眼的圆心与半径），`draw(plan)` 只是照着版面往 Canvas 上刷。
+
+分开的理由不是洁癖：本机 **Robolectric 的光栅化不可信**。探针实验（`probeRng`）画一个 6×6 红方块到
+10×10 白底位图，读回来的中心像素仍是白、全场只有 24 个红点；同一张标准 zxing 码用 Canvas 画出来解不
+出，而用 `int[]` 直接喂 `RGBLuminanceSource` 就秒解。所以像素断言这条路废掉，改成：
+
+1. 版面算术逐条断言（`qrLayout` 就是原版那条
+   `reserve = max(extra, min(w/(n+2), h/(n+2))) * 2` → `module = (canvas-reserve)/n` → 居中）；
+2. **把版面在这里重栅格化成 `int[]`，交给真 zxing 解码**，要求解回原 URL。
+
+第 2 条是本卡最有价值的产出：**它证明"环形定位眼"是真的可扫的**——环+点+间隙在扫描线上正好给出
+1:1:3:1:1 的 finder profile，所以 zxing 自己就能读；这条 URL（79 字符 @ Q）是版本 7 = 45×45 模块。
+另一个副作用被写进测试：`iv_code` 是**透明底**，白卡片 `scl_code` 才是静区的一部分，所以码不能贴边铺满。
+
+### LoadingDialog 的三条事实
+
+`app/.../pages/common/LoadingDialog.kt`，照 1.5.6 `pages/common/LoadingDialog.java`（76 行）：
+
+* 窗口 **`FLAG_NOT_FOCUSABLE`**（原版 `setFlags(8, 8)`），所以遮罩从不抢输入法焦点；
+* 动画在 show 时 `startAnimation()`、dismiss 时 `pauseAnimation()`（原版 `E0/F0` 里的 `v()`/`z()`，
+  已用 `javap` 对过 `SVGAImageView` 的方法名），播 `assets/loading.svga`；
+* **最短显示时间**规则：被要求立刻收起时，如果还不到 `minShownMillis` 就推迟剩下的时间再收
+  （原版 `b0(long)`）。默认 250ms，**但 `BaseFrameActivity.showLoading()` 是用 `0L` 构造的**，
+  所以好友屏这条下限其实是关的——规则照搬，因为别的调用点用得到。
+
+平台缝 `RealAddFriendPlatform.showLoading/hideLoading` 现在按原版那样**每屏复用一个实例**
+（原版把它缓存在 LiveData 里），并沿用"activity 已死就不显示"的守卫。
+
+### 数字与验收
+
+新增 **13 条测试**（绘制器 9 + 加载遮罩 3，另 1 条接线检查），`:app` **153 / 0 failures**、`:net` **10 / 0**，
+合计 **163 全绿**；`assembleDebug` 通过，APK **61,848,174 B**（≈61.8MB，比上轮 59.06MB 大 2.8MB，就是 zxing
+与重新打包所致），已核 `MatchCodeQrPainter`、`LoadingDialog`、`zxing/qrcode/encoder/Encoder`、
+`dialog_loading` 资源与 `assets/loading.svga` 都在包里。
+
+依赖多了一个 **`com.google.zxing:core:3.5.3`**。APK 里只留类名、没有版本串，和 MMKV/BRVAH 一样按公开最新接
+（已进待验）。另外踩回来一个老坑：`gradle :app:dependencies` **只解析 POM**，zxing 的 jar 要跑
+`tools/gradle.sh :app:fetchDebugArtifacts` 才真下载——这条 helper 任务本来就是为这事存在的。
+
+### 不在本卡里的（别误会）
+
+1. **真人扫码验收**：本机证明的是"版面能被 zxing 读"，不等于手机相机对着这块屏也读得快——抗畸变、
+   透明底在深色主题上的对比度，都要装包扫一次（待验第 35 条）。
+2. **`QRCodeScanActivity` 的解码侧**（zxing `MultiFormatReader` + 相机）：属 #20 那张卡。
+3. **1.5.6 的头像嵌码合图**（`z0.a(qr, logo)`，把 logo 缩到 1/3 宽居中）：1.6.6 无调用点，没搬。
+4. **SVGA 播放本身**：动画资源与视图已接，`Robolectric` 里只验时序与窗口标志，观感要装包看。
 
 ## 六、架构决定（写死，避免重写时反复）
 
@@ -799,11 +869,12 @@ platform.copy(userIdText)                                                    // 
 | 27 | VIP 状态变化的四个副作用 | `AccountSideEffects.onVipStateChanged` 只有条件被测试钉住；IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播，都要等 IM/widget 那两张卡
 | 28 | 加完好友后弹不弹权限设置，真机上按哪条判据 | 已按 1.6.6 改成"渠道号==3301"；我们的包没有渠道段（第 22 条）会恒 false。要么先补渠道段，要么临时按 1.5.6 配置规则验 |
 | 29 | 匹配码"四位一组"的显示与"裸 id"的复制 | 逻辑与文案已由测试钉住；实际观感（等宽字体 `sf_pro_rounded_bold_subset`、超长 id 换行、复制后系统剪贴板提示）要装包看 |
-| 30 | 二维码卡片是真空的 | `QrCodeRenderer.Pending` 有意返回 null，装包后 `iv_code` 应显示为空白卡片；zxing + 自绘 painter 那张卡完成后这条自动关闭 |
+| 30 | ~~二维码卡片是真空的~~ → **已由 #19 接上真绘制器**；剩下的是**真人拿手机扫这块屏** | 本机已用真 zxing 解码证明版面可读（含环形定位眼的 1:1:3:1:1），但相机抗畸变、透明底在不同主题下的对比度、130dp 显示尺寸够不够，只能装包扫一次 |
 | 31 | 键盘遮罩（`view_input_mask`）与输入框 focus 的联动 | 判定式已测（focus ∧ keyboardVisible）；fastkit 的 `KeyboardUtils` 只搬了全局布局监听 + 250/200 阈值，真实 IME 下的高度/时机要装包验，`adjustResize` 也没在清单里（原版就没有） |
 | 32 | 权限请求的两处等价替换 | XXPermissions 未接回：①"永久拒绝跳系统设置"用 `shouldShowRequestPermissionRationale` 判定，与原版第二个布尔不完全相同；②原版 `onGranted(allGranted=false)` 也会 toast，单权限 contracts 无此分支 |
 | 33 | 微信/QQ 分享本体 | 装没装已用包查询等价复现（原版本来就是包查询），分享调用是空实现；`<queries>` 只写了两个包名，真机上若还有 SDK 声明需合并 |
-| 34 | 加载遮罩（LoadingDialog） | `showLoading/hideLoading` 时序对、画面空（它播 `loading.svga`），本轮没搬；请求期间界面不会变灰 |
+| 34 | 加载遮罩的观感 | 本体已落地（非聚焦窗口、SVGA 起停、最短显示规则都有测试）；`loading.svga` 的实际动画、遮罩透明度、100dp 卡片圆角要装包看。**另注**：本机 Robolectric 光栅化不可信（画红方块读回是白的），所以任何"像素对不对"的判断都只能上人眼 |
+| 35 | zxing 的确切版本 | APK 里只有类名、没有版本串，现接公开 `com.google.zxing:core:3.5.3`；`Encoder`/`ByteMatrix` 是 zxing 内部 API（不是 `MultiFormatWriter` 那条公共面），若将来对齐不上老版本的模块排布，先怀疑这里 |
 
 ## 十、下一步顺序（建议）
 

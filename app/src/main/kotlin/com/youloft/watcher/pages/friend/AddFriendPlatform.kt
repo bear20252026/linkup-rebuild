@@ -7,6 +7,7 @@ import android.content.Context
 import android.net.Uri
 import android.view.View
 import com.mc.fastkit.utils.KeyboardUtils
+import com.youloft.watcher.pages.common.LoadingDialog
 import java.net.URLEncoder
 
 /**
@@ -18,9 +19,8 @@ interface AddFriendPlatform {
     fun copy(text: String)
 
     /**
-     * The modal `LoadingDialog` the original showed over this screen while a lookup ran. It plays
-     * `loading.svga`, so the sheet itself is a separate card; until then these two calls only mark the
-     * window as busy.
+     * The modal sheet the original showed over this screen while a lookup ran: one cached
+     * `LoadingDialog` per activity, non-focusable, playing `assets/loading.svga`.
      */
     fun showLoading()
 
@@ -65,9 +65,19 @@ class RealAddFriendPlatform(
         clipboard.setPrimaryClip(ClipData.newPlainText("match_code", text))
     }
 
-    override fun showLoading() = Unit
+    // The recovered base class caches one sheet per activity and reuses it; the 0L floor is exactly
+    // what `BaseFrameActivity.showLoading()` passes there.
+    private var loading: LoadingDialog? = null
 
-    override fun hideLoading() = Unit
+    override fun showLoading() {
+        if (activity.isFinishing || activity.isDestroyed) return
+        val sheet = loading ?: LoadingDialog(activity, minShownMillis = 0L).also { loading = it }
+        sheet.show()
+    }
+
+    override fun hideLoading() {
+        loading?.dismissAfterMinimum()
+    }
 
     override fun hideKeyboard(view: View) = KeyboardUtils.hideKeyboard(view)
 

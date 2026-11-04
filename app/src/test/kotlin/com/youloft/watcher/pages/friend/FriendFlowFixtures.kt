@@ -35,13 +35,14 @@ object FriendFlowFixtures {
     var source = TestFriendListSource()
     val flags = Flags()
     var stores = InMemoryKeyValueStores()
-    var qr: QrCodeRenderer = QrCodeRenderer.Pending
+    /** Tests that want a picture hand over their own renderer. */
+    var qr: QrCodeRenderer = QrCodeRenderer { _, _ -> null }
 
     fun reset() {
         repository = FakeRepository()
         source = TestFriendListSource()
         stores = InMemoryKeyValueStores()
-        qr = QrCodeRenderer.Pending
+        qr = QrCodeRenderer { _, _ -> null }
         flags.vip = false
         flags.cachedFriends = 0
         flags.askPermissions = false
