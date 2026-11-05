@@ -2,3 +2,7 @@
 # server/scripts/smoke.sh 变成 CRLF。实测后果不是"直接不执行"，而是更难查的那种：
 # `dirname "$BASH_SOURCE"` 带上一截 \r，脚本于是 cd 到不存在的目录，在错误位置跑 go build 后失败。
 *.sh text eol=lf
+
+# 同理为 gofmt 固定 LF：本机 autocrlf=true 时，Windows 上 checkout 出来的 .go 带 CRLF，
+# `gofmt -l` 会把**每一个**文件都报成待格式化（实测在干净克隆里 12/12 全中），把这道门禁变成假警报。
+*.go text eol=lf
