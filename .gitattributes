@@ -1,0 +1,4 @@
+# Shell 脚本必须是 LF。本机 core.autocrlf=true，重新 checkout 会把 tools/*.sh 与
+# server/scripts/smoke.sh 变成 CRLF。实测后果不是"直接不执行"，而是更难查的那种：
+# `dirname "$BASH_SOURCE"` 带上一截 \r，脚本于是 cd 到不存在的目录，在错误位置跑 go build 后失败。
+*.sh text eol=lf
