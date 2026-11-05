@@ -20,7 +20,7 @@ REPO="bear20252026/linkup-recovery"
 cd "$PUB"
 git checkout -- rebuild          # 只回退本脚本负责的 rebuild/，报告与 README 的手改不能被动掉
 # Wipe the whole mirror before re-extracting: `git archive | tar -x` only overlays, so a directory
-# list here would silently keep deleted files (server/ and core-net/ were missing from it).
+# list here would silently keep files that were deleted locally (this card's `server/` was the proof).
 rm -rf rebuild/* rebuild/.gitignore
 mkdir -p rebuild
 

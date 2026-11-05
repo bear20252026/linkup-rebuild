@@ -31,7 +31,6 @@ bash server/scripts/smoke.sh
 | `net/` | 纯 JVM 网络层模块：AES 签名、公共参数拦截器、97 条路由的 Retrofit 接口 |
 | `app/` | Android 壳，包名沿用 `com.youloft.watcher`，已带入 1.6.6 的 25MB assets |
 | `fastkit/` | 自研组件库的还原（弹窗基类、ShapeView、Spannable 工具等） |
-| `core-net/` | 1.5.6 时代 yftracker 自带的独立 HTTP 栈（定位上报走它，签名算法不同） |
 | `server/` | 重建后端第一刀：Go 网关 + OpenIMServer 适配层（17 条路由） |
 | `recovered/` | 分析与验收产物：路由表、API 契约、模块清单、设计文档 |
 | `tools/` | 反编译与还原脚本、Gradle 包装、发布脚本（可重复执行） |
