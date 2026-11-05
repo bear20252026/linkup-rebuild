@@ -32,6 +32,13 @@ object KeyboardUtils {
         manager.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
+    /** `KeyboardUtils.o(view, …)` of the original — ask the IME for the field, after it is focusable. */
+    fun showKeyboard(view: View) {
+        view.requestFocus()
+        val manager = view.context.getSystemService(InputMethodManager::class.java) ?: return
+        manager.showSoftInput(view, 0)
+    }
+
     fun isKeyboardShown(activity: Activity): Boolean =
         belowVisibleFrame(activity.window) > showThresholdPx
 

@@ -1045,6 +1045,91 @@ unzip -t          → No errors detected
 4. 打包环节是否还有别的步骤（对齐、verity、二次签名）只能从签名块结构反推，脚本已丢；
 5. 启动拉取与 10 分钟刷新要不要照搬；渠道写进发布链（`assembleRelease` 之后自动打标）要不要接。
 
+## 五点二十一、登录屏前半：短信那条（#18，2026-11-05）
+
+`LoginActivity` + `LoginSmsDialog` + `SendCodeButton` + `PolicyRemindDialog` 落地。
+这一卡的意义不是"又多一屏"，而是 **#16 那条写入通道终于有了上游**：`user2` 与 `token` 从此由真实登录流程写入。
+
+### 五条推翻旧记账的事实（都在 1.6.6 源码里逐行核对）
+
+| 之前记的 | 实际 | 出处 |
+|---|---|---|
+| `typeId` 1/2/3/4/5，4=微信 5=QQ | **typeId 只有 1/2/3，走 `api/sms/click_to_login`**；微信/QQ 是**另一个端点** `api/user/login`，body 用 `platform`（4/5），没有 typeId | `datasource/a.java:715-733`（`f` vs `Q`）与 `:873`（`unionId,platform,avatar,nickname,phone`） |
+| 登录成功"先写 token 再写 user2" | **先 `user2` 再 `token`**（`CacheUtils.i3` 在 `d3` 之前） | `manager/v0.java:314-330` |
+| 一键登录 SDK 是 Mob `com.mob.secverify` | 1.5.6 确实是 `SecPure`；**1.6.6 把 Mob 整族删了，换成同结构的 `cn.fly.verify.FlyVerify`**（`coremcl/mgs/id/tools` 子包一一对得上，等于同一套东西换牌；`com.g.gysdk` 两版都在） | 1.6.6 `manager/v0.java:4,343,485` ↔ 1.5.6 `manager/z0.java:332,445`；`out_jadx_156/sources/com/mob/secverify` 存在、`src166/sources/com/mob` 整个不存在 |
+| `Cut.loginType` 是数字，非 1/3 时"弹短信框" | 它是**字符串**；`toIntOrNull() ?: 1` 交给 `v0.o(type, cb)`，非 1/3 ⇒ **回调 null**，再由 `number/operator` 空 ⇒ 才落到短信框 | `LoginActivity.java:434`、`manager/v0.java:463` |
+| 登录响应一律写进缓存 | 有一条**不写缓存**的分支：登录返回但昵称为空（或三方登录返回已注册账号）时，用户被**寄存在进程全局 `App.user`**，只写 token —— 这正是"补资料屏"的取数来源 | `manager/v0.java:314-321`、`App.java:69-72,41` |
+
+`repository/c.e()` 的分岔也一并钉住：`bindingPhone` 时**只** `o2.r(user)`（换缓存记录，不写 token、不签到），
+否则 `v0.h(user, true)`。1.6.6 里 `lastLoginType` 手机号路径**恒为 6**（短信与一键都是 6），三方才写 4/5。
+
+### 决策树（重建照搬）
+
+```
+onCreate → GET api/sms/login/cut → loginType.toIntOrNull() ?: 1
+        → OneTapAuth.preLogin(type) → SecurityInfo?
+             null            → 协议行去掉运营商条款
+             number 为空      → 只存字段，不改协议行（下一次 onResume 才画出来）
+             number 非空      → 协议行追加《运营商条款》
+点"手机号" → 勾选框未勾 → PolicyRemindDialog →（确认＝自动勾上 + 重放这次点击）
+          → number/operator 任一为空 → LoginSmsDialog（短信）
+          → 否则                   → LoginPhoneDialog（一键，本卡后半）
+```
+
+短信弹窗里三条硬规则：`et_phone` 长度**恰好 11** 才放开"发送验证码"，11 + 验证码**恰好 4** 才放开"立即登录"，
+而且**验证码填满 4 位当场自动提交**（`c.afterTextChanged`），按钮只是第二条路；
+发送成功后焦点跳验证码、倒计时起飞，**倒计时期间号码框被禁用/置灰/删除叉隐藏**（`I()`/`J()`）；
+成功回调的顺序是 `loginCallback()` → 按 `isRegister` 分流 → `CacheUtils.j2(6)` → 关弹窗 → `finish()`。
+
+### 一处只在原包里成立的不一致
+
+`utils/...p` 之外，`LoginActivity` 的 QQ 按钮：直接点击（`S0`）**不**禁用按钮，
+只有走协议提醒弹窗的续作（`T0`）才 `ivLoginQq.setEnabled(false)`。我没"修平"，照搬并写进测试。
+
+### 落在代码里
+
+- `net`：路由早年在，本卡补了 `LoginRepository` 侧 body 形状（`typeId` 以**字符串**发送，`region` 默认 `+86`）。
+- `:app`：`data/LoginRepository.kt`（+ 成功后的写入分岔）、`data/local/LoginFlags.kt`
+  （`lastLoginType` 在默认实例、`isRequestedNotification` 在**按用户分实例**——`CacheUtils.Z0()` 用的就是 `Z()`）、
+  `pages/login/{LoginActivity,LoginViewModels,LoginPlatform,LoginNavigation}.kt`、
+  `pages/login/dialog/{LoginSmsDialog,PolicyRemindDialog}.kt`、`view/SendCodeButton.kt`、
+  `ext/ClickableSpans.kt`、三份布局自银行复制进 `app`、清单加 `LoginActivity` + `POST_NOTIFICATIONS`。
+- `KeyValueStore` 加了 `int/boolean` 读写：原版这两条键是 MMKV 的 int/bool，**用字符串读不出来**，
+  老用户升级时就读不到自己的"上次登录"了。
+- `AccountSideEffects` 加 `onSignedIn(user)`：IM 绑定、`lf.b.b(userId)`、`MobclickAgent.onProfileSignIn`
+  三条挂在它上面，都在别的卡里，所以是接口而不是实现。
+
+### 缝与本机测不了的东西
+
+1. **两个厂商 jar 拿不到**（`com.g.gysdk`、`cn.fly.verify` 都不在 Maven Central），
+   `UnavailableOneTapAuth` 恒答 null——这正是原版 preLogin 失败的那条分支，所以短信路径不受影响，
+   但"一键登录真的能一键"必须等有 SDK 的那天。
+2. **微信/QQ 授权本体**：只有包查询是真的（原版也是包查询），`sendWechatAuth`/`startQqLogin`/
+   客服会话是空实现；`LoginEvents` 三个流是给 `wxapi/WXEntryActivity` 留的口，那个屏属三方登录卡。
+3. **`CountDownTimer` 在 Robolectric 下不会投递消息**（实测：喂 59 秒空转，标签纹丝不动）。
+   所以 `SendCodeButton` 把计时器抽成 `internal interface Countdown`，生产用平台实现、测试手喂 tick。
+   与"像素类断言本机不可信"是同一类事：**计时类断言本机同样不可信**。
+4. **`Dialog.getContext()` 不是 Activity**：带主题时 Android 会包一层 `ContextThemeWrapper`，
+   原版基类自己存了原始 context 所以 `context as? Activity` 成立。重建基类没有这个字段，
+   于是"登录成功后关掉登录页"这条静默失效——已把解包逻辑提成 `BindingDialog.hostActivity` 并被测试钉住。
+5. 弹窗跟随键盘：原版 `onKeyboardChanged` 平移 `imeHeight - statusBarHeight`（不小于 0），
+   重建用 `KeyboardUtils` 手接；观感要装包看。
+
+### 数字
+
+`:app` **235 / 0**（本卡 +38：`LoginActivityTest` 15、`LoginSmsDialogTest` 12、`SendCodeButtonTest` 6、
+`UserManagerTest` +5 条写入顺序与停车分支），`:net` **29 / 0** 不变，合计 **264 全绿**。
+`assembleDebug` 通过，APK 61,848,174 B。本卡复制进 `:app` 的三份布局 `activity_login`、`dialog_login_sms`、
+`dialog_policy_remind` **全部 inflate ok**；业务命名布局总体仍 **306/335**（无倒退，也无新增——这三份本来就能过）。
+
+### 不在本卡里的（#18 后半）
+
+1. `LoginPhoneDialog`（一键登录那条：typeId 1 送 `token+gyuId`，typeId 3 送 `token+opToken+operator`）；
+2. `EmptyLoginActivity` + `PrivacyPolicyDialog`（首启隐私门，同意后才初始化 SDK 并跳 `GuideActivity`）；
+3. `ImproveUserInfoActivity` 与 `MainActivity`（两个跳转目标，本卡只留 `LoginNavigation` 记录）；
+4. 微信 code → `api.weixin.qq.com/sns/oauth2/access_token` → `/sns/userinfo` → `platform=4` 这条完整链；
+5. `/api/sms/send` 的真实调用——**我不会去碰它**（会发真短信），所以上面全部是假仓库驱动的 JVM 测试。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1143,7 +1228,7 @@ unzip -t          → No errors detected
 | 22 | ~~渠道号~~ → **已由 #17 还原**：两个原包实测都带 `0x71777777` 段、内容 `{"channel":"3305"}`；读侧 `SigningBlockInstallChannel` + 写侧 `gradle :net:tagChannel` 都已落地并自检 | 本机已把自家 debug 包打上 3305 并验回（`apksigner verify` 仍 v2=true、`unzip -t` 无错）；**只剩"装到真机上 app 自己读出来"这一步**，见第 40 条 |
 | 23 | ~~`showPermissionChannel` 走三方配置 SDK~~ → **更正（#17）**：是我们自己的一个 OkHttp GET（`cfg.51wnl-cq.com` 302 → `configsys.51wnl-cq.com/api/config/getconfigs`），值全 base64，`Parameter_Map` 摊进设置 | 客户端已重建并用 2026-11-04 真回包钉住（18 个键、`showPermissionChannel=["3300","3301","-1"]`、令牌 `r` 已实测）。**另注**：1.6.6 已不读这个键，判据见第 28 条 |
 | 24 | 老用户升级时 `user2` 读不到之后的旧 Parcelable 回读 | 我们的 DTO 不是 Parcelable，这段没搬；那批老用户装新包会显示成未登录，等登录流接管写入时一并定 |
-| 25 | 真机上让 `user2` 真的有值 | 写入通道已通（#16），但**登录屏没重建**：短信/一键登录还牵着号码认证 SDK（`GYManager.preLogin`）与 `/api/sms/send`——后者我不会去碰（会发真短信）。过渡办法是探针屏那条 `GET api/user/info`，前提是先灌进一个有效 token |
+| 25 | 真机上让 `user2` 真的有值 | 写入通道已通（#16），**登录屏与短信弹窗也已重建（#18 前半）**，所以真机上点"手机号→收码→登录"就会落 `user2`+`token`。仍不能本机代跑的原因只有一个：`/api/sms/send` 会发真短信，我不去调它。过渡办法仍是探针屏那条 `GET api/user/info`（前提是先灌进一个有效 token） |
 | 26 | 服务端公钥 PEM 的**页脚到底是四个还是五个横杠** | 原版按 `----END PUBLIC KEY-----`（四横杠）字面剥离；标准五横杠会残留 `-` → Base64 解不出 → 走 10086"匹配码无效都不弹"的静默分支。装包后打一次通讯录搜索即可判定 |
 | 27 | VIP 状态变化的四个副作用 | `AccountSideEffects.onVipStateChanged` 只有条件被测试钉住；IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播，都要等 IM/widget 那两张卡
 | 28 | 加完好友后弹不弹权限设置，真机上按哪条判据 | **判据差异 #17 已量清**：线上包渠道是 `3305`，1.6.6 规则（`==3301`）恒不弹；1.5.6 规则在今天配置 `["3300","3301","-1"]` 下有 `-1` 通配 ⇒ 恒弹。剩下的是决定：重建包按哪条、打标打哪个号（第 22 条） |
@@ -1161,6 +1246,10 @@ unzip -t          → No errors detected
 | 40 | 打上 3305 的包，app 自己在真机上把渠道读出来 | Robolectric 里 `applicationInfo.sourceDir` 不是真 APK，签名块只能在设备上读。做法：`gradle :net:tagChannel --args=<apk> 3305` → 装 → 探针页应显示 `channel.id=3305`、`addFriendTips=null`、`askPermissionsAfterAdd=false` |
 | 41 | 远程配置要不要在启动时自动拉（原版 `SdkInitManager` 会拉、10 分钟节流） | 代码两侧都齐（`refreshRemoteConfig`），但**有意没接到启动流程**——这是产品/合规决定（未同意隐私政策前是否允许打这个域名），等你拍板 |
 | 42 | `0x504B4453` 那个 14 KB 段的归属；发布链是否还写了别的东西 | 两个原包都有、内容高熵、既不是 Walle 也不是 apksig 的已知号段，打包脚本已丢 → 只有 CI 或运维能认 |
+| 43 | 真机上验证码是否真到、60 秒观感、键盘跟随与号码框锁定的手感 | **`/api/sms/send` 不去调**（会发真短信），逻辑已用假仓库在 JVM 里钉死；剩下的是运营商延迟 + IME 高度 + `重新发送（%d）` 排版。另注：`CountDownTimer` 在 Robolectric 下不投递消息，计时类断言只能靠注入的 ticker（五点二十一） |
+| 44 | 一键登录（`LoginPhoneDialog`）真跑起来 | `com.g.gysdk` 与 `cn.fly.verify` 两个 jar 都不在 Maven Central、APK 里只有类名 ⇒ 重建恒答 null（等价原版 preLogin 失败分支）。masked 号码排版与运营商条款都要等 SDK |
+| 45 | 微信/QQ 授权与客服会话的真实回路 | 包查询是真的（原版也是）；`sendWechatAuth`/`startQqLogin`/客服会话是空实现，`LoginEvents` 三个流还没有发布者（`wxapi/WXEntryActivity`、QQ `IUiListener` 属三方登录卡） |
+| 46 | `POST_NOTIFICATIONS` 该在什么时机问 | 现在照搬原版：`onCreate` 里每账号只问一次（键在按用户实例）。上架审核对这条敏感，是否挪到首启隐私同意之后，是产品决定 |
 
 ## 十、下一步顺序（建议）
 

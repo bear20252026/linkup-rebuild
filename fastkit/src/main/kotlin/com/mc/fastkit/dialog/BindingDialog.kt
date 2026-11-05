@@ -40,14 +40,25 @@ abstract class BindingDialog<V : ViewBinding>(context: Context) :
     /** Called once, after the binding is inflated and installed. */
     protected abstract fun onInit(binding: V)
 
+    /**
+     * The Activity this dialog belongs to. `Dialog.getContext()` is *not* it: with a theme, Android
+     * wraps the passed context in a `ContextThemeWrapper`, so a sheet that wants to finish its host --
+     * as the recovered login sheets did -- has to unwrap first. The original's own base kept the raw
+     * context, which is why its `context as? Activity` worked there.
+     */
+    val hostActivity: android.app.Activity?
+        get() {
+            var candidate: Context? = context
+            while (candidate is android.content.ContextWrapper && candidate !is android.app.Activity) {
+                candidate = candidate.baseContext
+            }
+            return candidate as? android.app.Activity
+        }
+
     override fun show() {
         // The recovered manager refused to show when the host activity was gone or the dialog was
         // already up; keeping that here so a stray second call cannot crash a screen.
-        var candidate: Context? = context
-        while (candidate is android.content.ContextWrapper && candidate !is android.app.Activity) {
-            candidate = candidate.baseContext
-        }
-        val host = candidate as? android.app.Activity
+        val host = hostActivity
         if (host != null && (host.isFinishing || host.isDestroyed)) return
         if (isShowing) return
         binding

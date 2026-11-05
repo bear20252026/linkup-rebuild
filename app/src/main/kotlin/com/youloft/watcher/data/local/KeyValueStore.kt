@@ -6,13 +6,25 @@ import com.tencent.mmkv.MMKV
 /**
  * The two MMKV instances the recovered `CacheUtils` reads through:
  * a process-wide default one, and one named after the logged-in user id. Both are opened in
- * multi-process mode (the original passed mode `2`), and both are read through this tiny
- * string-only surface because every value these screens need is a Gson JSON string.
+ * multi-process mode (the original passed mode `2`).
+ *
+ * Strings carry the JSON records, but `CacheUtils` also wrote plain ints and booleans
+ * (`decodeInt("lastLoginType", 0)`, `decodeBool("isRequestedNotification", false)`), so those two
+ * types are part of the surface too — an MMKV value written as an int is not readable as a string,
+ * and old installs are exactly what a rebuilt client has to keep reading.
  */
 interface KeyValueStore {
     fun string(key: String): String?
 
     fun putString(key: String, value: String)
+
+    fun int(key: String, default: Int = 0): Int
+
+    fun putInt(key: String, value: Int)
+
+    fun boolean(key: String, default: Boolean = false): Boolean
+
+    fun putBoolean(key: String, value: Boolean)
 }
 
 interface KeyValueStores {
@@ -26,6 +38,16 @@ interface KeyValueStores {
 private class MmkvStore(private val mmkv: MMKV) : KeyValueStore {
     override fun string(key: String): String? = mmkv.decodeString(key)
     override fun putString(key: String, value: String) {
+        mmkv.encode(key, value)
+    }
+
+    override fun int(key: String, default: Int): Int = mmkv.decodeInt(key, default)
+    override fun putInt(key: String, value: Int) {
+        mmkv.encode(key, value)
+    }
+
+    override fun boolean(key: String, default: Boolean): Boolean = mmkv.decodeBool(key, default)
+    override fun putBoolean(key: String, value: Boolean) {
         mmkv.encode(key, value)
     }
 }
@@ -50,24 +72,35 @@ class InMemoryKeyValueStores(
 ) : KeyValueStores {
     private val sharedValues = initialShared.toMutableMap()
 
-    override val shared: KeyValueStore = object : KeyValueStore {
-        override fun string(key: String): String? = sharedValues[key]
-        override fun putString(key: String, value: String) {
-            sharedValues[key] = value
-        }
-    }
+    override val shared: KeyValueStore = store(sharedValues)
 
-    override fun forUser(userId: Long): KeyValueStore {
-        val values = userValues.getOrPut(userId) { mutableMapOf() }
-        return object : KeyValueStore {
-            override fun string(key: String): String? = values[key]
-            override fun putString(key: String, value: String) {
-                values[key] = value
-            }
-        }
-    }
+    override fun forUser(userId: Long): KeyValueStore =
+        store(userValues.getOrPut(userId) { mutableMapOf() })
 
     fun putForUser(userId: Long, key: String, value: String) {
         userValues.getOrPut(userId) { mutableMapOf() }[key] = value
+    }
+
+    /**
+     * One map-backed space. Numbers and flags round-trip through their text form here; the real
+     * `MmkvStore` keeps MMKV's own typing, which is what an old install's data needs.
+     */
+    private fun store(values: MutableMap<String, String>): KeyValueStore = object : KeyValueStore {
+        override fun string(key: String): String? = values[key]
+        override fun putString(key: String, value: String) {
+            values[key] = value
+        }
+
+        override fun int(key: String, default: Int): Int = values[key]?.toIntOrNull() ?: default
+        override fun putInt(key: String, value: Int) {
+            values[key] = value.toString()
+        }
+
+        override fun boolean(key: String, default: Boolean): Boolean =
+            values[key]?.toBooleanStrictOrNull() ?: default
+
+        override fun putBoolean(key: String, value: Boolean) {
+            values[key] = value.toString()
+        }
     }
 }

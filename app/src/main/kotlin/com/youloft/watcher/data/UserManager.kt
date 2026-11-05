@@ -24,10 +24,14 @@ class NetworkUserRepository(private val api: LinkUpApi) : UserRepository {
  */
 interface AccountSideEffects {
     fun onVipStateChanged(user: User, wasVip: Boolean)
+
+    /** What `LoginManager` did after storing an account: bind IM, `lf.b.b(userId)`, Umeng sign-in. */
+    fun onSignedIn(user: User)
 }
 
 object NoAccountSideEffects : AccountSideEffects {
     override fun onVipStateChanged(user: User, wasVip: Boolean) = Unit
+    override fun onSignedIn(user: User) = Unit
 }
 
 /**
@@ -49,9 +53,44 @@ class UserManager(
 
     fun token(): String = cache.token()
 
-    /** `z0.g(user, ...)` — the point a login response is turned into local state. */
-    fun store(user: User) {
+    /**
+     * The point a login response becomes local state — `manager/v0.h(user, …)` in the recovered code.
+     *
+     * Three recovered details are the reason this is not one line:
+     *  - **the account record is written before the token** (`CacheUtils.i3` then `d3`), which is the
+     *    order the original kept in `v0.h`;
+     *  - a user is only written to `user2` when it is *usable as a session*: a login whose nickname is
+     *    still empty, or a third-party login for an account that still has to complete its profile
+     *    (`isRegister == true`), is **parked in a process-global holder instead** (`App.user`) — that
+     *    holder is what the profile-completion screen reads;
+     *  - the token is stored in both cases, so a parked user is signed in but not yet cached.
+     *
+     * `userId == 0` also stopped the desktop-widget update service and cleared the account LiveData in
+     * the original; both belong to the widget/IM cards, so only the cache write is modelled here.
+     */
+    fun store(user: User, fromLogin: Boolean = true) {
+        if (fromLogin && user.nickname.isNullOrEmpty() || !fromLogin && user.isRegister) {
+            inFlight = user
+        } else {
+            cache.save(user)
+            _user.value = user
+        }
         cache.saveToken(user.token.orEmpty())
+        sideEffects.onSignedIn(user)
+    }
+
+    /**
+     * `App.f63249f` — the user a login returned but could not cache yet.
+     * `App.b()`/`App.d(user)` read and write it; the profile-completion screen is its consumer.
+     */
+    var inFlight: User = User()
+        private set
+
+    /**
+     * `manager/o2.r(user)` on its own — the write `repository/c` performs when a login only *binds* a
+     * phone: replace the cached record and publish it, without touching the token or signing in.
+     */
+    fun saveRecord(user: User) {
         cache.save(user)
         _user.value = user
     }

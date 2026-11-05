@@ -8,6 +8,8 @@ import com.youloft.linkup.api.dto.User
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.watcher.AndroidDeviceContext
 import com.youloft.watcher.data.local.InMemoryKeyValueStores
+import com.youloft.watcher.data.local.KeyValueStore
+import com.youloft.watcher.data.local.KeyValueStores
 import com.youloft.watcher.data.local.UserCache
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -35,8 +37,42 @@ class UserManagerTest {
 
     private class Recorder : AccountSideEffects {
         val events = mutableListOf<Pair<Long, Boolean>>()
+        val signedIn = mutableListOf<Long>()
         override fun onVipStateChanged(user: User, wasVip: Boolean) {
             events += user.userId to wasVip
+        }
+
+        override fun onSignedIn(user: User) {
+            signedIn += user.userId
+        }
+    }
+
+    /** Records the order keys are written, which is the one thing the login write path is about. */
+    private class OrderingStores : KeyValueStores {
+        val writes = mutableListOf<String>()
+        private val backing = InMemoryKeyValueStores()
+
+        override val shared: KeyValueStore = recording(backing.shared)
+        override fun forUser(userId: Long): KeyValueStore = recording(backing.forUser(userId))
+
+        private fun recording(inner: KeyValueStore) = object : KeyValueStore {
+            override fun string(key: String): String? = inner.string(key)
+            override fun int(key: String, default: Int): Int = inner.int(key, default)
+            override fun boolean(key: String, default: Boolean): Boolean = inner.boolean(key, default)
+            override fun putString(key: String, value: String) {
+                writes += key
+                inner.putString(key, value)
+            }
+
+            override fun putInt(key: String, value: Int) {
+                writes += key
+                inner.putInt(key, value)
+            }
+
+            override fun putBoolean(key: String, value: Boolean) {
+                writes += key
+                inner.putBoolean(key, value)
+            }
         }
     }
 
@@ -48,12 +84,79 @@ class UserManagerTest {
         val manager = UserManager(repository, cache, effects)
     }
 
-    private fun user(userId: Long = 7L, vipSubType: Int = 0, token: String? = null) = User(
+    private fun user(
+        userId: Long = 7L,
+        vipSubType: Int = 0,
+        token: String? = null,
+        nickname: String? = "有名字",
+        isRegister: Boolean = false,
+    ) = User(
         userId = userId,
         mainUser = userId,
         vipSubType = vipSubType,
         token = token,
+        nickname = nickname,
+        isRegister = isRegister,
     )
+
+    @Test
+    fun `the cached record is written before the token, in that order`() {
+        val stores = OrderingStores()
+        val manager = UserManager(FakeUserRepository(), UserCache(stores), Recorder())
+
+        manager.store(user(token = "jwt-abc"))
+
+        assertEquals(listOf(UserCache.KEY_USER, UserCache.KEY_TOKEN), stores.writes)
+    }
+
+    @Test
+    fun `a login that still has no nickname is parked, and only the token is written`() {
+        val stores = OrderingStores()
+        val manager = UserManager(FakeUserRepository(), UserCache(stores), Recorder())
+
+        manager.store(user(token = "half-login", nickname = null))
+
+        assertEquals(listOf(UserCache.KEY_TOKEN), stores.writes, "the record must not be cached yet")
+        assertEquals(0L, manager.current().userId)
+        assertEquals(7L, manager.inFlight.userId, "`App.user` is where the profile screen picks it up")
+    }
+
+    @Test
+    fun `a third-party login parks an account that still has to complete its profile`() {
+        val stores = OrderingStores()
+        val manager = UserManager(FakeUserRepository(), UserCache(stores), Recorder())
+
+        manager.store(user(isRegister = true, token = "wx"), fromLogin = false)
+        assertEquals(listOf(UserCache.KEY_TOKEN), stores.writes)
+        assertEquals(7L, manager.inFlight.userId)
+
+        val fresh = OrderingStores()
+        UserManager(FakeUserRepository(), UserCache(fresh), Recorder())
+            .store(user(isRegister = false, token = "wx"), fromLogin = false)
+        assertEquals(listOf(UserCache.KEY_USER, UserCache.KEY_TOKEN), fresh.writes)
+    }
+
+    @Test
+    fun `binding a phone replaces the record without touching the token`() {
+        val stores = OrderingStores()
+        val recorder = Recorder()
+        val manager = UserManager(FakeUserRepository(), UserCache(stores), recorder)
+
+        manager.saveRecord(user(token = "ignored"))
+
+        assertEquals(listOf(UserCache.KEY_USER), stores.writes)
+        assertTrue(recorder.signedIn.isEmpty(), "no sign-in side effects on the bind path")
+    }
+
+    @Test
+    fun `signing in reports the account to the side effects`() {
+        val recorder = Recorder()
+        val manager = UserManager(FakeUserRepository(), UserCache(OrderingStores()), recorder)
+
+        manager.store(user(userId = 21L))
+
+        assertEquals(listOf(21L), recorder.signedIn)
+    }
 
     @Test
     fun `storing a login result writes the recovered keys and feeds the identity`() {

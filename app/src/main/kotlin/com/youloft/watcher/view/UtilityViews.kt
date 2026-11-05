@@ -7,7 +7,6 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.Shader
 import android.util.AttributeSet
-import android.os.CountDownTimer
 import android.view.View
 import android.widget.LinearLayout
 import androidx.appcompat.widget.AppCompatTextView
@@ -164,41 +163,6 @@ class BottomLineTextView @JvmOverloads constructor(
 
     private companion object {
         val LINE_ATTRS = intArrayOf(AppR.attr.bottomLineColor, AppR.attr.bottomLineHeight)
-    }
-}
-
-/** 60s countdown for the SMS code button; the original defaults to the same window. */
-class SendCodeButton @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0,
-) : AppCompatTextView(context, attrs, defStyleAttr) {
-
-    private var timer: CountDownTimer? = null
-    var countdownMillis: Long = 60_000L
-    var normalText: CharSequence = text
-    var countingFormat: (Long) -> String = { "${it / 1000}s后重新获取" }
-
-    fun startCountDown() {
-        timer?.cancel()
-        isClickable = false
-        timer = object : CountDownTimer(countdownMillis, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {
-                text = countingFormat(millisUntilFinished)
-            }
-
-            override fun onFinish() {
-                text = normalText
-                isClickable = true
-            }
-        }.start()
-    }
-
-    fun cancelCountDown() {
-        timer?.cancel()
-        timer = null
-        text = normalText
-        isClickable = true
     }
 }
 

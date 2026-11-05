@@ -19,7 +19,10 @@ import com.youloft.watcher.data.local.FriendCache
 import com.youloft.watcher.data.local.InstallChannel
 import com.youloft.watcher.data.local.SigningBlockInstallChannel
 import com.youloft.watcher.data.local.KeyValueStores
+import com.youloft.watcher.data.local.LoginFlags
 import com.youloft.watcher.data.local.MmkvKeyValueStores
+import com.youloft.watcher.pages.login.OneTapAuth
+import com.youloft.watcher.pages.login.UnavailableOneTapAuth
 import com.youloft.watcher.data.local.AddFriendTipsPolicy
 import com.youloft.watcher.data.local.AddFriendTips
 import com.youloft.watcher.data.local.PermissionChannelGate
@@ -121,6 +124,25 @@ open class LinkUpApplication : Application() {
     open val userRepository: UserRepository by lazy {
         NetworkUserRepository(LinkUpClient(context = deviceContext()).api)
     }
+
+    /** `repository/c` — the login endpoints, plus the write that a successful one performs. */
+    open val loginRepository: LoginRepository by lazy {
+        NetworkLoginRepository(
+            LinkUpClient(context = deviceContext()).api,
+            users,
+            LoginFlags(keyValueStores),
+        )
+    }
+
+    /** `CacheUtils.L()` / `Z0()` — the two account flags outside the user record. */
+    open val loginFlags: LoginFlags get() = LoginFlags(keyValueStores)
+
+    /**
+     * The carrier one-tap SDK (`com.g.gysdk`, `cn.fly.verify`). Neither jar can be taken out of the APK
+     * and neither is on Maven Central, so production answers "no cached number" — which is the same
+     * branch the recovered code took when the pre-login call failed, and it lands the user in the SMS sheet.
+     */
+    open val oneTapAuth: OneTapAuth get() = UnavailableOneTapAuth
 
     /** `manager/s2` + `manager/z0`: the single owner of the account record and its cache write. */
     open val users: UserManager by lazy { UserManager(userRepository, accountCache) }
