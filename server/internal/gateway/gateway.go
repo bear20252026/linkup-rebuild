@@ -1,0 +1,276 @@
+// Package gateway is the HTTP surface the LinkUp Android client already speaks: the same paths, the
+// same `{status,msg,data}` envelope, the same AES signature header, the same account token.
+//
+// Two rules shape it:
+//
+//  1. Where the client is the fixed side, the server matches it — the signature is verified over the
+//     URL the client actually sent, and the RSA public key is emitted in the four-dash footer form the
+//     client's own stripper expects (contract.PublicKeyPEM).
+//  2. Where only the server knew the answer, the value is a flag, never a guess. The friend quota and
+//     the client-config switches are configured at boot and documented as unknown-from-the-APK, because
+//     inventing a number here would look identical to a recovered one.
+package gateway
+
+import (
+	"bytes"
+	"crypto/rsa"
+	"encoding/json"
+	"errors"
+	"io"
+	"log/slog"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"linkup.local/server/internal/contract"
+	"linkup.local/server/internal/dto"
+	"linkup.local/server/internal/openim"
+	"linkup.local/server/internal/store"
+)
+
+// Options is everything boot has to decide.
+type Options struct {
+	Store       *store.Store
+	IM          *openim.Client
+	JWTSecret   []byte
+	PublicKey   *rsa.PrivateKey
+	TokenTTL    time.Duration
+	Logger      *slog.Logger
+	DevSMSCode  string // when set, every issued code is this value and nothing is sent
+	FriendLimit int    // <0 means "no quota"; the real number is not recoverable from the APK
+
+	// CutLoginType is what `api/sms/login/cut` answers with. It selects the one-tap vendor on the
+	// device, so until a vendor SDK is wired up anything but "1"/"3" is the honest choice.
+	CutLoginType string
+	// ClientConfig is `api/client/config`. Every switch in it is an operational decision, so the
+	// defaults here are the ones the shipped APKs' own fallbacks used, not invented values.
+	ClientConfig dto.ChannelConfig
+}
+
+// Gateway holds the routes' shared state.
+type Gateway struct {
+	opts Options
+	log  *slog.Logger
+	pem  string
+}
+
+const bodyLimit = 1 << 20
+
+// DefaultClientConfig is what `api/client/config` answers until operations says otherwise. The nine
+// switches are all operational choices — none of their production values is readable from the APK —
+// so they start at the values the client itself falls back to when the field is absent, and the
+// im group ids stay empty rather than invented.
+func DefaultClientConfig() dto.ChannelConfig {
+	return dto.ChannelConfig{AutoReportAddressShow: 0, NotRelativesLockShow: false}
+}
+
+// New builds the engine. Routes are registered exactly as the client spells them, without a leading
+// slash in the recovered annotation but with one on the wire.
+func New(opts Options) (*gin.Engine, error) {
+	if opts.Store == nil {
+		return nil, errors.New("gateway: store is required")
+	}
+	if opts.IM == nil {
+		return nil, errors.New("gateway: openim client is required")
+	}
+	if len(opts.JWTSecret) == 0 {
+		return nil, errors.New("gateway: jwt secret is required")
+	}
+	if opts.PublicKey == nil {
+		return nil, errors.New("gateway: rsa key is required")
+	}
+	if opts.TokenTTL <= 0 {
+		opts.TokenTTL = 30 * 24 * time.Hour
+	}
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
+	}
+	pemText, err := contract.PublicKeyPEM(&opts.PublicKey.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+	g := &Gateway{opts: opts, log: opts.Logger, pem: pemText}
+
+	gin.SetMode(gin.ReleaseMode)
+	engine := gin.New()
+	engine.Use(gin.Recovery(), g.signature(), g.account())
+
+	api := engine.Group("/api")
+	{
+		// Unauthenticated, unsigned (the client's own signer skips any path containing sms/login).
+		api.GET("/client/config", g.clientConfig)
+		api.GET("/sms/login/cut", g.loginCut)
+		api.GET("/sms/send", g.sendCode)
+		api.POST("/sms/click_to_login", g.loginByPhone)
+		api.POST("/user/login", g.loginByThird)
+
+		// Authenticated.
+		api.GET("/user/info", g.userInfo)
+		api.POST("/user/update/info", g.updateUserInfo)
+		api.GET("/tool/rsa/public_key", g.publicKey)
+
+		api.GET("/relation/pre_confirm", g.preConfirm)
+		api.POST("/relation/apply", g.apply)
+		api.POST("/relation/confirm", g.confirm)
+		api.GET("/relation/apply_list", g.applyList)
+		api.GET("/relation/list", g.friendList)
+		api.GET("/relation/info", g.friendInfo)
+		api.POST("/relation/del", g.deleteFriend)
+		api.POST("/relation/update", g.updateRelation)
+		api.POST("/relation/update_remark", g.updateRemark)
+	}
+	return engine, nil
+}
+
+// signature verifies the AES signature the client puts in the `Signature` header. The skipped paths
+// are the ones the client's interceptor also skips, so a missing header there is not an error.
+//
+// The body is read on every route, skipped ones included: the login calls carry their payload in it,
+// and dropping it here would silently hand the handlers an empty form.
+func (g *Gateway) signature() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var body []byte
+		if !strings.EqualFold(c.Request.Method, http.MethodGet) && c.Request.ContentLength > 0 {
+			raw, err := io.ReadAll(io.LimitReader(c.Request.Body, bodyLimit))
+			if err != nil {
+				g.deny(c, "read body")
+				return
+			}
+			body = raw
+			c.Request.Body = io.NopCloser(bytes.NewReader(raw))
+		}
+		c.Set(bodyKey, body)
+
+		if !clientSigns(c.Request.URL.Path) {
+			c.Next()
+			return
+		}
+		input := contract.SignatureInput(c.Request.URL.Path, c.Request.URL.RawQuery, c.Request.Method, body)
+		if !contract.Verify(c.GetHeader("Signature"), input) {
+			g.deny(c, "signature")
+			return
+		}
+		c.Next()
+	}
+}
+
+// clientSigns reproduces the recovered interceptor's own skip list: a path with a `login` or `sms`
+// segment is sent without Signature and Authorization headers, so demanding one there would reject
+// every real login. Everything else — including `api/client/config` and `api/user/login`'s neighbours
+// — arrives signed.
+func clientSigns(path string) bool {
+	for _, segment := range strings.Split(strings.Trim(path, "/"), "/") {
+		if segment == "login" || segment == "sms" {
+			return false
+		}
+	}
+	return true
+}
+
+const (
+	bodyKey     = "linkup.body"
+	claimsKey   = "linkup.claims"
+	authSkipKey = "linkup.anonymous"
+)
+
+// deny answers the way the test server answered a bad signature: 1001, "参数异常".
+func (g *Gateway) deny(c *gin.Context, reason string) {
+	g.log.Warn("rejected", "path", c.Request.URL.Path, "reason", reason)
+	c.AbortWithStatusJSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
+}
+
+// account requires the raw JWT in `Authorization` for every route except the three that log a user in.
+func (g *Gateway) account() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		switch c.FullPath() {
+		case "/api/client/config", "/api/sms/login/cut", "/api/sms/send", "/api/sms/click_to_login", "/api/user/login":
+			c.Set(authSkipKey, true)
+			c.Next()
+			return
+		}
+		claims, err := contract.ParseToken(g.opts.JWTSecret, c.GetHeader("Authorization"))
+		if err != nil {
+			// The client's data source treats this as token_fail and stops before business code.
+			c.AbortWithStatusJSON(http.StatusUnauthorized, contract.Fail(contract.StatusTokenFail, "登录已失效"))
+			return
+		}
+		c.Set(claimsKey, claims)
+		c.Next()
+	}
+}
+
+func (g *Gateway) claims(c *gin.Context) *contract.Claims {
+	v, ok := c.Get(claimsKey)
+	if !ok {
+		return &contract.Claims{}
+	}
+	claims, _ := v.(*contract.Claims)
+	if claims == nil {
+		return &contract.Claims{}
+	}
+	return claims
+}
+
+// body decodes the JSON body the signature middleware already read.
+func body(c *gin.Context) map[string]any {
+	raw, _ := c.Get(bodyKey)
+	text, _ := raw.([]byte)
+	if len(text) == 0 {
+		return map[string]any{}
+	}
+	var out map[string]any
+	if err := json.Unmarshal(text, &out); err != nil {
+		return map[string]any{}
+	}
+	return out
+}
+
+func num(m map[string]any, key string) int64 {
+	switch v := m[key].(type) {
+	case float64:
+		return int64(v)
+	case string:
+		n, _ := strconv.ParseInt(v, 10, 64)
+		return n
+	case json.Number:
+		n, _ := v.Int64()
+		return n
+	}
+	return 0
+}
+
+// optStr and optNum distinguish "the client sent null / left the key out" from "the client sent a
+// value", which matters for fields whose zero means something (stage 0 restarts the profile wizard).
+func optStr(m map[string]any, key string) *string {
+	if v, ok := m[key].(string); ok {
+		return &v
+	}
+	return nil
+}
+
+func optNum(m map[string]any, key string) *int {
+	raw, ok := m[key]
+	if !ok || raw == nil {
+		return nil
+	}
+	n := int(num(m, key))
+	return &n
+}
+
+func str(m map[string]any, key string) string {
+	if v, ok := m[key].(string); ok {
+		return v
+	}
+	return ""
+}
+
+func queryInt(c *gin.Context, key string, def int) int {
+	n, err := strconv.Atoi(c.Query(key))
+	if err != nil || n <= 0 {
+		return def
+	}
+	return n
+}

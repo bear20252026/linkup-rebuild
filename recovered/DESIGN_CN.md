@@ -1130,6 +1130,79 @@ onCreate → GET api/sms/login/cut → loginType.toIntOrNull() ?: 1
 4. 微信 code → `api.weixin.qq.com/sns/oauth2/access_token` → `/sns/userinfo` → `platform=4` 这条完整链；
 5. `/api/sms/send` 的真实调用——**我不会去碰它**（会发真短信），所以上面全部是假仓库驱动的 JVM 测试。
 
+## 五点二十二、后端重建第一刀：Go 网关 + OpenIMServer（#21，2026-11-05）
+
+### 这一刀切在哪
+
+`api` 侧此前一直是"客户端单方面对齐线上"。本轮按你的决定换方向：**关系与消息状态交给 OpenIMServer，
+LinkUp 自有的东西自己做**，语言选 Go（与线上 `always_guard.api` 同栈，且本机 Go 1.27 现成）。
+落点 `server/`，覆盖 **17 条路由**（GET 9 / POST 8）：登录域 5 条、配置与公钥 2 条、关系域 10 条。
+剩下 80 条没动——它们是定位/锁机/截图/纪念日/VIP/支付，不阻塞"两台设备能加上好友"这条主链。
+
+分层是四块：`contract`（信封 + AES 签名 + JWT + PEM）、`openim`（关系域 REST 客户端）、
+`store`（OpenIM 存不下的：账号 / 匹配码 / 每方向 extras / 验证码 / 配额）、`gateway`（路由与两个中间件）。
+
+### 本轮从代码里新核出来的四条（之前不知道或记错）
+
+| # | 事实 | 出处 |
+|---|---|---|
+| 1 | `api/relation/confirm` 的 `code` 在 **query**，body 里只是重复一份 | `net/.../LinkUpApi.kt:54`（`@Query("code") code: Long, @Body payload`）↔ 1.6.6 `datasource` 调用点 |
+| 2 | `api/user/update/info` 的 body **恰好四个键**：`avatar`、`nickname`、`sex`、**`stage`** | 1.6.6 `datasource/a.java:402`：`a1.j0(s1.a(f65723w,…), s1.a("nickname",…), s1.a(ArticleInfo.USER_SEX,…), s1.a("stage",…))`；`ImproveUserInfoActivity.java:54` 里 `f65723w = "avatar"`，`ArticleInfo.java:6` 里 `USER_SEX = "sex"`（一个百度广告的常量被复用成了用户字段名——这类"意外的名字"本身就是还原线索） |
+| 3 | `stage` 不是装饰：它是"补资料走到第几步"，客户端拿它决定从哪一步继续，`App.user.setStage()` 本地写、下次进屏 `getStage() > 0` 就跳过去 | 1.6.6 `ImproveUserInfoActivity.java:343,411-412`。服务端丢这个键 ⇒ 每个半途退出的人都被打回第一步 |
+| 4 | 两个申请列表的响应 key **大小写不一致**：`get_friend_apply_list` → `FriendRequests`，`get_self_friend_apply_list` → `friendRequests` | `github.com/openimsdk/protocol v0.0.73-alpha.12`：`relation.pb.go:514` vs `:2083`。Go 的 `encoding/json` 有大小写不敏感兜底，所以一个解码器能读两种；测试把两种拼法都钉住，防止以后"顺手统一"把自发列表读成空 |
+
+顺带把一条旧事实钉进服务端：`api/client/config` **是**签名的（签名的跳过规则只看路径分段里有没有
+`login`/`sms`），而线上那台 `link.tttick.com` 实测不校验签名（§七）。重建版按测试服的行为校验，
+这是有意与线上现状不同，不是还原。
+
+### 我自己写出来的四个 bug（都在本轮被抓并修掉）
+
+1. **签名中间件在"跳过"分支里没读 body。** 于是登录路径的 body 永远是空 map ⇒ `typeId` 解析成 0 ⇒
+   **所有登录都被自己拒了**。gateway 测试一上来 9 条红，才定位到"跳过校验"顺手跳过了读体。
+2. **`IssueCode(phone, ttl)` 收了 `ttl` 然后 `_ = ttl` 丢掉**——验证码永不过期。这条最危险的地方在于
+   它编译过、也"看起来对"，只有真去断言过期才红。修法：`Code.ExpiresAt` + `CheckCode` 里比对并清除。
+3. **`ThirdAccount` 的 switch 有一条分支返回 nil 指针**，测试当场 panic。三方登录（`api/user/login`）
+   原来的账号键是我编的 `"wx"+platform+":"+unionId` 塞进 phone 列——所以"微信绑过手机的人再用短信登录"
+   会拿到**第二个账号**。现在 `User` 有 `unionId/platform` 两列，规则是：union id 是主键，手机来绑就附上；
+   只有手机已知时该账号收养这个 union id（前提它还没有）。一个人不再因为入口不同变成两个人。
+4. **`smoke.sh` 自己漏了 query**（签了 `?page=1&pageSize=20` 却请求裸路径），relation/list 报 1001。
+   查了两轮才发现是我的脚本错、不是网关错——顺手说明篡改检测真的有效。脚本现在把两种情形都测：
+   签名与实际 query 不一致 ⇒ 拒；一致 ⇒ 过。
+
+另外记一条**发布链的坑**（与后端无关但同源）：`tools/publish.sh` 用 `git archive | tar -x` 叠加复制，
+`rm -rf` 只列了当时存在的几个目录名——新增的 `server/`、`core-net/` 不在列，所以**在本地删掉的服务文件
+会在公开仓里复活**。已改成整目录清空再解。
+
+### 哪些是照客户端、哪些是我定的
+
+写进了 `server/README.md` 的一张三分类表（不可改 / 我定的 / 未知待真服对比），这里挑三个最容易看漏的：
+
+- **不可改**：RSA 公钥必须以**四个横杠**结尾 `----END PUBLIC KEY-----`（§五点二十一 与 §七都提过，
+  这轮在服务端落成真代码并有负向测试：五横杠会让客户端 Base64 多留一个 `-`，然后静默走 10086 分支）。
+- **不可改**：`Authorization` 是裸 JWT；`typeId`、`platform` 是字符串；`data` 为 null 时整个键省略。
+- **我定的**：`-friend-limit` 默认 `-1`（不配额）、`-cut-login-type` 默认 `9`（不走一键登录）、
+  "该用户不存在"用 `1002`、confirm 时两个方向各留各的选择。每一条都是 flag，因为把它们写成"看起来
+  像恢复值"的数字才是最坏的结果。
+
+### 数字与验收
+
+`go vet` 干净，`gofmt` 干净，**34 个 Go 测试全绿**（contract 6、gateway 15、openim 6、store 7），
+全部离线。`bash server/scripts/smoke.sh` **28 条用例全绿**：真起进程、真走 TCP、签名由 **openssl** 产出
+——于是 Go / JVM 客户端 / OpenSSL 三个实现在同一条契约上对上了；OpenSSL 那一路是我这轮顺手发现的
+（一开始 `-K` 的 hex 我把 `4b` 打成 `6b`，两家"不一致"居然是我的键错）。
+
+**没跑的**：OpenIM 真容器栈一次都没起过。C 盘 7.2 GB（99% 满）而 Docker data-root 在 C，
+那套镜像解压 2.5–3.5 GB。所以"网关 ↔ 真 OpenIM"只到**待验**（下表 47–49 行），
+`smoke.sh` 里是故意把 `-openim` 指到死端口的：验证不可达时答 `status:500 服务暂时不可用`，
+而不是一个看起来像成功的空好友列表。
+
+本轮同时复验了客户端侧没有倒退：`:net` 29 / 0、`:app` 235 / 0（合计 **264**，本卡没碰任何 Kotlin 文件），
+从 XML 报告逐条数出来的。**顺带记一条坑**：`sh tools/gradle.sh … | tail` 之后的 `$?` 是 `tail` 的 0，
+我第一次这样跑就差点把一次 BUILD FAILED 当绿收下——真退出码要从被测命令自己取。
+另外 `:fastkit:testDebugUnitTest` **现在是坏的**（AAPT 报 `colorPrimaryVariant` 等属性找不到：该模块的
+res 引用 Material 属性，但测试变体的类路径上没有 material 依赖），而 `fastkit/src` 只有 `main/`、
+**零测试源**——所以它不在回归命令里，将来给 :fastkit 写测试时要先补这个依赖。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1250,6 +1323,12 @@ onCreate → GET api/sms/login/cut → loginType.toIntOrNull() ?: 1
 | 44 | 一键登录（`LoginPhoneDialog`）真跑起来 | `com.g.gysdk` 与 `cn.fly.verify` 两个 jar 都不在 Maven Central、APK 里只有类名 ⇒ 重建恒答 null（等价原版 preLogin 失败分支）。masked 号码排版与运营商条款都要等 SDK |
 | 45 | 微信/QQ 授权与客服会话的真实回路 | 包查询是真的（原版也是）；`sendWechatAuth`/`startQqLogin`/客服会话是空实现，`LoginEvents` 三个流还没有发布者（`wxapi/WXEntryActivity`、QQ `IUiListener` 属三方登录卡） |
 | 46 | `POST_NOTIFICATIONS` 该在什么时机问 | 现在照搬原版：`onCreate` 里每账号只问一次（键在按用户实例）。上架审核对这条敏感，是否挪到首启隐私同意之后，是产品决定 |
+| 47 | **网关 ↔ 真 OpenIMServer 跑通一遍**（注册 → add_friend → add_friend_response → 两个列表 → set_friend_remark → delete_friend） | 本机物理上跑不了：C 盘只剩 7.2 GB（99% 满）而 Docker data-root 在 C，OpenIM 那套镜像解压 2.5–3.5 GB。步骤：① 把 Docker 磁盘迁到 D（D 剩 128 GB）② 按上游 `openim-docker` 起栈（mongo:7.0.28 / redis:7.0.0 / bitnamilegacy 的 kafka 3.5.1、minio 2024.1.13、etcd 3.5.21 / openim/openim-server:v3.8.3-patch.18）③ `go run ./cmd/server -openim http://127.0.0.1:10002 -openim-secret <真密钥>`（**不带 `-dev`**，`openIM123` 会被启动拒绝）④ 两台设备或两条会话走一遍加友。在那之前 `internal/openim` 只有 httptest 打桩，**不算验证过** |
+| 48 | `FriendRequests` / `friendRequests` / `friendsInfo` 三个 key 真服到底怎么拼 | 现在照的是 `openimsdk/protocol v0.0.73-alpha.12` 的 json tag，而 REST 层是 protojson 输出，两者可能不完全一致。Go 解码有大小写兜底，所以读不空；但**发送方向**（`pagination.pageNumber` 之类）错了就是 400。等 47 跑通逐条对 |
+| 49 | `get_friend_apply_list` 不传 `handleResults` 时真服返回哪些行 | 现在不传该键（客户端模型里也没有过滤概念）。未处理/已处理是否都回来，直接决定 `applyList` 的 `unreadCount` 口径 |
+| 50 | 三方登录的 `isRegister` 该答 true 还是 false | 它决定客户端 `UserManager.store(fromLogin=false)` 走"停车等补资料"还是直接落库。APK 只看得到消费端，看不到服务端怎么给 |
+| 51 | 线上网关要不要补签名校验 | `link.tttick.com` 实测不校验，密钥在那台形同虚设；重建版默认校验。改线上是运维决定，不是我能在这台机器上做的 |
+| 52 | `-friend-limit` 与 `api/client/config` 九个开关的真实取值 | 只有 CI/运营能给出。重建版全部是启动 flag，默认值都取"客户端自己的 fallback"，没编数字 |
 
 ## 十、下一步顺序（建议）
 
@@ -1260,3 +1339,7 @@ onCreate → GET api/sms/login/cut → loginType.toIntOrNull() ?: 1
 5. 找回 keystore；找不回就新签名 + 老用户重装方案。
 6. 权限从 73 条砍到最小必要（`QUERY_ALL_PACKAGES`、`REQUEST_INSTALL_PACKAGES`、后台精确定位是上架审核与监管重点）。
 7. 与安全/运维定：生产网关要不要补齐 Signature 校验（第七节末）。
+8. 后端侧的下一步（`server/`，五点二十二）：① 把 Docker 磁盘迁到 D，跑通"网关 ↔ 真 OpenIM"（待验 47–49）；
+   ② 客户端把 baseUrl 指到这台重建网关，用真机走一遍加友，逐条对字段；③ 再按域扩路由
+   （定位/锁机 → 纪念日/截图 → VIP），每域一批测试。服务端源码仍然要追：它决定的是"我定的那些取值
+   对不对"，不再是"能不能上线"。

@@ -6,3 +6,8 @@ local.properties
 *.zip
 *.log
 __pycache__/
+
+# server runtime artifacts: a private key and the account store must never be committed
+*.key
+linkup-store.json
+server/linkup-store.json
