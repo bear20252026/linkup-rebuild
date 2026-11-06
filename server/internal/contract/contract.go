@@ -21,6 +21,9 @@ const (
 	StatusOK        = 200
 	StatusParamErr  = 1001 // "参数异常" — the test server's answer to a missing or wrong Signature
 	StatusTokenFail = 401  // the client's `token_fail` path: re-login
+	// StatusForbidden is ours, not a recovery: the client only tests `status != 200` and toasts
+	// `msg`, so what the original server used for "you may not see this" is not observable.
+	StatusForbidden = 403
 )
 
 // Envelope is the body every route returns. `Data` is omitted when nil, which is what the client's

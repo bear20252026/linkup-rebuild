@@ -81,9 +81,13 @@ type harness struct {
 	engine http.Handler
 	im     *stubIM
 	store  *store.Store
+	zone   *time.Location
 }
 
-func newTest(t *testing.T) *harness {
+// newTest builds a gateway over a stub OpenIM. Mutators let a case change the boot options the way
+// an operator would — the track thresholds and the day timezone are flags, so they must be testable
+// as flags rather than as constants.
+func newTest(t *testing.T, mutators ...func(*Options)) *harness {
 	t.Helper()
 	db, err := store.Open("")
 	if err != nil {
@@ -98,7 +102,7 @@ func newTest(t *testing.T) *harness {
 		t.Fatal(err)
 	}
 	gin.SetMode(gin.TestMode)
-	engine, err := New(Options{
+	opts := Options{
 		Store:        db,
 		IM:           openim.New(server.URL, testImSk, "imAdmin"),
 		JWTSecret:    []byte(testJWT),
@@ -108,11 +112,16 @@ func newTest(t *testing.T) *harness {
 		DevSMSCode:   devCode,
 		FriendLimit:  friendMax,
 		CutLoginType: cutNoVendor,
-	})
+		DayZone:      time.UTC,
+	}
+	for _, mutate := range mutators {
+		mutate(&opts)
+	}
+	engine, err := New(opts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &harness{engine: engine, im: stub, store: db}
+	return &harness{engine: engine, im: stub, store: db, zone: opts.DayZone}
 }
 
 type envelope struct {

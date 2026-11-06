@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"linkup.local/server/internal/gateway"
+	"linkup.local/server/internal/location"
 	"linkup.local/server/internal/openim"
 	"linkup.local/server/internal/store"
 )
@@ -35,6 +36,9 @@ func main() {
 		cut         = flag.String("cut-login-type", "9", `api/sms/login/cut answer: "1" GY, "3" FlyVerify, anything else means no one-tap path`)
 		friendLimit = flag.Int("friend-limit", -1, "friends a non-VIP account may hold; -1 disables the quota (the production number is not recoverable from the APK)")
 		devCode     = flag.String("dev-sms-code", "", "when set, this code is accepted for every phone and no message is ever sent")
+		staySeconds = flag.Int64("stay-seconds", 120, "how long a phone must sit still before the day counts another arrival point (not observable from the APK)")
+		gapSeconds  = flag.Int64("gap-seconds", 1800, "how long a silence becomes 没有新定位 instead of movement (not observable from the APK)")
+		dayZone     = flag.String("loc-timezone", "Asia/Shanghai", "timezone the track days are counted in")
 		dev         = flag.Bool("dev", false, "allow the published OpenIM demo secret and an empty JWT secret")
 	)
 	flag.Parse()
@@ -79,17 +83,24 @@ func main() {
 	}
 
 	client := openim.New(*imAddr, imSk, *imAdmin)
+	zone, err := loadZone(*dayZone)
+	if err != nil {
+		log.Error("timezone", "err", err)
+		os.Exit(1)
+	}
 	engine, err := gateway.New(gateway.Options{
-		Store:        db,
-		IM:           client,
-		JWTSecret:    []byte(jwt),
-		PublicKey:    key,
-		TokenTTL:     *tokenTTL,
-		Logger:       log,
-		DevSMSCode:   *devCode,
-		FriendLimit:  *friendLimit,
-		CutLoginType: *cut,
-		ClientConfig: gateway.DefaultClientConfig(),
+		Store:            db,
+		IM:               client,
+		JWTSecret:        []byte(jwt),
+		PublicKey:        key,
+		TokenTTL:         *tokenTTL,
+		Logger:           log,
+		DevSMSCode:       *devCode,
+		FriendLimit:      *friendLimit,
+		CutLoginType:     *cut,
+		ClientConfig:     gateway.DefaultClientConfig(),
+		LocationSettings: location.Settings{StaySeconds: *staySeconds, GapSeconds: *gapSeconds},
+		DayZone:          zone,
 	})
 	if err != nil {
 		log.Error("build gateway", "err", err)
@@ -106,6 +117,21 @@ func main() {
 		log.Error("serve", "err", err)
 		os.Exit(1)
 	}
+}
+
+// loadZone accepts a named zone and falls back to a fixed +08:00 when the machine has no tzdata
+// (a Windows build of Go without the tzdb tag has no embedded database).
+func loadZone(name string) (*time.Location, error) {
+	if name == "" {
+		return time.Local, nil
+	}
+	if zone, err := time.LoadLocation(name); err == nil {
+		return zone, nil
+	}
+	if name == "Asia/Shanghai" {
+		return time.FixedZone(name, 8*60*60), nil
+	}
+	return nil, fmt.Errorf("unknown timezone %q", name)
 }
 
 // loadOrCreateKey keeps the envelope key stable across restarts: the client caches the account record

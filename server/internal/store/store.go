@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"linkup.local/server/internal/location"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -64,6 +65,13 @@ type Extra struct {
 	Since    int64  `json:"since"`
 }
 
+// fix is one stored position: the wire bean (bean/Location, which has no owner field) plus the
+// account it was reported by.
+type fix struct {
+	UserID int64 `json:"userId"`
+	location.Point
+}
+
 // Apply is one pending request, as the sender recorded it. The authoritative list stays in OpenIM;
 // this is only the LinkUp-side payload that travels with the request: which relationship the sender
 // picked and what they were willing to share. The client's request row has no message field, so none
@@ -94,11 +102,13 @@ const maxCodeAttempts = 5
 
 // Data is the on-disk shape.
 type Data struct {
-	NextID  int64            `json:"nextID"`
-	Users   []User           `json:"users"`
-	Extras  map[string]Extra `json:"extras"`
-	Applies map[string]Apply `json:"applies"`
-	Codes   map[string]Code  `json:"codes"`
+	NextID    int64            `json:"nextID"`
+	NextFix   int64            `json:"nextFix"`
+	Users     []User           `json:"users"`
+	Extras    map[string]Extra `json:"extras"`
+	Applies   map[string]Apply `json:"applies"`
+	Codes     map[string]Code  `json:"codes"`
+	Locations []fix            `json:"locations"`
 }
 
 // Store guards Data and persists it on every write.
@@ -119,7 +129,7 @@ var ErrNotFound = errors.New("linkup/store: not found")
 // Open loads (or creates) the file. An empty path keeps everything in memory, which is what the
 // tests do.
 func Open(path string) (*Store, error) {
-	s := &Store{path: path, data: Data{NextID: firstUserID, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
+	s := &Store{path: path, data: Data{NextID: firstUserID, NextFix: 1, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
 	if path == "" {
 		return s, nil
 	}
@@ -146,6 +156,9 @@ func Open(path string) (*Store, error) {
 	}
 	if s.data.NextID < firstUserID {
 		s.data.NextID = firstUserID
+	}
+	if s.data.NextFix == 0 {
+		s.data.NextFix = 1
 	}
 	return s, nil
 }
@@ -460,4 +473,72 @@ func ParseID(text string) int64 {
 		id = id*10 + int64(r-'0')
 	}
 	return id
+}
+
+// AddFix stores one reported position and returns it with the server-assigned id, which is what
+// `api/location/report` answers with.
+func (s *Store) AddFix(userID int64, p location.Point) (location.Point, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	p.ID = s.data.NextFix
+	s.data.NextFix++
+	s.data.Locations = append(s.data.Locations, fix{UserID: userID, Point: p})
+	if err := s.save(); err != nil {
+		return location.Point{}, err
+	}
+	return p, nil
+}
+
+// Fixes returns one account's whole history in time order.
+func (s *Store) Fixes(userID int64) []location.Point {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]location.Point, 0, 32)
+	for _, row := range s.data.Locations {
+		if row.UserID == userID {
+			out = append(out, row.Point)
+		}
+	}
+	location.Sort(out)
+	return out
+}
+
+// LatestFix is the position the track screen and the cards show as "现在".
+func (s *Store) LatestFix(userID int64) (location.Point, bool) {
+	fixes := s.Fixes(userID)
+	for i := len(fixes) - 1; i >= 0; i-- {
+		if fixes[i].Valid() {
+			return fixes[i], true
+		}
+	}
+	return location.Point{}, false
+}
+
+// DaysFor lists the days that have any data, newest first, counted in the server's timezone:
+// `api/location/days` answers strings and `api/location/v2/tracks` takes one back, so the two must
+// agree on which day a fix belongs to.
+func (s *Store) DaysFor(userID int64, in *time.Location) []string {
+	seen := map[string]bool{}
+	var out []string
+	for _, p := range s.Fixes(userID) {
+		day := location.Day(p.TimePeriod, in)
+		if seen[day] {
+			continue
+		}
+		seen[day] = true
+		out = append(out, day)
+	}
+	sort.Sort(sort.Reverse(sort.StringSlice(out)))
+	return out
+}
+
+// FixesOnDay is the slice one day's summary is computed from.
+func (s *Store) FixesOnDay(userID int64, day string, in *time.Location) []location.Point {
+	var out []location.Point
+	for _, p := range s.Fixes(userID) {
+		if location.Day(p.TimePeriod, in) == day {
+			out = append(out, p)
+		}
+	}
+	return out
 }

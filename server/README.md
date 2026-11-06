@@ -4,7 +4,7 @@
 都不改**；好友关系与消息状态放进 OpenIMServer，OpenIM 存不下的 LinkUp 自有字段（关系类型、九项共享
 开关、备注、验证码、配额）留在本地文件。
 
-这一刀覆盖 **17 条路由**（GET 9 / POST 8）：登录域、客户端配置、RSA 公钥、关系域全套。其余 80 条
+现在覆盖 **20 条路由**（GET 11 / POST 9）：登录域、客户端配置、RSA 公钥、关系域全套、**定位域 3 条**。其余 77 条
 （定位、锁机、截图、纪念日、VIP/支付、上传、风控……）还没动——它们大多是"业务表 + 推送"，不阻塞
 "两台设备能加上好友"这条主链路。
 
@@ -13,13 +13,13 @@
 ```bash
 cd server
 
-# 回归：36 个测试，全部离线，不需要 Docker 也不需要网络
+go test ./... 见下
 go test ./...
 
 # 真进程 + 真 socket：28 条用例，签名由第三个实现（openssl）产出
 bash scripts/smoke.sh
 
-# 客户端 ↔ 本网关会师：30 条（要求网关已在跑，且它打的是本网关，不发真短信）
+# 客户端 ↔ 本网关会师：46 条（要求网关已在跑，且它打的是本网关，不发真短信）
 #   ./linkup-gateway -addr 127.0.0.1:8090 -jwt-secret … -openim-secret … -dev-sms-code 000000 &
 #   cd .. && sh tools/gradle.sh :net:gatewayVerify --args="http://127.0.0.1:8090/ 000000"
 
@@ -31,7 +31,7 @@ LINKUP_OPENIM_URL=http://127.0.0.1:10002 LINKUP_OPENIM_SECRET=<非默认密钥> 
   go test ./internal/openim -run Live -v
 
 # 起一个只用内存的本地网关
-go run ./cmd/server -dev -store= -openim-secret= -dev-sms-code 000000
+go run ./cmd/server -dev -store= -openim-secret= -dev-sms-code 000000     -stay-seconds 120 -gap-seconds 1800 -loc-timezone Asia/Shanghai
 ```
 
 `smoke.sh` 存在的理由不是重复 `go test`，而是两件 `go test` 证明不了的事：`cmd/server` 的 flag、
@@ -46,7 +46,8 @@ go run ./cmd/server -dev -store= -openim-secret= -dev-sms-code 000000
 | `internal/contract` | 信封、AES 签名、JWT、RSA 公钥 PEM | 1.6.6 反编译 + 真实测试服应答 + JDK 产出的黄金样本 |
 | `internal/openim` | OpenIMServer 的 REST 客户端（管理员令牌、关系域 8 个调用） | 跑着的 `openim-server:v3.8.3-patch.18` 实测 + `openimsdk/protocol v0.0.73-alpha.12` 的 json tag |
 | `internal/store` | OpenIM 存不下的那部分：账号 / 匹配码 / 每方向的 extras / 验证码 / 配额 | 客户端字段名与调用点 |
-| `internal/gateway` | 17 条路由 + 两个中间件（签名、会话） | `recovered/api_166_contract.md` |
+| `internal/location` | 把上报的点算成"某一天"的折线、停留与移动、三个汇总数字 | 客户端渲染这些数字的方式（`TrackRecordFragment.java:164/181/280/236-300`） |
+| `internal/gateway` | 20 条路由 + 两个中间件（签名、会话） | `recovered/api_166_contract.md` |
 | `internal/dto` | 客户端 Gson 解析的 JSON 形状 | 两个 APK 的 bean 字段名 |
 
 ## 哪些是抄来的、哪些是我定的
@@ -92,7 +93,9 @@ go run ./cmd/server -dev -store= -openim-secret= -dev-sms-code 000000
   `Parameter type must not include a type variable or wildcard`。原版的 class 文件签名是
   `java.util.Map<String, Object>`（`gh/a.java:293`）。门禁在 `:net` 的 `BodyParameterTypesTest`。
 
-**未知，留给真服对比**：`api/client/config` 线上答 12 个键（客户端模型只有 9 个）；一键登录 typeId 1/3
+**未知，留给真服对比**：`api/location/batch/report` 的 body 键（1.6.6 里找不到调用点，没实现）；
+两个 widget 接口要"配对的另一人"与设备状态模型；停留/缺口/归日三个阈值；地址拼接顺序、
+`lostType` 非 0 的含义、`Point.type` 的取值。`api/client/config` 线上答 12 个键（客户端模型只有 9 个）；一键登录 typeId 1/3
 的真实入参；`relation/main_user`、`match_by_phone` 这些没实现的路由的字段；
 `FriendList.Info` 里本后端给不出值的 13 个键（`av`/`deleteAt`/`id`/`imSuspend`/`location`/`newFriend`/
 `permissionValue`/`receivedFirstMsg`/`remarkToMe`/`riskTypes`/`selected`/`sendFirstMsg`/`unregisterTime`）——

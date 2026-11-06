@@ -8,6 +8,8 @@
 // one that the client treats as absent is not the same thing.
 package dto
 
+import "linkup.local/server/internal/location"
+
 // Envelope is the body wrapper every route answers with.
 type Envelope struct {
 	Status int    `json:"status"`
@@ -181,3 +183,34 @@ func Text(s string) *string { return &s }
 
 // Int returns a pointer to n.
 func Int(n int) *int { return &n }
+
+// FriendLocation is bean/FriendLocation: the guarded person's position as the track screen shows it.
+//
+// `endMeetingTime`, `lastMeetingTime` and `pairTime` belong to the pairing/meeting model this
+// backend does not have yet, so they stay 0 rather than invented; `arrivalTime` is the fix's own
+// timestamp, which is the only reading the client's "更新于" label can mean.
+type FriendLocation struct {
+	Address         *location.Address `json:"address,omitempty"`
+	ArrivalTime     int64             `json:"arrivalTime"`
+	EndMeetingTime  int64             `json:"endMeetingTime"`
+	LastMeetingTime int64             `json:"lastMeetingTime"`
+	PairTime        int64             `json:"pairTime"`
+	Lat             float64           `json:"lat"`
+	Lng             float64           `json:"lng"`
+	Speed           float32           `json:"speed"`
+	Type            int               `json:"type"`
+}
+
+// TrackRecord is bean/TrackRecordBean, `api/location/v2/tracks`'s answer. The nested
+// Point/Track/Line types come straight from internal/location so the wire shape cannot drift from
+// the code that computes it.
+type TrackRecord struct {
+	ArrivalPointCount int                      `json:"arrivalPointCount"`
+	FriendLocation    *FriendLocation          `json:"friendLocation,omitempty"`
+	Permission        *Permission              `json:"permission,omitempty"`
+	Points            []location.PolylinePoint `json:"points"`
+	TotalDistance     float64                  `json:"totalDistance"`
+	TotalStayTime     int64                    `json:"totalStayTime"`
+	Tracks            []location.Track         `json:"tracks"`
+	UserID            int64                    `json:"userId"`
+}

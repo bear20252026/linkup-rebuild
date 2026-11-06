@@ -1348,6 +1348,73 @@ Info 里这个后端**给不出值**的键一律**不发**（`av`/`deleteAt`/`id
 `hadFriend`/`otherFriendLimit` 这些布尔的原始算法、以及 `apply` 时申请方的 `sensSetting`
 服务端原来到底存不存（我按"存"实现）。
 
+## 五点二十五、定位域服务端：上报 → 按天 → 当天轨迹（#22 前半，2026-11-05）
+
+### 为什么先做服务端
+
+定位是这个 app 的核心，但 `home/MapFragment`、`pages/track/TrackRecordFragment` 的**地图面卡在
+`com.baidu.mapapi.map.MapView`**——百度的 SDK 不在 Maven Central，这台机器上取不到（清单在
+`recovered/missing_third_party_classes.txt`）。所以这一刀把**数据面**做实：设备上报位置、服务端按天
+索引、把某天的轨迹算回客户端的形状。界面接上来只是插一层，不需要再等服务端。
+
+新增 3 条路由（网关总数 20）：`POST api/location/report`、`GET api/location/days?queryId=`、
+`GET api/location/v2/tracks?queryId=&date=`。**没做的两条是有原因的**：
+`api/location/batch/report` 在 1.6.6 里找不到调用点（body 的键名无从依据，编一个就是把猜测写成恢复值）；
+`api/widget/location`、`api/widget/track` 要先有"配对的另一人"和设备状态模型（`FriendState` 那些电量/
+屏幕字段属敏感事件域），这刀不假装能做。
+
+### 形状全部来自客户端怎么用（`server/internal/location`）
+
+| 事实 | 出处 |
+|---|---|
+| `totalDistance` 是**米**：界面除以 1000 再拼 "km" | `TrackRecordFragment.java:181` |
+| `totalStayTime` 是**秒**：乘 1000 后交给时长格式化 | `:164` |
+| `timePeriod` 是**epoch 秒**：`Date(timePeriod * 1000)` 再格式化 "HH:mm" | `:280` |
+| `line.type`：1→文案 `less_than_1m`、2→`less_than_200m`、3→"无法获取定位"图标、4→"没有新定位"警告 | `:236-300` 的分支 |
+| `track.type`：2→停留图标 + `R.string.arrive`；3→蓝点 + `R.string.leave` | `:484-500` |
+| 轨迹列表的行只在 `lostType == 0` 时才渲染 | 同一段的守卫 |
+| `bean/Address` 只有 province/city/district/street/streetNumber/poiName **六个键，没有整串地址** | `bean/Address.java` ⇒ 整串是服务端拼的，`placeOf` 按 parts 顺序拼 |
+| `bean/Location` 有 10 个键（含 `type`），`api/location/report` 的 body 就是这个 bean 本身 | `gh/a.java:401`（`@Body Location`，不是 map） |
+| `TrackRecordBean.Point/Track/Line` 是嵌套 bean；`:net` 生成器把 `points/tracks` 留在了 `List<JsonElement?>` | 本刀把这两个字段换成 `List<TrackRecordBean.Point?>?` / `…Track?>?`，会师检查才能真的解出类型 |
+
+停留的判定就是那两个客户端文案给的阈值：**段距离 ≤ 1 米算同一段停留**，超过 1 米算移动；
+`track` 行只在停留边界、缺口、无法定位时产生（纯移动的点是折线 `points` 上的顶点，不是行）。
+
+### 两个数只能问运营（都做成了 flag）
+
+`-stay-seconds`（停留多久算一个"到达点"，默认 120）与 `-gap-seconds`（沉默多久算"没有新定位"，
+默认 1800）。这两个数是原服务端算完就扔的，客户端只拿到结果。测试里专门有一条
+`TestLocationFlagsAreHonouredNotHardcoded`：把阈值改成 600 秒，四分钟的停留就**不该**再算到达点——
+证明它们是真参数，不是藏在代码里的假恢复值。
+
+`-loc-timezone`（默认 `Asia/Shanghai`）是第三条：天与天之间归在哪一天由服务端决定，而
+`api/location/days` 回的是字符串、`v2/tracks` 又把它当 `date` 传回来，两处必须同一个时区。
+Windows 上的 Go 没有内嵌 tzdb，所以 `loadZone` 在该情况下退回固定 +08:00 而不是报错。
+
+### 谁能看谁的位置
+
+`api/location/days` 与 `v2/tracks` 都带 `queryId`。规则：**自己永远可以**；他人必须与我有**任一方向**
+的关系（确认过的好友，extras 行存在）。拒绝时 HTTP 仍是 200、信封 `status=403`（这个码是我定的——
+客户端只判 `status != 200` 并 toast `msg`，原服务端的码不可观测），文案 "没有查看该设备位置的权限"。
+会师检查里有一条：关系删除之后再读对方轨迹，必须被拒。
+
+### 验收（本轮之后一共七层）
+
+| 层次 | 命令 | 结果 |
+|---|---|---|
+| 定位算法 | `go test ./internal/location` | **9 绿**（haversine、停留/移动分界、阈值 flag、无法定位的行、时区归日） |
+| 定位路由 | `go test ./internal/gateway -run Location` | **4 绿**（上报回显、按天与当天数字、权限、flag 生效） |
+| 服务端全量 | `go test ./...` | **49 绿** |
+| 死 IM | `bash server/scripts/smoke.sh` | 28 绿 |
+| 真 OpenIM | `bash server/scripts/openim-e2e.sh` | 20 绿 |
+| 真服集成 | `go test ./internal/openim -run Live` | 3 绿 |
+| **客户端 ↔ 网关** | `sh tools/gradle.sh :net:gatewayVerify --args="http://127.0.0.1:8090/ 000000"` | **46 绿**（定位域新增 16 条，全部用客户端真 bean 解） |
+
+`gatewayVerify` 现在会真的走一遍：上报一个带地址的 fix（body 是 `Location` bean，不是 map）→
+同址 5 分钟 → `days` 里有今天 → `v2/tracks` 解出 `points/tracks` 嵌套类型、
+`totalStayTime=300`、`arrivalPointCount=1`、行的 type 是 2/3、`friendLocation` 带地点名、
+`permission` 非空 → 删关系后读对方轨迹被拒。**这条链是 JVM 侧唯一能把服务端字节喂进真 Gson 模型的检查**。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1479,6 +1546,10 @@ Info 里这个后端**给不出值**的键一律**不发**（`av`/`deleteAt`/`id
 | 55 | `hadFriend`、`otherFriendLimit`、`hadVipPlan` 这些布尔的原始算法 | 重建按字面语义给（有无好友、对方是否满配额、是否订阅过）；服务端源码没找到前，值对不对只能靠产品口径 |
 | 56 | `apply` 时申请方的 `sensSetting` 服务端原来存不存 | 我按"存"实现：pending 记录带 relation+三项开关，confirm 时各方向留各自的。若原版只按确认方覆盖两边，行为差别要在真两端对拍才看得出 |
 | 57 | `:net` 里 `MutableMap` 这条签名改动对**抓包对齐**的影响 | 键序可能因此变化（mapOf→mutableMapOf 保序行为相同，但 40 处调用点的字面顺序是我按原版抄的）。若以后要逐字节对线上请求，得重新抓一次包 |
+| 58 | `api/location/batch/report` 的 body 键名与语义 | 接口在 `gh/a.java:255` 声明了，但 1.6.6 全树找不到调用点（可能被裁剪或改名）；没有依据就不实现，实现成猜的键名只会让以后对线上时多一条假一致 |
+| 59 | `api/widget/location` / `api/widget/track`（桌面卡片） | 两个响应都要"配对的另一人"（`friendLocation`/`friendState`）与设备状态（电量、充电、屏幕态）。配对模型与敏感事件域还没做，先做就是把字段编出来 |
+| 60 | `-stay-seconds`、`-gap-seconds`、`-loc-timezone` 的真实取值 | 停留多久算一个到达点、沉默多久算"没有新定位"、一天从哪个时区开始——都是原服务端算完就扔的中间量，客户端只看到结果。要么线上抓包对比，要么运营定 |
+| 61 | 轨迹文本与几个残留编码 | `placeOf` 拼地址的顺序（bean/Address 没有整串字段，原版也是服务端拼的）、`lostType` 非 0 的含义（客户端只在 ==0 时渲染行）、`TrackRecordBean.Point.type` 的取值（代码里没人读） |
 
 ## 十、下一步顺序（建议）
 

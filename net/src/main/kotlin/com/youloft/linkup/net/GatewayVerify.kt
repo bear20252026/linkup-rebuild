@@ -1,5 +1,7 @@
 package com.youloft.linkup.net
 
+import com.youloft.linkup.api.dto.Address
+import com.youloft.linkup.api.dto.Location
 import com.youloft.linkup.api.dto.Permission
 
 /**
@@ -195,6 +197,67 @@ suspend fun main(args: Array<String>) {
         val otherSide = a.api.relationList(page = 1, pageSize = 50, key = "").data?.list
             ?.firstOrNull { it?.userId == userB.userId }
         v.check("删除是双向的：A 那边也不再有 B（真 IM 的单向删除陷阱）", otherSide == null, "= ${otherSide?.userId}")
+
+        // —— 定位域：客户端上报自己的位置，再把那一天的轨迹读回来 ——
+        val nowSeconds = System.currentTimeMillis() / 1000
+        val home = Location(
+            accuracy = 12f,
+            address = Address(
+                city = "重庆市", district = "渝北区", poiName = "两江幸福广场",
+                street = "龙山路", streetNumber = "9号",
+            ),
+            lat = 29.6154, lng = 106.5301, locType = 1, timePeriod = nowSeconds,
+        )
+        val reported = a.api.locationReport(home)
+        v.check("location/report 能吃下 bean 形状的 body", reported.isSuccess, "status=${reported.status} msg=${reported.msg}")
+        v.check(
+            "服务端回显经纬度与设备自己的 timePeriod",
+            reported.data?.lat == home.lat && reported.data?.timePeriod == nowSeconds,
+            "= ${reported.data}",
+        )
+        val fixId = reported.data?.id ?: 0L
+        v.check("服务端分配了 id（客户端下次上报要带回去）", fixId != 0L, "= $fixId")
+
+        a.api.locationReport(home.copy(id = fixId, timePeriod = nowSeconds + 300))
+
+        val days = a.api.locationDays(queryId = userA.userId)
+        v.check("location/days 认得今天", !days.data.isNullOrEmpty(), "= ${days.data}")
+        val newestDay = days.data?.firstOrNull().orEmpty()
+        v.check("日期是 yyyy-MM-dd（客户端原样带回作 date 参数）", newestDay.length == 10 && newestDay[4] == '-' && newestDay[7] == '-', "= $newestDay")
+
+        val day = a.api.locationV2Tracks(queryId = userA.userId, date = newestDay)
+        v.check("location/v2/tracks 成功", day.isSuccess, "status=${day.status} msg=${day.msg}")
+        val record = day.data
+        v.check(
+            "嵌套 points 被解成 bean 的类型（不再是 JsonElement）",
+            record?.points?.size == 2 && record.points.first()?.lat == home.lat,
+            "= ${record?.points?.size}",
+        )
+        v.check("tracks 也解成了嵌套类型", record?.tracks?.size == 2, "= ${record?.tracks?.size}")
+        // 同址五分钟：距离 0、停留 300 秒、算一个到达点（默认阈值 120 秒）。
+        v.check("totalDistance 是米（同址应为 0）", record?.totalDistance == 0.0, "= ${record?.totalDistance}")
+        v.check("totalStayTime 是秒（客户端会 ×1000）", record?.totalStayTime == 300, "= ${record?.totalStayTime}")
+        v.check("arrivalPointCount 按停留阈值算", record?.arrivalPointCount == 1, "= ${record?.arrivalPointCount}")
+        v.check(
+            "轨迹行的 type 是 2 到达 / 3 离开（客户端按这两个值选图标与文案）",
+            record?.tracks?.mapNotNull { it?.type } == listOf(2, 3),
+            "= ${record?.tracks?.map { it?.type }}",
+        )
+        v.check(
+            "地址由服务端拼好（bean/Address 没有整串字段）",
+            record?.tracks?.firstOrNull()?.address?.contains("渝北区") == true,
+            "= ${record?.tracks?.firstOrNull()?.address}",
+        )
+        v.check(
+            "friendLocation 带回了最新位置与地点名",
+            record?.friendLocation?.address?.poiName == "两江幸福广场" && record.friendLocation.arrivalTime >= nowSeconds,
+            "= ${record?.friendLocation}",
+        )
+        v.check("轨迹里也带回 permission（客户端据此决定画不画）", record?.permission != null)
+
+        // 定位是别人的隐私：关系已经被删掉，所以这一步必须被拒（状态码是本网关定的，文案才会被 toast）。
+        val peek = b.api.locationDays(queryId = userA.userId)
+        v.check("删掉关系后读不到对方的轨迹", !peek.isSuccess && peek.msg.orEmpty().contains("权限"), "status=${peek.status} msg=${peek.msg}")
     }.onFailure { e ->
         v.check("流程没有中途异常", false, "${e::class.simpleName}: ${e.message}")
     }

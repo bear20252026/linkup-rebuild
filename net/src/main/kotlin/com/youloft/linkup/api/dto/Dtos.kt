@@ -799,10 +799,10 @@ data class TrackRecordBean(
     val arrivalPointCount: Int = 0,
     val friendLocation: FriendLocation? = null,
     val permission: PermissionUpdateBean? = null,
-    val points: List<JsonElement?>? = null,
+    val points: List<TrackRecordBean.Point?>? = null,
     val totalDistance: Double = 0.0,
     val totalStayTime: Int = 0,
-    val tracks: List<JsonElement?>? = null,
+    val tracks: List<TrackRecordBean.Track?>? = null,
     val userId: Long = 0L,
 ) {
 

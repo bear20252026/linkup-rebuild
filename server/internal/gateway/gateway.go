@@ -27,6 +27,7 @@ import (
 
 	"linkup.local/server/internal/contract"
 	"linkup.local/server/internal/dto"
+	"linkup.local/server/internal/location"
 	"linkup.local/server/internal/openim"
 	"linkup.local/server/internal/store"
 )
@@ -48,6 +49,13 @@ type Options struct {
 	// ClientConfig is `api/client/config`. Every switch in it is an operational decision, so the
 	// defaults here are the ones the shipped APKs' own fallbacks used, not invented values.
 	ClientConfig dto.ChannelConfig
+
+	// LocationSettings holds the two track numbers that are not observable from the APK
+	// (stay length that counts as an arrival point, silence that counts as a gap).
+	LocationSettings location.Settings
+	// DayZone is the timezone days are counted in; `api/location/days` answers date strings and
+	// `api/location/v2/tracks` takes one back, so the same zone must serve both.
+	DayZone *time.Location
 }
 
 // Gateway holds the routes' shared state.
@@ -88,6 +96,12 @@ func New(opts Options) (*gin.Engine, error) {
 	if opts.Logger == nil {
 		opts.Logger = slog.Default()
 	}
+	if opts.LocationSettings.StaySeconds <= 0 || opts.LocationSettings.GapSeconds <= 0 {
+		opts.LocationSettings = location.DefaultSettings()
+	}
+	if opts.DayZone == nil {
+		opts.DayZone = time.Local
+	}
 	pemText, err := contract.PublicKeyPEM(&opts.PublicKey.PublicKey)
 	if err != nil {
 		return nil, err
@@ -121,6 +135,11 @@ func New(opts Options) (*gin.Engine, error) {
 		api.POST("/relation/del", g.deleteFriend)
 		api.POST("/relation/update", g.updateRelation)
 		api.POST("/relation/update_remark", g.updateRemark)
+
+		// Location domain: report, then read one day back.
+		api.POST("/location/report", g.locationReport)
+		api.GET("/location/days", g.locationDays)
+		api.GET("/location/v2/tracks", g.locationTracks)
 	}
 	return engine, nil
 }
@@ -212,6 +231,14 @@ func (g *Gateway) claims(c *gin.Context) *contract.Claims {
 		return &contract.Claims{}
 	}
 	return claims
+}
+
+// rawBody returns the bytes the signature middleware read off the request, before the handlers
+// parsed them into a map. The bean-shaped routes need the whole object, not one key at a time.
+func rawBody(c *gin.Context) []byte {
+	raw, _ := c.Get(bodyKey)
+	text, _ := raw.([]byte)
+	return text
 }
 
 // body decodes the JSON body the signature middleware already read.
