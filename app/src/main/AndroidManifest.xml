@@ -68,6 +68,10 @@
             android:name=".pages.login.LoginActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".pages.track.TrackRecordActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
     </application>
 
     <!-- The add-friend screen asks whether WeChat/QQ are installed. On API 30+ that query is only

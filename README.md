@@ -5,7 +5,7 @@
 ## 现在能跑的命令
 
 ```bash
-# 客户端离线回归：367 个 JVM/Robolectric 测试（:location 93 + :net 31 + :app 243），不需要手机也不需要网络
+# 客户端离线回归：404 个 JVM/Robolectric 测试（:location 93 + :net 31 + :app 280），不需要手机也不需要网络
 sh tools/gradle.sh :location:testDebugUnitTest :net:test :app:testDebugUnitTest
 
 # 客户端 ↔ 重建网关会师：30 条（网关要先起来；打的是本网关，不发真短信）
@@ -32,7 +32,7 @@ bash server/scripts/smoke.sh
 | 路径 | 内容 |
 |---|---|
 | `net/` | 纯 JVM 网络层模块：AES 签名、公共参数拦截器、97 条路由的 Retrofit 接口 |
-| `location/` | 定位抽象层：一家 `LocationProvider`/`PlaceResolver`/`LocationGateway` 接口 + 系统源与百度源两家实现，零三方依赖 |
+| `location/` | 定位抽象层：一家 `LocationProvider`/`PlaceResolver`/`LocationGateway` 接口 + 系统源与百度源两家实现，无厂商定位/地图 SDK 依赖（使用 Kotlin 协程） |
 | `app/` | Android 壳，包名沿用 `com.youloft.watcher`，已带入 1.6.6 的 25MB assets |
 | `fastkit/` | 自研组件库的还原（弹窗基类、ShapeView、Spannable 工具等） |
 | `server/` | 重建后端：Go 网关 + OpenIMServer 适配层 + 定位域（20 条路由） |
@@ -42,7 +42,7 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
-已验证：带签名的 GET 被真实服务端接受（`status=200`）；`location`/`net`/`app` 367 个测试全绿；`server` 49 个 Go 测试
+已验证：带签名的 GET 被真实服务端接受（`status=200`）；`location`/`net`/`app` 累计404个测试通过（本轮重跑 app 280，定位93/网络31未改动且 UP-TO-DATE）；`server` 49 个 Go 测试
 + 28 条真 socket 用例全绿；同一条签名契约在 **JVM 客户端、Go、OpenSSL** 三个实现下产出同一段密文
 （JVM 样本向量钉在 `server/internal/contract`，POST 体的 md5 规则由 MockWebServer 离线锁定）。
 **重建网关 ↔ 真 OpenIMServer 已跑通**：20 条端到端用例 + 3 个在线集成测试全绿；
@@ -52,9 +52,14 @@ bash server/scripts/smoke.sh
 发行版里跑的，Docker Desktop 与 C 盘都没被碰）。
 
 定位已经换成**一家接口**：`location/` 模块定义 `LocationProvider` / `PlaceResolver` / `LocationGateway`，
-系统 `LocationManager` 实现今天就能跑，百度实现用反射绑定（签名逐条对着 `recovered/baidu_location_api_156.txt`，
-测试用同签名的 SDK 替身跑**生产反射代码**），接口层零三方依赖由 `LocationLayerIndependenceTest` 把门。
+系统 `LocationManager` 实现已通过 Robolectric 测试，真机效果待验；百度实现用反射绑定（签名逐条对着 `recovered/baidu_location_api_156.txt`，
+测试用同签名的 SDK 替身跑**生产反射代码**），接口层无厂商包依赖由 `LocationLayerIndependenceTest` 把门。
 坐标换算逐行复现 `recovered/geo_golden_156.txt`（那份样本是拿原包 `h0.java` 的算术在 JDK 上真跑出来的）。
+
+轨迹列表侧已接入恢复入口：本人轨迹、15天日期条与数据圆点、摘要/五类连接线、点击选中取消、无定位说明弹窗、
+加载/空/错状态和刷新；切日会取消旧请求，失败不会留下上一天的地址。地图容器明确标注尚未接入。
+原版地图/滑动面板、VIP/隐私与 IM 提醒、后台采集及停留/离开判定仍未完成。
+本轮没有连接安卓设备，Robolectric 交互测试不代表真机视觉验收；见设计文档五点二十七、待验67–70。
 
 未验证：**向真服发一条带 body 的签名 POST**（要真登录态，且容易撞上写接口，没做）；97 条里剩下的 80 条
 路由字段与业务规则（需要线上源码）。逐条见 `recovered/DESIGN_CN.md` 第九节的待验清单。

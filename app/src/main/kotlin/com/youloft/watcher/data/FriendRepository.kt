@@ -134,6 +134,11 @@ open class LinkUpApplication : Application() {
         )
     }
 
+    /** The track screen's two reads: `api/location/days` and `api/location/v2/tracks`. */
+    open val trackRepository: TrackRepository by lazy {
+        NetworkTrackRepository(LinkUpClient(context = deviceContext()).api)
+    }
+
     /** `CacheUtils.L()` / `Z0()` — the two account flags outside the user record. */
     open val loginFlags: LoginFlags get() = LoginFlags(keyValueStores)
 

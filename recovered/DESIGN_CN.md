@@ -1584,6 +1584,42 @@ bd09 偏移的怪癖 `h0.java:137`），并且：
 `SystemLocationProviderTest` 16（Robolectric 真的投递定位，也真的验到"一次性注册会被摘掉"）、
 `SystemPlaceResolverTest` 10、`LocationProvidersTest` 7、`LocationLayerIndependenceTest` 6（架构门禁：接口层不许出现厂商包名）。
 
+## 五点二十七、轨迹列表与无地图宿主（#24，2026-11-06）
+
+本轮恢复列表侧，不宣称复原整张地图页。恢复入口增加“查看我的轨迹（列表恢复版）”，进入不导出的
+`TrackRecordActivity`；缺少登录账号时不发请求。宿主提供返回、刷新、15天日期条和明确标注“地图尚未接入”的
+`track_map_container`。没有伪造地图，也没有接入好友页面以绕过尚未恢复的 VIP/隐私权限交互。
+
+- `TrackRepository` 只委托 `locationDays` / `locationV2Tracks` 两个已有 GET。日期条本地生成，days 回包仅点亮日期圆点。
+- `TrackRecordViewModel` 负责加载/空/错状态、切日取消旧请求、刷新与选择切换；网络异常可重试，取消不会变成错误。
+  即使旧实现忽略取消后才返回，也不能覆盖新日期的列表。失败清空旧行、权限、位置和选中点；日期圆点失败不清掉轨迹。
+- `TrackRowBuilder` 先摘要、再过滤 null 并按时间倒序；连接线共有五种，不是四种。仅停留/移动可选，同点再点取消。
+- `lostType=1/3` 是红点且隐藏标签/地址，2 是蓝点+地址而无标签；并非所有非零值都隐藏整行。
+  `line.type=5` 最后覆盖隐藏地址；未识别的 lostType 中性重置，避免沿用回收行里另一个点的地址。
+- 原版 200m 边界不统一：摘要 `<=200`，移动 `<200`；摘要保留一位小数，移动去尾零。
+  摘要/移动时长截断分钟，停留/未知段按30秒进位。数字字号按 sp 换算并使用已存在的圆体字体。
+- 复用五份原版列表/日期/弹窗布局。回收行会重置监听、箭头、色调与地址；警告气泡用 Activity 上下文开真 Dialog，销毁页面时关闭。
+
+原版参考：1.5.6 `TrackRecordFragment.java:148-183,239-263,280-556,713-729,824-851`，
+`mf/a.java:49-124`；1.6.6 日期布局 `item_track_record_date_tab.xml`。地址尾端遮罩是文字溢出的渐变，不是隐私遮罩。
+原版 Activity 的直接布局依赖缺失的 `SheetLayout`；地图由代码动态插入，不是 XML 里缺一个 MapView 标签。
+
+可执行验证：
+
+```bash
+sh tools/gradle.sh --offline :app:testDebugUnitTest --tests 'com.youloft.watcher.pages.track.*'
+sh tools/gradle.sh --offline :location:testDebugUnitTest :net:test :app:testDebugUnitTest :app:assembleDebug
+```
+
+本轮结果：轨迹新增37条（格式15 + 流程22），`:app` 全套280条重新执行通过；加上未改动的
+`:location` 93和`:net` 31（Gradle 判定 UP-TO-DATE），客户端累计404条、0失败/错误/跳过。
+APK 构建成功，64,723,895字节，并检查到 DEX 含 `TrackRecordActivity`。
+`go test -count=1 -json ./...` 实际重跑49个顶层测试通过（另有2个子测试通过），3个在线 OpenIM 测试跳过。
+
+测试分别覆盖格式/行分支，以及真实 Activity、Fragment、RecyclerView 点击、弹窗、错误重试、切日竞争和旋转保留。
+Robolectric 不是设备实测：本轮 `adb devices -l` 没有设备，未安装 APK，未验真机像素、字体与系统窗口效果；
+没有新增线上请求，也没有把历史 gatewayVerify / OpenIM 联调结果当本轮实测。待验项见67–70。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1718,12 +1754,16 @@ bd09 偏移的怪癖 `h0.java:137`），并且：
 | 58 | `api/location/batch/report` 的 body 键名与语义 | 接口在 `gh/a.java:255` 声明了，但 1.6.6 全树找不到调用点（可能被裁剪或改名）；没有依据就不实现，实现成猜的键名只会让以后对线上时多一条假一致 |
 | 59 | `api/widget/location` / `api/widget/track`（桌面卡片） | 两个响应都要"配对的另一人"（`friendLocation`/`friendState`）与设备状态（电量、充电、屏幕态）。配对模型与敏感事件域还没做，先做就是把字段编出来 |
 | 60 | `-stay-seconds`、`-gap-seconds`、`-loc-timezone` 的真实取值 | 停留多久算一个到达点、沉默多久算"没有新定位"、一天从哪个时区开始——都是原服务端算完就扔的中间量，客户端只看到结果。要么线上抓包对比，要么运营定 |
-| 61 | 轨迹文本与几个残留编码 | `placeOf` 拼地址的顺序（bean/Address 没有整串字段，原版也是服务端拼的）、`lostType` 非 0 的含义（客户端只在 ==0 时渲染行）、`TrackRecordBean.Point.type` 的取值（代码里没人读） |
+| 61 | 轨迹文本与几个残留编码 | `placeOf` 拼地址的顺序（bean/Address 没有整串字段，原版也是服务端拼的）、`lostType` 非 0 的业务含义、`TrackRecordBean.Point.type` 的取值。更正：客户端会渲染 lostType 1/2/3；具体样式已在五点二十七核实，不再声称仅渲染0 |
 | 62 | `x0.java:242` 那条"潜在停留范围外"到底用哪个阈值 | 代码读出来是 `n()` = `stayDistanceThreshold`（200 m），但按键名语义应是 `potentialStayDistanceThreshold`（20 m，即 `k()`）。两种读法差 10 倍，直接决定轨迹上"停留点"的密度。JADX 寄存器复用严重，只能由后端/产品定，或等真机抓一段原始点回算 |
 | 63 | 十七个定位远程配置键的**线上真实值** | `LocationTuning` 的默认值是原包 `ConfigUtils.d(key, default)` 的字面兜底（`manager/l.java:64-80`），线上大概率被 `configsys` 覆盖过。这是**只读**一件事：`GET configsys.51wnl-cq.com/api/config/getconfigs?appver=166`（值全 base64，令牌是回包的 `r`），不发消息、不写任何东西，随时可查 |
 | 64 | 百度定位/地图 SDK 从哪来 | 内网 CI 产物、公司百度账号后台下载的 AAR，还是决定不接（走"无 SDK 版"）。拿到 AAR 后要做的事很具体：把 `BaiduSdk.kt` 的反射换成类型安全实现，并让 AAR 自带清单把 `com.baidu.location.f`（`:remote` 进程、foregroundServiceType=location）带进来 |
 | 65 | 反射监听在**真** SDK 上是否被接受 | 本层用 `BDLocationListener` 接口重载 + 动态代理（`LocationClient.java:1213`），测试跑在签名一致的替身上。真 SDK 内部若对该监听对象做 `instanceof BDAbstractLocationListener` 或读它的类名，就会静默收不到回调。这一条只能真机验，且是接上 AAR 后的第一件事 |
 | 66 | 厂商 ROM 上 `Geocoder` 到底能不能用 | 无 SDK 版把地址完全压在 `SystemPlaceResolver`（`android.location.Geocoder`）上；国内设备若无 GMS/无后端地理编码，`isPresent()` 会是 false 或恒返回空。真机一验便知，验不过就要么接 SDK，要么只报坐标 |
+| 67 | 轨迹列表真机显示与只读联调 | 连接设备并获准安装后：登录已有测试账号，从恢复入口进列表；检查15天切换、空日、错误重试、选择取消、警告弹窗及返回；大字体和长地址检查字号、渐变与横向滚动。当前无设备，Robolectric 不能代替像素验收 |
+| 68 | `line.type=5` 与 `lostType=1/3` 的业务意义 | 原版渲染已还原（灰色时长/隐藏地址，以及两类相同的红点），但没有证据替这些数字命名为某种业务状态；需要真实轨迹样本或服务端源码 |
+| 69 | 地图和原版滑动面板 | 当前仅提供独立 `track_map_container` 占位。原版 SheetLayout 手势状态、TextureMapView 生命周期、轨迹覆盖物和点选联动都未实现，不是替换一个 View 即完成 |
+| 70 | 轨迹页 VIP/隐私/提醒及后台采集 | 原版 VIP 遮罩、sensTrack 门禁、定位权限提示和 IM 提醒按钮未接，故仅在恢复入口提供本人列表；常驻采集服务和停留/离开状态机仍是后续工程 |
 
 ## 十、下一步顺序（建议）
 

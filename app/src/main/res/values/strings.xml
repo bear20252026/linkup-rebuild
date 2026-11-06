@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LinkUp</string>
+    <string name="track_list_back">返回</string>
+    <string name="track_map_pending">轨迹列表恢复版 · 地图尚未接入</string>
+    <string name="track_list_login_required">请先登录，再查看自己的轨迹</string>
+    <string name="track_list_probe">查看我的轨迹（列表恢复版）</string>
 </resources>

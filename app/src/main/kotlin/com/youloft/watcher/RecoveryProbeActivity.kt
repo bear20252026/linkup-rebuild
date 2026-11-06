@@ -33,6 +33,9 @@ class RecoveryProbeActivity : AppCompatActivity() {
 
         val context = AndroidDeviceContext(this)
         val graph = appGraph(this)
+        findViewById<android.view.View>(R.id.probe_track).setOnClickListener {
+            com.youloft.watcher.pages.track.TrackRecordActivity.start(this, graph.users.current().userId)
+        }
         lifecycleScope.launch {
             result.text = runCatching {
                 val response = LinkUpClient(context = context).api.clientConfig()
