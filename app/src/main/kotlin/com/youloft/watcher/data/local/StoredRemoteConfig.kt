@@ -26,6 +26,18 @@ class StoredRemoteConfig(
         parameterMap?.getAsJsonArray(key)?.map { it.asString }.orEmpty()
     }.getOrDefault(emptyList())
 
+    /**
+     * Config values arrive both as JSON numbers and as quoted strings (`of.b` base64-decodes every value
+     * before storing it), so both spellings are read and anything unparseable counts as absent — the
+     * caller keeps its recovered fallback rather than getting a 0.
+     */
+    override fun number(key: String): Double? {
+        val element = parameterMap?.get(key) ?: return null
+        if (element.isJsonNull) return null
+        runCatching { element.asString.toDoubleOrNull() }.getOrNull()?.let { return it }
+        return runCatching { element.asDouble }.getOrNull()
+    }
+
     /** `SettingProvider.u(context, "online_lastrequest", 0L)` — when the last request went out. */
     fun lastRequestAtMillis(): Long =
         stores.shared.string(KEY_LAST_REQUEST_AT)?.toLongOrNull() ?: 0L

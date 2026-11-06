@@ -1,0 +1,63 @@
+# 百度定位 SDK 在本 build 里被反射绑定的每一个声明
+#
+# 来源：_raw/out_jadx_156/sources/com/baidu/location/（1.5.6 原包内可读），逐条给出文件与行号。
+# 用途：location/src/test/java/com/baidu/location/ 下的测试替身必须与这份签名一致，
+#       BaiduApiSurfaceTest 会把两者对齐核验；原包若换了签名，这条测试先红。
+# 同时记录原包真正调用过的地方，证明不是凭空设计出来的接口。
+
+[com.baidu.location.LocationClient]
+ctor(Context)                                     LocationClient.java:390    调用 x0.java:677
+ctor(Context, LocationClientOption)               LocationClient.java:465    （原包未用，先建 option 再 setLocOption）
+static setAgreePrivacy(boolean)                   LocationClient.java:1122   调用 SdkInitManager.java:281
+static setKey(String)                             LocationClient.java:1126   调用 x0.java:676
+registerLocationListener(BDAbstractLocationListener)  LocationClient.java:1203  调用 x0.java:698
+registerLocationListener(BDLocationListener)          LocationClient.java:1213  本层用的是这个接口重载（可动态代理）
+# 注意：**没有 unregisterLocationListener**（1.5.6 与 1.6.6 两版都只有上面两个 register 重载）。
+# 所以 close() 只能 stop 后丢弃客户端，测试替身里也不许出现这个方法——上一轮我凭想象加了一个，被测试抓出来。
+setLocOption(LocationClientOption)                LocationClient.java:1294   调用 x0.java:694 / s0.java:773
+getLocOption()                                      LocationClient.java:1176 调用 x0.java:626（休眠时改 scanSpan）
+start()                                             LocationClient.java:1308
+stop()                                              LocationClient.java:1344   调用 s0.java? / x0.java
+isStarted()                                         LocationClient.java:1184   调用 x0.java（日志 started=）
+requestLocation() -> int                            LocationClient.java:1251   调用 s0.java:775（返回值只进日志）
+# 未同意隐私时构造函数抛异常：LocationClient.java:910-911
+
+[com.baidu.location.BDLocationListener]           BDLocationListener.java:4-5
+onReceiveLocation(BDLocation)
+
+[com.baidu.location.LocationClientOption]         调用 x0.java:678-691（1.5.6）与 dg/a.java:98-117（1.6.6）
+ctor()
+enum LocationMode { Hight_Accuracy, Battery_Saving, Device_Sensors, Fuzzy_Locating }   LocationClientOption.java:95-100
+enum FirstLocType { SPEED_IN_FIRST_LOC, ACCURACY_IN_FIRST_LOC }                          LocationClientOption.java:90-93
+setLocationMode(LocationMode)               LocationClientOption.java:360
+setIsNeedAddress(boolean)                   LocationClientOption.java:334（内部同时写 addrType）
+setIsNeedLocationPoiList(boolean)           LocationClientOption.java:346
+setOpenGnss(boolean)                        LocationClientOption.java:466
+setEnableSimulateGnss(boolean)              LocationClientOption.java:308
+setOnceLocation(boolean)                    LocationClientOption.java:433
+field scanSpan: int                         LocationClientOption.java:51     原包 2000（前台）/ locationScanMillsWhenDormancy（休眠）
+field coorType: String                      LocationClientOption.java:27     原包 "bd09ll"
+field addrType: String                      LocationClientOption.java:22     原包 "all"（g6/n.java:66 f71448s）
+field disableLocCache: boolean              LocationClientOption.java:28     原包 true
+field isIgnoreKillProcess: boolean          LocationClientOption.java:33     原包 true
+field wifiCacheTimeOut: int                 LocationClientOption.java:54     原包 120000
+field isEnableBeidouMode: boolean           LocationClientOption.java:31     原包 true
+field firstLocType: FirstLocType            LocationClientOption.java:30     原包 ACCURACY_IN_FIRST_LOC
+
+[com.baidu.location.BDLocation]               调用 x0.java:284-304
+getLatitude() -> double                     BDLocation.java:2410
+getLongitude() -> double
+getRadius() -> float                        （原包把它存进 bean 的 accuracy）
+getSpeed() -> float                         原包：仅 locType==61 时 /3.6，否则写 0
+getLocType() -> int                         BDLocation.java:2414；TypeGnssLocation=TypeGpsLocation=61（:93-94），TypeNetWorkLocation=161（:96）
+getCoorType() -> String                     BDLocation.java:2294（本层用它决定坐标系，不假定 bd09ll）
+getProvince()/getCity()/getDistrict()/getStreet()/getStreetNumber() -> String
+getPoiList() -> List<Poi>                   原包取第一个 Poi 的 name 填 poiName，空则 ""
+
+[com.baidu.location.Poi]
+getName() -> String                         Poi.java:48
+
+# 原包没有用、但同一族里值得记一笔的：
+#   BDLocation.getAddress() 返回 SDK 自己的 Address（字段更多），原包只取分开的六个字符串；
+#   上报给服务端的 bean 是 com.youloft.common.bean.Address（province/city/district/street/streetNumber/poiName），
+#   少一个都不行——网关那边按这六个键组合显示地址。

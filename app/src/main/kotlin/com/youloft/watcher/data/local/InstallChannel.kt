@@ -24,6 +24,13 @@ class FallbackInstallChannel(private val id: String = DEFAULT) : InstallChannel 
  */
 interface RemoteConfig {
     fun stringList(key: String): List<String>
+
+    /**
+     * `ConfigUtils.d(key, default)` returned a `Number`, which every reader cast (`manager/l.java:64-80`
+     * is the clearest case: seventeen location thresholds read this way). Null means "the config does not
+     * carry this key", which is *not* the same as zero, so callers must keep the recovered fallback.
+     */
+    fun number(key: String): Double? = null
 }
 
 /**

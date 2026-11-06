@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!--
+      The location layer declares its own permissions so the app that uses it cannot forget them: the
+      recovered 1.6.6 manifest carried ACCESS_COARSE_LOCATION and ACCESS_FINE_LOCATION
+      (_raw/manifest_166.xml:7-8), which is what SystemLocationProvider checks.
+
+      Not declared here, on purpose: ACCESS_BACKGROUND_LOCATION and FOREGROUND_SERVICE_LOCATION
+      (_raw/manifest_166.xml:10-12) belong to the card that adds the reporting foreground service, and
+      `com.baidu.location.f` (foregroundServiceType="location", android:process=":remote",
+      _raw/manifest_166.xml:288) arrives with the Baidu AAR itself, so naming it here would point at a
+      class that is not in this build.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+</manifest>

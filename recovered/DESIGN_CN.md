@@ -1415,6 +1415,175 @@ Windows 上的 Go 没有内嵌 tzdb，所以 `loadZone` 在该情况下退回固
 `totalStayTime=300`、`arrivalPointCount=1`、行的 type 是 2/3、`friendLocation` 带地点名、
 `permission` 非空 → 删关系后读对方轨迹被拒。**这条链是 JVM 侧唯一能把服务端字节喂进真 Gson 模型的检查**。
 
+## 五点二十六、定位抽象层：一家接口，各家 SDK 与 API（#23，2026-11-05）
+
+用户要的东西很具体：**"抽象的定位，能兼容各家的 SDK 和 API，单独变成一个接口"**。
+这一节记的就是这层为什么长这样、每一刀切在原版代码的哪一行上，以及**明确没搬的部分**。
+
+### 一、切分点不是我发明的，1.6.6 自己已经找到了一半
+
+`_raw/src166/sources/dg/a.java` 里有一个不可变值类 `Snapshot(locationMode, scanSpan)`：
+
+- `update(mode, span)` **配置没变就返回 null**（`dg/a.java:149`），调用方 `manager/s0.java:769-774`
+  因此只在真的变了才 `setLocOption`；
+- `toOption()`（`dg/a.java:98-117`）把另外**十三个百度字段写成常量**；
+- 日志把快照打全：`reason=…,mode=…,scanSpan=…,coorType=…,addrType=…,openGnss=…,started=…,requestResult=…`。
+
+也就是说原版运行时就认定"会变通的只有模式与间隔"。所以 `LocationRequest` 只带
+`intervalMillis / accuracy / needsPlace / needsPoi / allowCachedFixes / singleFixTimeoutMillis`，
+那十三个常量留在各适配器内部——**换厂商时不需要重新谈判的边界，就是原版已经画出来的那条**。
+
+### 二、接口必须能表达原版真正做过的动作（逐条给证据）
+
+| 接口成员 | 原版对应动作 | 证据 |
+|---|---|---|
+| `start(request, listener)` | 建 `LocationClient` + 选项 + 注册监听 + `start()` | `x0.java:677-699`、`s0.java:764-785` |
+| `update(request)` | 休眠切档改 `scanSpan`（前台 2000 / 后台 `locationScanMillsWhenDormancy`） | `x0.java:619-648`、`s0.java:810` |
+| `singleFix(request)` | 单次定位：`setOnceLocation(true)` + `requestLocation()` | `s0.java:3031`（`reason=manual_request`）、`x0.java:114` |
+| `stop()` / `close()` | `stop()` / 注销监听 | `LocationClient.java:1344` |
+| `lastFix()` | `CacheUtils.S1(location)` 存的最近一次定位 | `x0.java:707-714` |
+| `capabilities` | 能否内带地址、能否给 POI、坐标系 | `setIsNeedAddress(true)` / `setIsNeedLocationPoiList(true)` |
+| `PlaceResolver` | 地址缺了才反查、以及"地址→坐标" | `utils/j0.java:149-169`（源名 `GeoCodeUtils.kt`）、`x0.java:785-797` |
+| `LocationGateway.report` | `POST api/location/report`，body 是 `Location` bean | `gh/a.java:401`、`bh/a.java:354` |
+| `ReportKind`（bean 的 `type`） | 0 未判定 / 2 停留 / 3 离开 / 4 转给 widget 的未变化点 | `x0.java:304 / 251 / 203,211 / 1418` |
+
+`LocationFix` 的字段就是 `bean/Location.java` 去掉本地存储关心的 `id`/`imPush`，外加一个显式坐标系标记。
+
+### 三、坐标系：bean 里存的是 WGS84，不是百度的 bd09ll（这轮最容易做错的一条）
+
+`x0.java:290` 每个回调都先 `h0.c(lat, lng)`，`h0.java` 里 `c = g(a(...))`，即 **bd09ll → gcj02 → wgs84**；
+要算距离时再 `bean/Location.java:222 getLatLng09()` 一路换回 bd09。整条链上没有任何地方把 bd09 直接落库。
+把这条抄进 `GeoMath.kt`（含"中国范围外不偏移"的短路 `h0.java:116/142`，以及 `wgs84→bd09` 范围外**仍然**加
+bd09 偏移的怪癖 `h0.java:137`），并且：
+
+- 黄金样本 `recovered/geo_golden_156.txt`：把 `h0.java` 的纯算术逐字抄成临时 Java，用 JDK 真跑出来的
+  **46 行**结果（六类换算 × 6 个点 + 范围外标记 + 一个距离值）。`GeoMathTest` 必须**逐行复现**它，
+  这比"我觉得等价"强。
+- 适配器的坐标系**从 SDK 读**（`BDLocation.getCoorType()`），不假定 bd09ll——高德/腾讯默认 gcj02，
+  原样塞进这套模型就会和缓存停留点差出 ~500 m。
+- 距离：原版用 `DistanceUtil.getDistance(bd09, bd09)`，缺一个点时返回哨兵 `-1.0`（`x0.java:786` 专门判它）。
+  中立实现 `distanceMeters(a, b)` 用**可空**表达同一件事，避免把 `-1` 当数字传下去。
+
+### 四、三家实现，以及"SDK 不在场"怎么办
+
+1. `SystemLocationProvider`（`android.location`）——**今天就能跑**，无需任何 AAR；坐标系 WGS84，
+   `inlinePlace=false / poiList=false` 老实承认，地址交给 `SystemPlaceResolver`（`Geocoder`）。
+2. `BaiduLocationProvider` + `BaiduSdk`——**反射绑定**，因为百度定位 SDK 只在两个 APK 里，公共仓库拉不到
+   （`recovered/missing_third_party_classes.txt` 记的是地图 View，SDK 类本身在 dex 里可读）。
+   监听见 `BDLocationListener` 是接口（`LocationClient.java:1213` 与抽象类重载并存），所以用 `Proxy` 动态实现——
+   这是"没有 SDK 也能编译"能成立的技术前提。
+   绑定的每一个签名写在 `recovered/baidu_location_api_156.txt`（带 APK 文件行号 + 原包调用点），
+   测试替身在 `location/src/test/java/com/baidu/location/` 只进测试类路径，**不会打进任何产物**。
+   AAR 回来后：把 `BaiduSdk.kt` 换成 ~120 行类型安全代码，其余一层不动。
+3. 测试内的假 provider/gateway——回归不依赖 SDK 的机制本身（266 条老测试的原则沿用）。
+
+`LocationProviders` 只负责**选择与回退**：按顺序取第一个 `isInstalled` 的；`isInstalled` 对百度还额外要求
+"已同意隐私"，因为 `LocationClient.java:908-911` 在未同意时直接抛异常——把这条算进"装不上"，才能让上层
+自然回退到系统源，而不是起一个必抛的客户端。
+
+### 五、上报节律是逐字移植的，单位陷阱写在类型上
+
+`x0.java:156-158`：`speed<=0 → maxInterval`，否则 `min(max(minUploadDistance/speed, minInterval), maxInterval)`，
+再 `x0.java:160-162` 用 `cur.timePeriod - last.timePeriod >= 上式` 做放行，速度取**两点里的较大值**
+（`x0.java:191/221`）。移植为 `LocationTuning.cadenceSeconds` + `ReportGate`。
+单位是这轮最容易悄悄错的地方：`x0.java:288` 只在 `locType==61`（GNSS）时把百度给的 **km/h 除以 3.6** 存进 bean，
+其他类型一律写 0——所以"静止"在原版里是**由厂商类型决定的**，不是速度阈值。
+`SystemLocationProvider` 不除 3.6（框架本来就是 m/s）。这条如果错了，线上上报频率会差 3.6 倍。
+
+### 六、明确没搬的部分（不是遗漏，是划出去的一张卡）
+
+`x0.java:164-265` 那套"停留点 / 潜在停留点 / 离开判定"状态机本轮**没有移植**：它依赖三个进程内状态
+（`f64563h` 当前停留点、`f64564i` 潜在停留点、`f64565j` 上次已上报），JADX 反编译里寄存器复用严重，
+需要单独核真值表，硬抄会产出"看着像、数字不对"的实现。所以本轮的 `ReportGate` 只做节律放行，
+`type` 一律发 0；服务端 `Summarise` 本来就按原始点算停留/离开，功能不断。
+
+抄录时发现一处**原版自身可疑**的地方：`x0.java:242` 判"潜在停留范围外"用的是 `n()` =
+`stayDistanceThreshold`（200 m），而语义上更像 `potentialStayDistanceThreshold`（20 m，键名与 `k()` 对得上）。
+两种读法差 10 倍，属于只能问后端/产品的，进待验表（第 62 行）。
+
+### 七、十七个远程配置键（默认为原包字面量，`ConfigUtils.d(key, default)`）
+
+| 键 | 默认 | 单位 | 本轮是否用到 |
+|---|---|---|---|
+| `locationScanMillsWhenDormancy` | 30000 | ms | ✅ `LocationTuning.dormancyIntervalMillis` |
+| `locationMinInterval` | 5 | s | ✅ 节律下限 |
+| `locationMaxInterval` | 20 | s | ✅ 节律上限 / 静止值 |
+| `locationMinUploadDistance` | 40.0 | m | ✅ 节律分子 |
+| `locationStayThreshold` | 300 | s | ⏳ 停留判定 |
+| `locationStayMinTimeInterval` | 900 | s | ⏳ 停留内最小上报间隔 |
+| `potentialStayDistanceThreshold` | 20.0 | m | ⏳（见上一节可疑点） |
+| `stayDistanceThreshold` | 200.0 | m | ⏳ |
+| `staySpeedThreshold` | 1.5 | m/s | ⏳ 高/低速分界 |
+| `distanceToStayPoint` | 250.0 | m | ⏳ |
+| `sendCmdLocationDistanceThreshold` | 10.0 | m | ⏳ 地址复用半径（`x0.java:786`） |
+| `autoReportStayTimeThreshold` | 7200 | s | ⏳ |
+| `requestTimeWhenNoLoc` | 600 | s | ⏳ 长期无定位时重新请求 |
+| `lowSpeedThreshold` | 5.0 | m/s | ⏳ `x0.java:323` |
+| `lowSpeedTimesAsWalk` | 90 | 次 | ⏳ |
+| `lowSpeedLocInterval` | 5000 | ms | ⏳ |
+| `movingTrackDelay` | 180 | s | ⏳ 潜在停留点转停留 |
+
+证据：`manager/l.java:64-80`（1.5.6）。默认值是**代码里的兜底**，线上真实值仍要从
+`configsys.51wnl-cq.com/api/config/getconfigs` 读（待验 60 的一条子项）。
+
+### 八、权限与清单归属
+
+`location/src/main/AndroidManifest.xml` 自己声明 `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`
+（原包 `manifest_166.xml:7-8`），用哪层就带哪条权限，不靠 app 记着补。
+**故意不写**的两条：`ACCESS_BACKGROUND_LOCATION` / `FOREGROUND_SERVICE_LOCATION`（原包 `:10-12`）属于"上报前台服务"
+那张卡；`com.baidu.location.f`（`foregroundServiceType=location`、`android:process=":remote"`，原包 `:288`）
+随百度 AAR 的清单自己进来，现在写等于指向一个本 build 不存在的类。
+
+### 九、API 侧只抽象"写"，不抽象"读"（一条有意识的取舍）
+
+`LocationGateway` 只有 `report(fix, kind)`。`days` / `v2/tracks` 的响应形状已经在 `:net` 里按真 bean
+钉死，并被 `gatewayVerify` 用真 Gson 解过；在定位层再建一套"中立读取模型"等于给同一个线上契约准备两份真相，
+这种契约最不该这样。要换后端的人实现 `report` 就够跑起来，读侧继续走 `:net`。
+
+### 反射绑定当场被抓出来的五条（"看着对"和"真跑"的差）
+
+这层的测试是**用签名一致的替身跑生产反射代码**，不是打桩自证。它第一轮就红了五条，全部是我的错：
+
+1. **`Method.invoke` 对 void 方法返回 null**，我却拿返回值判成败——于是
+   `setLocOption` / `registerLocationListener` / `start` / `stop` **每一次成功都被当成失败**，
+   `BaiduLocationProvider.start()` 根本返回不了 true，`LocationClient.start()` 一次都没被调用过。
+   正确判据是"方法找得到且没抛"。（`BaiduSdk.kt` 的 `call`/`call0`）
+2. **嵌套枚举的二进制名只有一个 `$`**。我写成 `"${owner.name}$$$nested"`，产出两个 `$`，
+   `Class.forName` 恒失败 ⇒ `locationMode` 与 `firstLocType` 永远是 null，
+   而且 `setLocationMode(null)` 会被静默传给 SDK。现在 `buildOption` 对**任何**缺失成员直接返回 null 并写
+   `missingReason`，不再"少配一项也照样出门"。
+3. **我凭语义编了一个 SDK 方法**：`unregisterLocationListener`。1.5.6 与 1.6.6 两版 `LocationClient`
+   都只有两个 `register` 重载，**没有注销**。所以 `close()` 只能 stop + 丢弃客户端（这也解释了原版为什么
+   全进程只建一个 client）。这条正是"反射绑定必须逐条对着反编译行号"的理由。
+4. `SystemLocationProvider.singleFix` **成功后泄漏注册**：只在 `invokeOnCancellation` 里 `removeUpdates`，
+   正常返回的那条路径没人清理，框架会一直回调。现在每条出口都摘。
+5. `Location.getId()` 在 compileSdk 34 不可见，我写的 `providerId = id` 编译过但拿到的是**本层的 id**
+   （恒 `"system"`）。改用 `location.provider`（`"gps"` / `"network"`）。
+
+### 本机新添的验收事实（Robolectric 4.11.1 / SDK 34，实测）
+
+- `ShadowLocationManager.allProviders = [gps, passive, network]`，默认 gps 开、network 关；
+  `requestLocationUpdates(...)` **不会**抛 `SecurityException`（所以权限必须自己查，别指望它兜底）；
+  `simulateLocation(...)` 之后 `idle()` **能真的投递回调**；`getLegacyLocationRequests(p).intervalMillis`
+  能读到注册间隔。
+- `Geocoder.isPresent()` 为 true，但 `getFromLocationName` 抛 `IOException: Service not Available`
+  ⇒ 正向地理编码（家/公司地址→坐标）在 JVM 里验不了，只能真机；`setFromLocation` 是**按实例**生效的。
+- Kotlin 2.4 把 `by lazy` 字段编译成 `<name>$delegate`（测试里要反射拿它）。
+
+### 验收
+
+| 层次 | 命令 | 结果 |
+|---|---|---|
+| 定位层 | `sh tools/gradle.sh :location:testDebugUnitTest` | **93 绿** |
+| 客户端回归 | `sh tools/gradle.sh :net:test :app:testDebugUnitTest` | **274 绿**（:net 31 + :app 243，本轮新增 8 条上报形状/配置阈值） |
+| 三层合计 | 上面两条相加 | **367 绿**，0 skipped |
+| 网关侧 | `cd server && go test ./...` | 49 绿（本轮没动服务端，沿用上一轮结果；smoke 与 gatewayVerify 同理没重跑） |
+
+定位层这 93 条的分布：`BaiduLocationProviderTest` 23（**跑的是生产反射代码**，只有 SDK 本身是替身）、
+`GeoMathTest` 14（逐行复现 `recovered/geo_golden_156.txt` 的全部 40 行）、`ReportGateAndCollectorTest` 17、
+`SystemLocationProviderTest` 16（Robolectric 真的投递定位，也真的验到"一次性注册会被摘掉"）、
+`SystemPlaceResolverTest` 10、`LocationProvidersTest` 7、`LocationLayerIndependenceTest` 6（架构门禁：接口层不许出现厂商包名）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1550,6 +1719,11 @@ Windows 上的 Go 没有内嵌 tzdb，所以 `loadZone` 在该情况下退回固
 | 59 | `api/widget/location` / `api/widget/track`（桌面卡片） | 两个响应都要"配对的另一人"（`friendLocation`/`friendState`）与设备状态（电量、充电、屏幕态）。配对模型与敏感事件域还没做，先做就是把字段编出来 |
 | 60 | `-stay-seconds`、`-gap-seconds`、`-loc-timezone` 的真实取值 | 停留多久算一个到达点、沉默多久算"没有新定位"、一天从哪个时区开始——都是原服务端算完就扔的中间量，客户端只看到结果。要么线上抓包对比，要么运营定 |
 | 61 | 轨迹文本与几个残留编码 | `placeOf` 拼地址的顺序（bean/Address 没有整串字段，原版也是服务端拼的）、`lostType` 非 0 的含义（客户端只在 ==0 时渲染行）、`TrackRecordBean.Point.type` 的取值（代码里没人读） |
+| 62 | `x0.java:242` 那条"潜在停留范围外"到底用哪个阈值 | 代码读出来是 `n()` = `stayDistanceThreshold`（200 m），但按键名语义应是 `potentialStayDistanceThreshold`（20 m，即 `k()`）。两种读法差 10 倍，直接决定轨迹上"停留点"的密度。JADX 寄存器复用严重，只能由后端/产品定，或等真机抓一段原始点回算 |
+| 63 | 十七个定位远程配置键的**线上真实值** | `LocationTuning` 的默认值是原包 `ConfigUtils.d(key, default)` 的字面兜底（`manager/l.java:64-80`），线上大概率被 `configsys` 覆盖过。这是**只读**一件事：`GET configsys.51wnl-cq.com/api/config/getconfigs?appver=166`（值全 base64，令牌是回包的 `r`），不发消息、不写任何东西，随时可查 |
+| 64 | 百度定位/地图 SDK 从哪来 | 内网 CI 产物、公司百度账号后台下载的 AAR，还是决定不接（走"无 SDK 版"）。拿到 AAR 后要做的事很具体：把 `BaiduSdk.kt` 的反射换成类型安全实现，并让 AAR 自带清单把 `com.baidu.location.f`（`:remote` 进程、foregroundServiceType=location）带进来 |
+| 65 | 反射监听在**真** SDK 上是否被接受 | 本层用 `BDLocationListener` 接口重载 + 动态代理（`LocationClient.java:1213`），测试跑在签名一致的替身上。真 SDK 内部若对该监听对象做 `instanceof BDAbstractLocationListener` 或读它的类名，就会静默收不到回调。这一条只能真机验，且是接上 AAR 后的第一件事 |
+| 66 | 厂商 ROM 上 `Geocoder` 到底能不能用 | 无 SDK 版把地址完全压在 `SystemPlaceResolver`（`android.location.Geocoder`）上；国内设备若无 GMS/无后端地理编码，`isPresent()` 会是 false 或恒返回空。真机一验便知，验不过就要么接 SDK，要么只报坐标 |
 
 ## 十、下一步顺序（建议）
 
@@ -1564,3 +1738,9 @@ Windows 上的 Go 没有内嵌 tzdb，所以 `loadZone` 在该情况下退回固
    ② 客户端把 baseUrl 指到这台重建网关，用真机走一遍加友，逐条对字段；③ 再按域扩路由
    （定位/锁机 → 纪念日/截图 → VIP），每域一批测试。服务端源码仍然要追：它决定的是"我定的那些取值
    对不对"，不再是"能不能上线"。
+9. 定位这一层（五点二十六）已经不需要等 SDK 就能往下走，顺序是：
+   ① 上报前台服务（带 `ACCESS_BACKGROUND_LOCATION` / `FOREGROUND_SERVICE_LOCATION`，并把 `privacyAgreed`
+      接到真的同意位）；② `x0.java:164-265` 的停留/离开判定作为 `ReportPolicy` 的第二实现，先把 242 行
+      那个 200/20 的读法定下来（待验 62）；③ 轨迹页地图：`LocationProvider`/`PlaceResolver` 这套接口已经把
+      "SDK 在场/不在场"分开了，地图那个 View 也该照同样一条缝做（拿到百度 AAR 就照原版，拿不到就用
+      `SystemPlaceResolver` + 静态图/列表版）。待验 63/65/66 三条分别是配置、真 SDK、真机 ROM，都要一次性问清。

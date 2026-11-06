@@ -4,14 +4,20 @@ import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.youloft.linkup.location.LocationRequest
+import com.youloft.linkup.location.LocationResult
+import com.youloft.linkup.location.provider.system.LocationPermissions
+import com.youloft.linkup.location.provider.system.SystemPlaceResolver
 import com.youloft.linkup.net.LinkUpClient
 import com.youloft.watcher.data.LinkUpApplication
 import com.youloft.watcher.data.appGraph
+import com.youloft.watcher.data.locationProviders
 import com.youloft.watcher.data.local.PermissionChannelGate
 import com.youloft.watcher.data.local.SigningBlockInstallChannel
 import com.youloft.watcher.data.local.StoredRemoteConfig
 import com.youloft.watcher.data.local.isVip
 import com.youloft.watcher.data.local.refreshRemoteConfig
+import com.youloft.watcher.data.locationTuning
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,6 +59,7 @@ class RecoveryProbeActivity : AppCompatActivity() {
                     appendLine("cached isVip=${users.current().isVip()} tokenStored=${users.token().isNotEmpty()}")
                     appendChannelReads(graph)
                     appendRemoteConfig(graph)
+                    appendLocation(graph)
                 }
             }.getOrElse { "FAILED: $it" }
         }
@@ -100,6 +107,44 @@ class RecoveryProbeActivity : AppCompatActivity() {
             "1.5.6 rule asksAfterAddFriendByConfig=" +
                 PermissionChannelGate(graph.installChannel, stored).asksAfterAddFriendByConfig(),
         )
+    }
+
+    /**
+     * #23 read side: the location layer is deliberately buildable with no vendor SDK, so a device is the
+     * only place that can say which source it actually picked, what the thresholds really are on this
+     * install, and whether the platform `Geocoder` answers at all (待验 66). Nothing here writes or reports
+     * to the backend — it asks for one fix and one address, then stops.
+     */
+    private suspend fun StringBuilder.appendLocation(graph: LinkUpApplication) {
+        appendLine("---- location layer (:location) ----")
+        val tuning = graph.remoteConfig.locationTuning()
+        appendLine(
+            "tuning 休眠=${tuning.dormancyIntervalMillis}ms 节律=[${tuning.minIntervalSeconds}..${tuning.maxIntervalSeconds}]s " +
+                "距离预算=${tuning.minUploadDistanceMeters}m",
+        )
+        appendLine(
+            "cadence(0/1/2/8 m/s)=${tuning.cadenceSeconds(0f)},${tuning.cadenceSeconds(1f)}," +
+                tuning.cadenceSeconds(2f) + ",${tuning.cadenceSeconds(8f)}",
+        )
+        val providers = locationProviders(this@RecoveryProbeActivity, privacyAgreed = { true })
+        appendLine("candidates ${providers.describe()}")
+        appendLine("permission=${LocationPermissions.of(this@RecoveryProbeActivity).state()}")
+        val chosen = providers.preferred()
+        if (chosen == null) {
+            appendLine("没有可用定位来源")
+            return
+        }
+        appendLine("chosen=${chosen.id} lastFix=${chosen.lastFix()}")
+        val outcome = chosen.singleFix(LocationRequest(singleFixTimeoutMillis = 20_000))
+        appendLine("singleFix=${outcome::class.simpleName} $outcome")
+        val fix = (outcome as? LocationResult.Located)?.fix
+        val resolver = SystemPlaceResolver(this@RecoveryProbeActivity)
+        appendLine("PlaceResolver available=${resolver.isAvailable}")
+        if (fix != null) {
+            appendLine("wgs84=${fix.coord.lat},${fix.coord.lng} 精度=${fix.accuracyMeters}m 速度=${fix.speedMetersPerSecond}m/s")
+            appendLine("resolvePlace=${resolver.resolvePlace(fix.coord)}")
+            appendLine("bd09=${fix.coord.asBd09().lat},${fix.coord.asBd09().lng}（地图显示用的坐标系）")
+        }
     }
 
     companion object {

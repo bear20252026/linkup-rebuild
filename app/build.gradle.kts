@@ -45,6 +45,7 @@ kotlin {
 
 dependencies {
     implementation(project(":net"))
+    implementation(project(":location"))
     implementation(project(":res166"))
     implementation(project(":fastkit"))
 
