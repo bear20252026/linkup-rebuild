@@ -161,20 +161,9 @@ func (g *Gateway) ensureIMAccount(ctx context.Context, u store.User) {
 		Nickname: u.Nickname,
 		FaceURL:  u.Avatar,
 	})
-	if err != nil && !isAlreadyKnown(err) {
+	if err != nil && !openim.IsAlreadyKnown(err) {
 		g.log.Warn("openim register failed", "userId", u.ID, "err", err)
 	}
-}
-
-// isAlreadyKnown treats "this account already exists" as success: re-login must not fail because the
-// IM identity was created earlier.
-func isAlreadyKnown(err error) bool {
-	var imErr *openim.Error
-	if !errors.As(err, &imErr) {
-		return false
-	}
-	return strings.Contains(strings.ToLower(imErr.Msg+imErr.Dlt), "exist") ||
-		strings.Contains(imErr.Msg, "已存在") || strings.Contains(imErr.Msg, "已经注册")
 }
 
 // loginByThird answers `api/user/login`, the WeChat (platform 4) and QQ (platform 5) path. The body is
@@ -492,12 +481,20 @@ func (g *Gateway) friendInfo(c *gin.Context) {
 	}))
 }
 
+// deleteFriend removes the pair in **both** directions. Measured on the live server: `delete_friend`
+// is per-owner, so after deleting B→A the other side still lists A (`inUser2Friends` stays true),
+// while LinkUp's own model forgets the relation both ways. Half a deletion would show up as a friend
+// that reappears on one phone, so both calls have to succeed.
 func (g *Gateway) deleteFriend(c *gin.Context) {
 	form := body(c)
 	id := num(form, "friendId")
 	me := g.claims(c).UserID
-	if !g.handleStatus(c, g.opts.IM.DeleteFriend(c.Request.Context(), store.IMID(me), store.IMID(id)), "删除好友") {
-		return
+	ctx := c.Request.Context()
+	for _, pair := range [][2]int64{{me, id}, {id, me}} {
+		if err := g.opts.IM.DeleteFriend(ctx, store.IMID(pair[0]), store.IMID(pair[1])); err != nil {
+			g.handleStatus(c, err, "删除好友")
+			return
+		}
 	}
 	if err := g.opts.Store.ForgetPair(me, id); err != nil {
 		g.log.Warn("forget relation failed", "err", err)

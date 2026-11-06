@@ -58,16 +58,19 @@ func (s *stubIM) handle(w http.ResponseWriter, r *http.Request) {
 	case "/auth/get_user_token":
 		data = `{"token":"user-token","expireTimeSeconds":7200}`
 	case "/friend/get_friend_list":
-		data = `{"friendsInfo":[{"ownerUserID":"10001","remark":"老妈","createTime":1700000000000,
+		data = `{"friendsInfo":[{"ownerUserID":"10001","remark":"老妈","createTime":1700000000,
 			"friendUser":{"userID":"10002","nickname":"女儿","faceURL":"https://x/a.png","ex":""}}],"total":1}`
+	case "/friend/is_friend":
+		// v3.8.3-patch.18 answers two flags, not one: each side's view is separate.
+		data = `{"inUser1Friends":true,"inUser2Friends":false}`
 	case "/friend/get_friend_apply_list":
 		data = `{"FriendRequests":[{"fromUserID":"10002","fromNickname":"女儿","fromFaceURL":"https://x/a.png",
-			"toUserID":"10001","handleResult":0,"reqMsg":"加一下","createTime":1700000000000}],"total":1}`
+			"toUserID":"10001","handleResult":0,"reqMsg":"加一下","createTime":1700000000}],"total":1}`
 	case "/friend/get_self_friend_apply_list":
 		// The protocol tags this response's key lower-case, unlike the list above. Both spellings are
 		// pinned so neither list can silently decode to empty.
 		data = `{"friendRequests":[{"fromUserID":"10001","fromNickname":"老妈","fromFaceURL":"https://x/b.png",
-			"toUserID":"10002","handleResult":0,"reqMsg":"加一下","createTime":1700000000000}],"total":1}`
+			"toUserID":"10002","handleResult":0,"reqMsg":"加一下","createTime":1700000000}],"total":1}`
 	default:
 		data = `{}`
 	}
@@ -117,9 +120,11 @@ func TestAdminTokenIsFetchedOnceAndReused(t *testing.T) {
 	if req["secret"] != "unit-secret" {
 		t.Errorf("secret field: %#v", req["secret"])
 	}
-	list, ok := req["userID"].([]any)
-	if !ok || len(list) != 1 || list[0] != "imAdmin" {
-		t.Errorf("userID field should be an array holding the admin id, got %#v", req["userID"])
+	// A real v3.8.3-patch.18 server answers an array here with
+	// "cannot unmarshal array into Go struct field GetAdminTokenReq.userID of type string",
+	// so the scalar shape is pinned deliberately.
+	if req["userID"] != "imAdmin" {
+		t.Errorf("userID should be the admin id as a string, got %#v", req["userID"])
 	}
 }
 
@@ -142,6 +147,9 @@ func TestRelationCallsUseTheDocumentedPathsAndFields(t *testing.T) {
 	if err := client.DeleteFriend(ctx, "10001", "10002"); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := client.IsFriend(ctx, "10001", "10002"); err != nil {
+		t.Fatal(err)
+	}
 
 	want := []string{
 		"/auth/get_admin_token", // once, then cached
@@ -150,6 +158,7 @@ func TestRelationCallsUseTheDocumentedPathsAndFields(t *testing.T) {
 		"/friend/add_friend_response",
 		"/friend/set_friend_remark",
 		"/friend/delete_friend",
+		"/friend/is_friend",
 	}
 	got := stub.calls()
 	if len(got) != len(want) {
@@ -168,6 +177,15 @@ func TestRelationCallsUseTheDocumentedPathsAndFields(t *testing.T) {
 	respond := stub.bodies["/friend/add_friend_response"]
 	if v, _ := respond["handleResult"].(float64); v != HandleResultAccepted {
 		t.Errorf("handleResult should be %d, got %#v", HandleResultAccepted, respond["handleResult"])
+	}
+	// is_friend takes userID1/userID2 — measured: the ownerUserID spelling gets
+	// `ArgsError: userID1 is empty` from the real server.
+	isFriend := stub.bodies["/friend/is_friend"]
+	if isFriend["userID1"] != "10001" || isFriend["userID2"] != "10002" {
+		t.Errorf("is_friend fields should be userID1/userID2, got %#v", isFriend)
+	}
+	if _, leaked := isFriend["ownerUserID"]; leaked {
+		t.Errorf("is_friend must not send ownerUserID: %#v", isFriend)
 	}
 	remark := stub.bodies["/friend/set_friend_remark"]
 	if remark["ownerUserID"] != "10001" || remark["friendUserID"] != "10002" || remark["remark"] != "女儿" {
@@ -211,6 +229,17 @@ func TestFriendAndApplyListsDecodeTheProtocolFieldNames(t *testing.T) {
 	paginated, _ := json.Marshal(pagination(2, 50))
 	if !strings.Contains(string(paginated), `"pageNumber":2`) || !strings.Contains(string(paginated), `"showNumber":50`) {
 		t.Errorf("pagination shape wrong: %s", paginated)
+	}
+}
+
+func TestIsFriendReadsTheOwnersDirection(t *testing.T) {
+	_, client := newStub(t)
+	got, err := client.IsFriend(context.Background(), "10001", "10002")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got {
+		t.Error("inUser1Friends=true must read as friend for the owner")
 	}
 }
 
@@ -261,4 +290,22 @@ func countPath(calls []string, path string) int {
 		}
 	}
 	return n
+}
+
+func TestAlreadyKnownMatchesTheMeasuredServerAnswer(t *testing.T) {
+	// v3.8.3-patch.18 answers a duplicate register with exactly this envelope.
+	stub := &stubIM{bodies: map[string]map[string]any{}, failure: map[string]int{}}
+	stub.failure["/user/user_register"] = ErrRegisteredAlready
+	srv := httptest.NewServer(http.HandlerFunc(stub.handle))
+	defer srv.Close()
+
+	err := New(srv.URL, "unit-secret", "imAdmin").RegisterUsers(context.Background(), Account{UserID: "10001"})
+	if !IsAlreadyKnown(err) {
+		t.Fatalf("errCode %d must read as already-registered, got %v", ErrRegisteredAlready, err)
+	}
+	// A different refusal must not be swallowed by the same predicate.
+	stub.failure["/user/user_register"] = 1500
+	if IsAlreadyKnown(New(srv.URL, "unit-secret", "imAdmin").RegisterUsers(context.Background(), Account{UserID: "10002"})) {
+		t.Fatal("an unrelated errCode must not read as already-registered")
+	}
 }

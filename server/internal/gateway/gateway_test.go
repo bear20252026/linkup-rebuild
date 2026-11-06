@@ -3,6 +3,7 @@ package gateway
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -66,11 +67,11 @@ func (s *stubIM) handle(w http.ResponseWriter, r *http.Request) {
 	case "/auth/get_admin_token":
 		data = `{"token":"t","expireTimeSeconds":3600}`
 	case "/friend/get_friend_list":
-		data = `{"friendsInfo":[{"ownerUserID":"1","remark":"","createTime":1700000000000,` +
+		data = `{"friendsInfo":[{"ownerUserID":"1","remark":"","createTime":1700000000,` +
 			`"friendUser":{"userID":"2","nickname":"女儿","faceURL":"http://a/2.png","ex":""}}],"total":1}`
 	case "/friend/get_friend_apply_list":
 		data = `{"FriendRequests":[{"fromUserID":"2","fromNickname":"女儿","toUserID":"1",` +
-			`"handleResult":0,"reqMsg":"妈加我","createTime":1700000000000}],"total":1}`
+			`"handleResult":0,"reqMsg":"妈加我","createTime":1700000000}],"total":1}`
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = io.WriteString(w, `{"errCode":0,"errMsg":"","data":`+data+`}`)
@@ -510,8 +511,21 @@ func TestRemarkRelationAndDelete(t *testing.T) {
 	if answered := h.request(t, http.MethodPost, "/api/relation/del", "", map[string]any{"friendId": other.ID}, token); answered.Status != 200 {
 		t.Fatalf("del: %+v", answered)
 	}
-	if len(h.im.record("/friend/delete_friend")) != 1 {
-		t.Error("the friendship was not removed on the IM side")
+	deled := h.im.record("/friend/delete_friend")
+	if len(deled) != 2 {
+		t.Fatalf("deletion must clear both directions, got %d IM calls: %#v", len(deled), deled)
+	}
+	seen := map[string]bool{}
+	for _, call := range deled {
+		seen[fmt.Sprint(call["ownerUserID"], "→", call["friendUserID"])] = true
+	}
+	for _, want := range []string{
+		fmt.Sprint(idOf(me.ID), "→", idOf(other.ID)),
+		fmt.Sprint(idOf(other.ID), "→", idOf(me.ID)),
+	} {
+		if !seen[want] {
+			t.Errorf("missing delete_friend %s, saw %#v", want, seen)
+		}
 	}
 	if extra := h.store.ExtraFor(me.ID, other.ID); extra.Relation != 0 || extra.Remark != "" {
 		t.Errorf("local extras survived the deletion: %+v", extra)

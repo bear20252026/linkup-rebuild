@@ -347,7 +347,9 @@ func (s *Store) RecordDevice(id int64, getuiCid, pushToken string) error {
 func (s *Store) PutExtra(e Extra) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	e.Since = time.Now().UnixMilli()
+	// Seconds, not milliseconds: the client renders this as `Date(createAt * 1000L)`
+	// (FriendInfoActivity.kt:103, FriendListVAdapter.kt:80) and OpenIM's own createTime is seconds too.
+	e.Since = time.Now().Unix()
 	s.data.Extras[extraKey(e.OwnerID, e.FriendID)] = e
 	return s.save()
 }

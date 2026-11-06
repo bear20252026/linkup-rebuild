@@ -14,7 +14,7 @@ sh tools/gradle.sh :net:liveVerify      # 期望打印 PROTOCOL_RECOVERED=1
 # 出 APK
 sh tools/gradle.sh :app:assembleDebug
 
-# 服务端回归：34 个 Go 测试，全离线（不需要 Docker）
+# 服务端回归：36 个 Go 测试，全离线（不需要 Docker）
 cd server && go test ./...
 
 # 服务端真进程 + 真 socket：28 条用例，签名由 openssl 产出
@@ -38,13 +38,15 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
-已验证：带签名的 GET 被真实服务端接受（`status=200`）；`net`/`app` 264 个测试全绿；`server` 34 个 Go 测试
+已验证：带签名的 GET 被真实服务端接受（`status=200`）；`net`/`app` 264 个测试全绿；`server` 36 个 Go 测试
 + 28 条真 socket 用例全绿；同一条签名契约在 **JVM 客户端、Go、OpenSSL** 三个实现下产出同一段密文
 （JVM 样本向量钉在 `server/internal/contract`，POST 体的 md5 规则由 MockWebServer 离线锁定）。
+**重建网关 ↔ 真 OpenIMServer 已跑通**：20 条端到端用例 + 3 个在线集成测试全绿，OpenIM 的原始应答
+留证在 `recovered/openim_live_evidence_2026-11-05/`（真栈是把 Ubuntu WSL rootfs import 到 D 盘的独立
+发行版里跑的，Docker Desktop 与 C 盘都没被碰）。
 
-未验证：**向真服发一条带 body 的签名 POST**（要真登录态，且容易撞上写接口，没做）；97 条路由逐条字段与
-业务规则（需要线上源码）；**网关 ↔ 真 OpenIM 容器栈一次都没跑过**（本机 C 盘只剩个位数 GB，镜像放不下）。
-逐条见 `recovered/DESIGN_CN.md` 第九节的待验清单。
+未验证：**向真服发一条带 body 的签名 POST**（要真登录态，且容易撞上写接口，没做）；97 条里剩下的 80 条
+路由字段与业务规则（需要线上源码）。逐条见 `recovered/DESIGN_CN.md` 第九节的待验清单。
 
 ## 红线
 

@@ -1209,6 +1209,61 @@ LinkUp 自有的东西自己做**，语言选 Go（与线上 `always_guard.api` 
 res 引用 Material 属性，但测试变体的类路径上没有 material 依赖），而 `fastkit/src` 只有 `main/`、
 **零测试源**——所以它不在回归命令里，将来给 :fastkit 写测试时要先补这个依赖。
 
+## 五点二十三、真栈验收：把 OpenIM 跑在 D 盘（#21 后半，2026-11-05）
+
+### 为什么不是"搬 Docker Desktop 的盘"
+
+你说"你来迁移 D 盘"。我**没有**去搬 Docker Desktop 自己那个 `docker_data.vhdx`（要改它的私有配置，
+弄坏了会连累你现有的镜像与容器）。改成：用 Ubuntu 官方 WSL rootfs（**校验过 sha256** 才 import）
+在 `D:\linkup-im\` 上开一个独立发行版 `linkup-im`，它里面自己跑 dockerd。
+于是镜像字节全部落在 D（5.7 GB，D 还剩 950 GB），**C 盘一个字节都没多占**，Docker Desktop 完全没被碰；
+要撤就是 `wsl --unregister linkup-im` 一条命令。步骤逐条写在 `server/README.md`。
+
+三条环境事实值得记下来（下次换台机器还会撞上）：
+
+1. **WSL 是 NAT 模式且没有 IPv6 路由**：`getent` 只回 AAAA，`curl` 在 **0 秒**内失败，看着像断网。
+   在该发行版里 `net.ipv6.conf.*.disable_ipv6=1` 之后 apt/镜像全通。
+2. **Docker Hub 直连不通**（`registry-1.docker.io` 连不上），`docker.1ms.run` 匿名可拉；
+   `docker.m.daocloud.io` 只对 `library/*` 放行，`openim/*` 回 403。
+3. **这台机器的 WSL 会在空闲时回收 VM**：分几次 `wsl -d …` 调用时，命令之间空上一分钟，
+   dockerd 连同整套容器就被带走，表现是容器反复 `Up 6 seconds`、10002 时通时断。
+   所以起栈 + 等 healthy + 跑验收必须**一次调用跑完**（脚本里先 `nohup sleep 7200 &` 顶住）。
+
+### 真服当场纠正了我四条（这是这一轮最值钱的东西）
+
+| # | 我之前写的 | 真服 v3.8.3-patch.18 说的 | 后果 |
+|---|---|---|---|
+| 1 | `get_admin_token` 发 `"userID":["imAdmin"]`（照着 proto 里 `repeated` 的想当然） | `{"errCode":1001,"errMsg":"…cannot unmarshal array into Go struct field GetAdminTokenReq.userID of type string"}` | **每一次 IM 调用都拿不到令牌**，整套关系功能全废。协议模块 `auth.GetAdminTokenReq.UserID` 本来就是 `string`——是我读错了 |
+| 2 | `is_friend` 发 `{ownerUserID,friendUserID}` | `ArgsError: userID1 is empty`；正确字段是 **userID1/userID2** | 这个调用必失败（客户端"已经是好友"分支要用） |
+| 3 | `is_friend` 回 `{"isFriend":bool}` | 回 **`{"inUser1Friends":…,"inUser2Friends":…}` 两个方向的旗标** | 读错键 ⇒ 永远返回 false，"已经是好友"提示永不出现 |
+| 4 | `delete_friend` 调一次就算删干净 | 删除是**单向**的：删 B→A 之后 A 侧 `inUser2Friends` 仍为 true | 一边删了另一边还留着 ⇒ 好友在另一台手机上复活。现在两个方向都删 |
+
+第 5 条不算纠错、算新事实：**`handleResults` 不传就是不过滤**（同意后仍回 handleResult=1 的行），
+传 `[0]` 才只回未处理——`apply_list` 的未读数只能这么算。第 6 条：重复注册回
+`errCode 1102 / RegisteredAlreadyError / "userID registered already"`，我原来的 `IsAlreadyKnown`
+只认 "exist" 子串，**接不住这条**，登录时 IM 侧一旦已存在就会误报失败。
+
+还有两条被我自己的实现坑到、跟 IM 无关但同一轮修掉：
+
+- **`Extra.Since` 我写成了 `UnixMilli()`**，而它出去就是客户端的 `createAt`，客户端做
+  `Date(createAt * 1000L)`（`FriendInfoActivity.kt:103`、`FriendListVAdapter.kt:80`）⇒ 关系详情会显示成
+  公元五万多年。OpenIM 自己的 `createTime` 也是秒 ⇒ 全链路统一成秒，并在测试里钉住单位区间。
+- **`smoke`/`e2e` 脚本被我自己的 Python 补丁写成了 CRLF**：`bash` 不报错，只是
+  `dirname "$BASH_SOURCE"` 带上一截 `\r`，于是 cd 到不存在的目录、在错误位置跑 go build。
+  已把 `*.sh`/`*.go` 在 `.gitattributes` 里锁成 LF，并把工作区两个脚本归一化。
+
+### 现在的验收数字
+
+| 层次 | 命令 | 结果 |
+|---|---|---|
+| 离线单测 | `go test ./...` | **36 绿**（contract 6 / gateway 15 / openim 8 / store 7），Windows 与 Linux 各跑一遍 |
+| 真进程 + 死 IM | `bash server/scripts/smoke.sh` | **28 绿**（不可达必须报错，不能报空列表） |
+| **真栈端到端** | `bash server/scripts/openim-e2e.sh` | **20 绿**（登录→申请→同意→两列表→详情→备注→双向删除→配额），OpenIM 原始应答留证 `recovered/openim_live_evidence_2026-11-05/` |
+| **在线集成测试** | `LINKUP_OPENIM_URL=… go test ./internal/openim -run Live` | **3 绿**；平时没真服就 skip，不拖红离线套件 |
+
+待验 47 / 48 / 49 已划掉。**仍然没验的**：`isRegister` 对三方登录该答什么（待验 50，要真客户端配合）、
+剩余 80 条路由的字段、以及"环信那边到底要不要换掉"这个产品决定。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1329,9 +1384,9 @@ res 引用 Material 属性，但测试变体的类路径上没有 material 依�
 | 44 | 一键登录（`LoginPhoneDialog`）真跑起来 | `com.g.gysdk` 与 `cn.fly.verify` 两个 jar 都不在 Maven Central、APK 里只有类名 ⇒ 重建恒答 null（等价原版 preLogin 失败分支）。masked 号码排版与运营商条款都要等 SDK |
 | 45 | 微信/QQ 授权与客服会话的真实回路 | 包查询是真的（原版也是）；`sendWechatAuth`/`startQqLogin`/客服会话是空实现，`LoginEvents` 三个流还没有发布者（`wxapi/WXEntryActivity`、QQ `IUiListener` 属三方登录卡） |
 | 46 | `POST_NOTIFICATIONS` 该在什么时机问 | 现在照搬原版：`onCreate` 里每账号只问一次（键在按用户实例）。上架审核对这条敏感，是否挪到首启隐私同意之后，是产品决定 |
-| 47 | **网关 ↔ 真 OpenIMServer 跑通一遍**（注册 → add_friend → add_friend_response → 两个列表 → set_friend_remark → delete_friend） | 本机物理上跑不了：C 盘只剩 7.2 GB（99% 满）而 Docker data-root 在 C，OpenIM 那套镜像解压 2.5–3.5 GB。步骤：① 把 Docker 磁盘迁到 D（D 剩 128 GB）② 按上游 `openim-docker` 起栈（mongo:7.0.28 / redis:7.0.0 / bitnamilegacy 的 kafka 3.5.1、minio 2024.1.13、etcd 3.5.21 / openim/openim-server:v3.8.3-patch.18）③ `go run ./cmd/server -openim http://127.0.0.1:10002 -openim-secret <真密钥>`（**不带 `-dev`**，`openIM123` 会被启动拒绝）④ 两台设备或两条会话走一遍加友。在那之前 `internal/openim` 只有 httptest 打桩，**不算验证过** |
-| 48 | `FriendRequests` / `friendRequests` / `friendsInfo` 三个 key 真服到底怎么拼 | 现在照的是 `openimsdk/protocol v0.0.73-alpha.12` 的 json tag，而 REST 层是 protojson 输出，两者可能不完全一致。Go 解码有大小写兜底，所以读不空；但**发送方向**（`pagination.pageNumber` 之类）错了就是 400。等 47 跑通逐条对 |
-| 49 | `get_friend_apply_list` 不传 `handleResults` 时真服返回哪些行 | 现在不传该键（客户端模型里也没有过滤概念）。未处理/已处理是否都回来，直接决定 `applyList` 的 `unreadCount` 口径 |
+| 47 ✅**已验 2026-11-05** | 网关 ↔ 真 OpenIMServer 全闭环：注册 → add_friend → 两个申请列表 → add_friend_response → is_friend → set_friend_remark → friendsInfo → 双向 delete。跑法与结果见 `server/README.md` 与 `report/28`：**20/20 端到端用例绿、3 个在线集成测试绿**（`internal/openim/live_test.go`，默认 skip） |
+| 48 ✅**已验 2026-11-05** | 三个 key 的拼法**照协议 tag 猜对了**：真服回 `FriendRequests`（收）、`friendRequests`（发）、`friendsInfo`（好友），原始应答留证在 `recovered/openim_live_evidence_2026-11-05/`。同时抓到我自己的两处错读：`get_admin_token` 的 `userID` 是**字符串不是数组**、`is_friend` 的请求字段是 **userID1/userID2**、响应是 **inUser1Friends/inUser2Friends 两个方向的旗标** |
+| 49 ✅**已验 2026-11-05** | `get_friend_apply_list` 不传 `handleResults` = **返回全部含已处理**（同意后仍回 handleResult=1 的行）；传 `[0]` 才只剩未处理。网关按"不过滤 + 用 handleResult==0 数未读"实现，与实测一致 |
 | 50 | 三方登录的 `isRegister` 该答 true 还是 false | 它决定客户端 `UserManager.store(fromLogin=false)` 走"停车等补资料"还是直接落库。APK 只看得到消费端，看不到服务端怎么给 |
 | 51 | 线上网关要不要补签名校验 | `link.tttick.com` 实测不校验，密钥在那台形同虚设；重建版默认校验。改线上是运维决定，不是我能在这台机器上做的 |
 | 52 | `-friend-limit` 与 `api/client/config` 九个开关的真实取值 | 只有 CI/运营能给出。重建版全部是启动 flag，默认值都取"客户端自己的 fallback"，没编数字 |

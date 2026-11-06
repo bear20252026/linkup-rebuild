@@ -9,7 +9,7 @@
 // (internal/api/router.go) and from github.com/openimsdk/protocol v0.0.73-alpha.12's generated json
 // tags, not from memory:
 //
-//	POST /auth/get_admin_token   {secret, userID[]}                -> {token, expireTimeSeconds}
+//	POST /auth/get_admin_token   {secret, userID}                  -> {token, expireTimeSeconds}
 //	POST /auth/get_user_token    {platformID, userID}             -> {token, expireTimeSeconds}
 //	POST /user/user_register     {users:[{userID,nickname,faceURL,ex}]}
 //	POST /user/update_user_info  {userInfo:{userID,nickname,faceURL}}
@@ -20,7 +20,7 @@
 //	POST /friend/get_friend_list            {userID,pagination} -> {friendsInfo,total}
 //	POST /friend/set_friend_remark {ownerUserID,friendUserID,remark}
 //	POST /friend/delete_friend     {ownerUserID,friendUserID}
-//	POST /friend/is_friend         {ownerUserID,friendUserID}
+//	POST /friend/is_friend         {userID1,userID2}                  -> {inUser1Friends,inUser2Friends}
 //
 // The two apply lists do not agree on the case of their key — the protocol module tags one
 // `FriendRequests` and the other `friendRequests`. Decoding happens with encoding/json, which falls
@@ -38,6 +38,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -111,6 +112,27 @@ type Error struct {
 
 func (e *Error) Error() string {
 	return fmt.Sprintf("openim %s: errCode=%d errMsg=%s errDlt=%s", e.Path, e.Code, e.Msg, e.Dlt)
+}
+
+// ErrRegisteredAlready is what the server answers when registering an account that already exists.
+const ErrRegisteredAlready = 1102
+
+// IsAlreadyKnown reports whether an error means "this already exists", which callers treat as
+// success: re-registering an account on login must not fail because the IM identity was created
+// earlier. The server has more than one wording for it across versions, hence the substring test.
+func IsAlreadyKnown(err error) bool {
+	var imErr *Error
+	if !errors.As(err, &imErr) {
+		return false
+	}
+	// Measured on v3.8.3-patch.18: a duplicate register answers
+	// {errCode:1102, errMsg:"RegisteredAlreadyError", errDlt:"userID registered already"}.
+	if imErr.Code == ErrRegisteredAlready {
+		return true
+	}
+	text := strings.ToLower(imErr.Msg + imErr.Dlt)
+	return strings.Contains(text, "exist") || strings.Contains(text, "already") ||
+		strings.Contains(imErr.Msg, "已存在") || strings.Contains(imErr.Msg, "已经注册")
 }
 
 // Call posts one request and decodes `out` from the envelope's `data`. Pass a nil out to ignore it.
@@ -196,7 +218,11 @@ func (c *Client) AdminToken(ctx context.Context) (string, error) {
 		ExpireTimeSeconds int64  `json:"expireTimeSeconds"`
 	}
 	if err := c.Call(ctx, "/auth/get_admin_token", map[string]any{
-		"secret": c.Secret, "userID": []string{c.Admin},
+		// `userID` is a **scalar string** here, not the repeated field the name suggests: the running
+		// v3.8.3-patch.18 server answers an array with
+		// `json: cannot unmarshal array into Go struct field GetAdminTokenReq.userID of type string`.
+		// auth.GetAdminTokenReq in the protocol module says `UserID string` too — this was my misread.
+		"secret": c.Secret, "userID": c.Admin,
 	}, &answered); err != nil {
 		return "", err
 	}
@@ -335,14 +361,21 @@ func (c *Client) DeleteFriend(ctx context.Context, owner, friend string) error {
 }
 
 // IsFriend is the check the client's "already a friend" branch needs.
+//
+// Measured on v3.8.3-patch.18: the answer is `{"inUser1Friends":…,"inUser2Friends":…}`, not a single
+// `isFriend`, and the two can differ because friendship is stored per direction. `inUser1Friends` is
+// "is userID2 in userID1's list", which is exactly the owner's view asked for here.
 func (c *Client) IsFriend(ctx context.Context, owner, friend string) (bool, error) {
 	var answered struct {
-		IsFriend bool `json:"isFriend"`
+		InUser1Friends bool `json:"inUser1Friends"`
+		InUser2Friends bool `json:"inUser2Friends"`
 	}
+	// The relation proto names these userID1/userID2, not ownerUserID/friendUserID; the server
+	// answers `ArgsError: userID1 is empty` for the intuitive spelling.
 	err := c.Call(ctx, "/friend/is_friend", map[string]any{
-		"ownerUserID": owner, "friendUserID": friend,
+		"userID1": owner, "userID2": friend,
 	}, &answered)
-	return answered.IsFriend, err
+	return answered.InUser1Friends, err
 }
 
 // UpdateProfile keeps the IM account card in step with the LinkUp profile.

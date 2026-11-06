@@ -163,6 +163,11 @@ func TestExtrasArePerDirectionAndDeletionClearsBoth(t *testing.T) {
 	if got := s.ExtraFor(a.ID, b.ID); got.Relation != 4 || !got.SensLoc || got.Since == 0 {
 		t.Fatalf("forward extras drifted: %+v", got)
 	}
+	// The client renders createAt as `Date(createAt * 1000L)`, so a millisecond value here would
+	// print a date in the 58000s instead of "2026-01-02".
+	if got := s.ExtraFor(a.ID, b.ID).Since; got < 1_700_000_000 || got > 9_999_999_999 {
+		t.Errorf("Since must be epoch seconds, got %d", got)
+	}
 	if s.FriendCount(a.ID) != 1 || s.FriendCount(b.ID) != 1 {
 		t.Fatalf("quota counting must only see one owner's side: %d / %d", s.FriendCount(a.ID), s.FriendCount(b.ID))
 	}
