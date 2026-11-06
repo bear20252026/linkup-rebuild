@@ -21,7 +21,7 @@ interface LinkUpApi {
     suspend fun talkEnshrineList(): ApiResponse<ChatCollectionData>
 
     @POST("api/user/update/push/token")
-    suspend fun userUpdatePushToken(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun userUpdatePushToken(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/phone/state/report")
     suspend fun phoneStateReport(@Body payload: PhoneStateInfo): ApiResponse<Unit>
@@ -33,10 +33,10 @@ interface LinkUpApi {
     suspend fun sensitiveServerTimer(@Query("eventTime") eventTime: Long): ApiResponse<ListBean<SensBean>>
 
     @POST("api/user/show/report")
-    suspend fun userShowReport(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun userShowReport(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/feedback")
-    suspend fun feedback(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun feedback(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/anniversary/choose")
     suspend fun anniversaryChoose(@Query("userId") userId: Long, @Query("friendId") friendId: Long, @Query("friendAvatar") friendAvatar: String): ApiResponse<Anniversary>
@@ -45,16 +45,16 @@ interface LinkUpApi {
     suspend fun fourQuadrantListGetList(@Query("listType") listType: Int): ApiResponse<TodoRsp>
 
     @POST("api/relation/lock")
-    suspend fun relationLock(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun relationLock(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("/api/feedback/create")
-    suspend fun apiFeedbackCreate(@Body payload: Map<String, Any?>): ApiResponse<EvaluateRes>
+    suspend fun apiFeedbackCreate(@Body payload: MutableMap<String, Any?>): ApiResponse<EvaluateRes>
 
     @POST("api/relation/confirm")
-    suspend fun relationConfirm(@Query("code") code: Long, @Body payload: Map<String, Any?>): ApiResponse<ConfirmAdd>
+    suspend fun relationConfirm(@Query("code") code: Long, @Body payload: MutableMap<String, Any?>): ApiResponse<ConfirmAdd>
 
     @POST("api/user/report/getui_cid")
-    suspend fun userReportGetuiCid(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun userReportGetuiCid(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/setting/update")
     suspend fun settingUpdate(@Body payload: PermissionUpdateBean): ApiResponse<Unit>
@@ -69,22 +69,22 @@ interface LinkUpApi {
     suspend fun settingUserListV2(@Query("pageSize") pageSize: Int): ApiResponse<PrivacyRes>
 
     @POST("api/anniversary/createOrEdit")
-    suspend fun anniversaryCreateoredit(@Body payload: Map<String, Any?>): ApiResponse<Anniversary>
+    suspend fun anniversaryCreateoredit(@Body payload: MutableMap<String, Any?>): ApiResponse<Anniversary>
 
     @GET("api/client/config")
     suspend fun clientConfig(): ApiResponse<ChannelConfig>
 
     @POST("api/index/realtime/voice/delete")
-    suspend fun indexRealtimeVoiceDelete(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun indexRealtimeVoiceDelete(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/location/batch/report")
-    suspend fun locationBatchReport(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun locationBatchReport(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/pop/homePage")
     suspend fun popHomepage(): ApiResponse<PopListBean>
 
     @POST("api/talk/enshrine_delete")
-    suspend fun talkEnshrineDelete(@Body payload: Map<String, Any?>): ApiResponse<ChatCollectionData>
+    suspend fun talkEnshrineDelete(@Body payload: MutableMap<String, Any?>): ApiResponse<ChatCollectionData>
 
     @GET("api/sensitive/user/days")
     suspend fun sensitiveUserDays(): ApiResponse<List<String>>
@@ -102,13 +102,13 @@ interface LinkUpApi {
     suspend fun locationDays(@Query("queryId") queryId: Long): ApiResponse<List<String>>
 
     @POST("api/sms/click_to_login")
-    suspend fun smsClickToLogin(@Body payload: Map<String, Any?>): ApiResponse<User>
+    suspend fun smsClickToLogin(@Body payload: MutableMap<String, Any?>): ApiResponse<User>
 
     @POST("api/risk/real_name_auth")
-    suspend fun riskRealNameAuth(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun riskRealNameAuth(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/relation/update_remark")
-    suspend fun relationUpdateRemark(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun relationUpdateRemark(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/address/tag_list")
     suspend fun addressTagList(): ApiResponse<List<JsonElement>>
@@ -135,19 +135,19 @@ interface LinkUpApi {
     suspend fun toolRsaPublicKey(): ApiResponse<PublicKey>
 
     @POST("api/phone/app_use/report")
-    suspend fun phoneAppUseReport(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun phoneAppUseReport(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/user/login")
-    suspend fun userLogin(@Body payload: Map<String, Any?>): ApiResponse<User>
+    suspend fun userLogin(@Body payload: MutableMap<String, Any?>): ApiResponse<User>
 
     @POST("api/phone/app_use/v2/report")
-    suspend fun phoneAppUseV2Report(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun phoneAppUseV2Report(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/relation/unlock")
-    suspend fun relationUnlock(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun relationUnlock(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/phone/sys_screen/report")
-    suspend fun phoneSysScreenReport(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun phoneSysScreenReport(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/index")
     suspend fun index(): ApiResponse<HomeData>
@@ -162,7 +162,7 @@ interface LinkUpApi {
     suspend fun settingUserList(@Query("pageSize") pageSize: Int): ApiResponse<PrivacySettingList>
 
     @POST("/api/attribution/choice_channel")
-    suspend fun apiAttributionChoiceChannel(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun apiAttributionChoiceChannel(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("/api/pay/available_types")
     suspend fun apiPayAvailableTypes(): ApiResponse<PayTypes>
@@ -171,13 +171,13 @@ interface LinkUpApi {
     suspend fun vipIndex(): ApiResponse<VipData>
 
     @POST("api/index/realtime/voice/send")
-    suspend fun indexRealtimeVoiceSend(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun indexRealtimeVoiceSend(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/pay/transaction")
     suspend fun payTransaction(@Query("productId") productId: String, @Query("fromScene") fromScene: Int, @Query("payType") payType: Int, @Query("gid") gid: Int, @Query("giftUserId") giftUserId: Long): ApiResponse<Pay>
 
     @POST("api/user/change_bind")
-    suspend fun userChangeBind(@Body payload: Map<String, Any?>): ApiResponse<User>
+    suspend fun userChangeBind(@Body payload: MutableMap<String, Any?>): ApiResponse<User>
 
     @GET("api/talk/gifs")
     suspend fun talkGifs(@Query("page") page: Int, @Query("pageSize") pageSize: Int): ApiResponse<ChatGifData>
@@ -186,31 +186,31 @@ interface LinkUpApi {
     suspend fun locationReport(@Body payload: Location): ApiResponse<Location>
 
     @POST("api/risk/report")
-    suspend fun riskReport(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun riskReport(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/talk/phone_state")
     suspend fun talkPhoneState(@Query("mainUser") mainUser: Long): ApiResponse<Map<String, JsonElement>>
 
     @POST("/api/four_quadrant_list/del")
-    suspend fun apiFourQuadrantListDel(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun apiFourQuadrantListDel(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("/api/relation/apply")
-    suspend fun apiRelationApply(@Body payload: Map<String, Any?>): ApiResponse<FriendApply>
+    suspend fun apiRelationApply(@Body payload: MutableMap<String, Any?>): ApiResponse<FriendApply>
 
     @POST("/api/vip/share_to_friend")
-    suspend fun apiVipShareToFriend(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun apiVipShareToFriend(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/four_quadrant_list/edit")
-    suspend fun fourQuadrantListEdit(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun fourQuadrantListEdit(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/attribution/activation")
-    suspend fun attributionActivation(@Body payload: Map<String, Any?>): ApiResponse<ActivationResult>
+    suspend fun attributionActivation(@Body payload: MutableMap<String, Any?>): ApiResponse<ActivationResult>
 
     @GET("api/screenshot/done")
     suspend fun screenshotDone(@Query("friendId") friendId: Long, @Query("SocializeConstants.KEY_PIC") q1: String): ApiResponse<Boolean>
 
     @POST("api/address/tag")
-    suspend fun addressTag(@Body payload: Map<String, Any?>): ApiResponse<JsonElement>
+    suspend fun addressTag(@Body payload: MutableMap<String, Any?>): ApiResponse<JsonElement>
 
     @GET("api/user/info")
     suspend fun userInfo(): ApiResponse<User>
@@ -219,13 +219,13 @@ interface LinkUpApi {
     suspend fun widgetLocation(): ApiResponse<LocationWidget>
 
     @POST("api/setting/update")
-    suspend fun settingUpdate2(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun settingUpdate2(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("/api/relation/apply_list")
     suspend fun apiRelationApplyList(@Query("page") page: Int, @Query("pageSize") pageSize: Int): ApiResponse<FriendRequestList>
 
     @POST("api/talk/enshrine_top")
-    suspend fun talkEnshrineTop(@Body payload: Map<String, Any?>): ApiResponse<ChatCollectionData>
+    suspend fun talkEnshrineTop(@Body payload: MutableMap<String, Any?>): ApiResponse<ChatCollectionData>
 
     @GET("api/feedback/check")
     suspend fun feedbackCheck(@Query("userId") userId: Long, @Query("deviceId") deviceId: String): ApiResponse<FeedbackPopBean>
@@ -240,13 +240,13 @@ interface LinkUpApi {
     suspend fun settingIm(): ApiResponse<AutoReport>
 
     @POST("api/user/android/install_app")
-    suspend fun userAndroidInstallApp(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun userAndroidInstallApp(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/weather/baiduWeather")
     suspend fun weatherBaiduweather(@Query("data_type") q0: String, @Query("district_id") q1: String, @Query("force") force: Int): ApiResponse<WeatherBean>
 
     @POST("api/user/update/info")
-    suspend fun userUpdateInfo(@Body payload: Map<String, Any?>): ApiResponse<User>
+    suspend fun userUpdateInfo(@Body payload: MutableMap<String, Any?>): ApiResponse<User>
 
     @GET("api/relation/lock/cover/list")
     suspend fun relationLockCoverList(): ApiResponse<ListBean<JsonElement>>
@@ -267,31 +267,31 @@ interface LinkUpApi {
     suspend fun locationV2Tracks(@Query("queryId") queryId: Long, @Query("date") date: String): ApiResponse<TrackRecordBean>
 
     @POST("api/relation/del")
-    suspend fun relationDel(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun relationDel(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/relation/list")
     suspend fun relationList(@Query("page") page: Int, @Query("pageSize") pageSize: Int, @Query("key") key: String): ApiResponse<FriendList>
 
     @POST("api/phone/call_record/report")
-    suspend fun phoneCallRecordReport(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun phoneCallRecordReport(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/sms/send")
     suspend fun smsSend(@Query("phone") phone: String, @Query("region") region: String): ApiResponse<Unit>
 
     @POST("api/relation/update")
-    suspend fun relationUpdate(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun relationUpdate(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/tool/uploadLog")
-    suspend fun toolUploadlog(@Body payload: Map<String, Any?>): ApiResponse<String>
+    suspend fun toolUploadlog(@Body payload: MutableMap<String, Any?>): ApiResponse<String>
 
     @POST("api/relation/main_user")
-    suspend fun relationMainUser(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun relationMainUser(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/index/realtime/voice/list")
     suspend fun indexRealtimeVoiceList(): ApiResponse<VoiceRsp>
 
     @POST("/api/relation/match_by_phone")
-    suspend fun apiRelationMatchByPhone(@Body payload: Map<String, Any?>): ApiResponse<SearchFriend>
+    suspend fun apiRelationMatchByPhone(@Body payload: MutableMap<String, Any?>): ApiResponse<SearchFriend>
 
     @POST("api/sensitive/report")
     suspend fun sensitiveReport(@Body payload: SensBean): ApiResponse<SensReportResult>
@@ -300,5 +300,5 @@ interface LinkUpApi {
     suspend fun userUnregister(): ApiResponse<Unit>
 
     @POST("api/index/realtime/voice/upload")
-    suspend fun indexRealtimeVoiceUpload(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun indexRealtimeVoiceUpload(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 }

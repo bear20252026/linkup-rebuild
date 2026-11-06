@@ -72,7 +72,7 @@ class NetworkLoginRepository(
         region: String,
         bindingPhone: Boolean,
     ): ApiResponse<User> {
-        val body = mapOf<String, Any?>(
+        val body = mutableMapOf<String, Any?>(
             "typeId" to typeId.toString(),
             "phone" to phone,
             "smsCode" to smsCode,
@@ -98,7 +98,7 @@ class NetworkLoginRepository(
         nickname: String?,
         phone: String?,
     ): ApiResponse<User> {
-        val body = mapOf<String, Any?>(
+        val body = mutableMapOf<String, Any?>(
             "unionId" to unionId,
             "platform" to platform.toString(),
             "avatar" to avatar,

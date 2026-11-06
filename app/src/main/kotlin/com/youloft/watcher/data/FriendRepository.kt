@@ -72,7 +72,7 @@ class NetworkFriendRepository(private val api: LinkUpApi) : FriendRepository {
     override suspend fun confirmAdd(userId: Long, relation: Int, sensSetting: Permission?) =
         api.relationConfirm(
             code = userId,
-            payload = mapOf(
+            payload = mutableMapOf(
                 "code" to userId,
                 "relation" to relation,
                 "sensSetting" to sensSetting,
@@ -81,19 +81,19 @@ class NetworkFriendRepository(private val api: LinkUpApi) : FriendRepository {
 
     override suspend fun friendInfo(userId: Long) = api.relationInfo(queryId = userId)
 
-    override suspend fun deleteFriend(userId: Long) = api.relationDel(payload = mapOf("friendId" to userId))
+    override suspend fun deleteFriend(userId: Long) = api.relationDel(payload = mutableMapOf("friendId" to userId))
 
     override suspend fun updateRelation(userId: Long, relation: Int) =
-        api.relationUpdate(payload = mapOf("friendId" to userId, "relation" to relation))
+        api.relationUpdate(payload = mutableMapOf("friendId" to userId, "relation" to relation))
 
     override suspend fun updateRemark(userId: Long, remark: String) =
-        api.relationUpdateRemark(payload = mapOf("friendId" to userId, "remark" to remark))
+        api.relationUpdateRemark(payload = mutableMapOf("friendId" to userId, "remark" to remark))
 
     override suspend fun preConfirm(code: Long) = api.relationPreConfirm(code = code)
 
     override suspend fun applyAdd(code: Long, relation: Int, sensSetting: Permission?) =
         api.apiRelationApply(
-            payload = mapOf(
+            payload = mutableMapOf(
                 "code" to code,
                 "relation" to relation,
                 "sensSetting" to sensSetting,
@@ -103,7 +103,7 @@ class NetworkFriendRepository(private val api: LinkUpApi) : FriendRepository {
     override suspend fun serverPublicKey() = api.toolRsaPublicKey()
 
     override suspend fun matchByPhone(encrypted: String, keyEncrypted: String) =
-        api.apiRelationMatchByPhone(payload = mapOf("encrypted" to encrypted, "keyEncrypted" to keyEncrypted))
+        api.apiRelationMatchByPhone(payload = mutableMapOf("encrypted" to encrypted, "keyEncrypted" to keyEncrypted))
 }
 
 /**
@@ -190,7 +190,7 @@ open class LinkUpApplication : Application() {
      */
     open val configService: ConfigService
         get() = ConfigService(
-            params = mapOf(
+            params = mutableMapOf(
                 "bd" to packageName,
                 "cid" to ConfigService.CLIENT_ID,
                 "av" to deviceContext().appVersion,

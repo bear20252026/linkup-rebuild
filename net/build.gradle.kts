@@ -34,6 +34,13 @@ tasks.register<JavaExec>("tagChannel") {
     classpath = sourceSets.main.get().runtimeClasspath
 }
 
+tasks.register<JavaExec>("gatewayVerify") {
+    group = "verification"
+    description = "Points the rebuilt client (real Retrofit + signer + Gson beans) at the rebuilt gateway"
+    mainClass.set("com.youloft.linkup.net.GatewayVerifyKt")
+    classpath = sourceSets.main.get().runtimeClasspath
+}
+
 tasks.register<JavaExec>("liveVerify") {
     group = "verification"
     description = "Signs a real request with the recovered algorithm and calls the live backend"

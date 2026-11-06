@@ -393,12 +393,12 @@ func TestUpdateInfoRoundTripsStage(t *testing.T) {
 	}
 }
 
-func TestMatchCodeResolvesAccountsAndBlocksSelfAdd(t *testing.T) {
+func TestUserIdIsTheMatchCodeAndSelfAddIsBlocked(t *testing.T) {
 	h := newTest(t)
 	token, me := h.login(t, "13800000005")
 	_, other := h.login(t, "13800000006")
 
-	found := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code="+idOf(other.MatchCode), nil, token)
+	found := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code="+idOf(other.ID), nil, token)
 	if found.Status != 200 {
 		t.Fatalf("pre_confirm: %+v", found)
 	}
@@ -411,10 +411,11 @@ func TestMatchCodeResolvesAccountsAndBlocksSelfAdd(t *testing.T) {
 		t.Errorf("match code resolved wrong: %+v", friend)
 	}
 
-	if self := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code="+idOf(me.MatchCode), nil, token); self.Status == 200 {
+	if self := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code="+idOf(me.ID), nil, token); self.Status == 200 {
 		t.Error("adding yourself must not be offered")
 	}
-	if missing := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code=12345678", nil, token); missing.Status == 200 {
+	// A code is an id, so an unissued 8-digit one must not resolve.
+	if missing := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code=99999999", nil, token); missing.Status == 200 {
 		t.Error("an unknown match code must not resolve")
 	}
 }
@@ -425,7 +426,7 @@ func TestApplyAndConfirmCrossTheOpenIMBoundary(t *testing.T) {
 	tokenB, b := h.login(t, "13800000008")
 
 	applied := h.request(t, http.MethodPost, "/api/relation/apply", "", map[string]any{
-		"code": b.MatchCode, "relation": 1,
+		"code": b.ID, "relation": 1,
 		"sensSetting": map[string]any{"sensLocation": true, "sensAppUse": false},
 	}, tokenA)
 	if applied.Status != 200 {
@@ -543,16 +544,16 @@ func TestFriendListCombinesOpenIMRowsWithLocalExtras(t *testing.T) {
 	if answered.Status != 200 {
 		t.Fatalf("relation/list: %+v", answered)
 	}
+	// This is `bean/FriendList.Info`, not the detail screen's bean: relation and sex are numbers,
+	// the timestamp key is createAt, and there is no permission object here.
 	list := decode[struct {
 		List []struct {
-			UserID     int64  `json:"userId"`
-			Nickname   string `json:"nickname"`
-			Remark     string `json:"remark"`
-			Relation   string `json:"relation"`
-			Permission struct {
-				SensLocation bool `json:"sensLocation"`
-				SensCall     bool `json:"sensCall"`
-			} `json:"permission"`
+			UserID   int64  `json:"userId"`
+			Nickname string `json:"nickname"`
+			Remark   string `json:"remark"`
+			Relation int    `json:"relation"`
+			Sex      int    `json:"sex"`
+			CreateAt int64  `json:"createAt"`
 		} `json:"list"`
 	}](t, answered.Data)
 
@@ -560,11 +561,22 @@ func TestFriendListCombinesOpenIMRowsWithLocalExtras(t *testing.T) {
 		t.Fatalf("expected the single stub friend, got %d", len(list.List))
 	}
 	row := list.List[0]
-	if row.UserID != 2 || row.Nickname != "女儿" || row.Relation != "4" || row.Remark != "闺女" {
+	if row.UserID != 2 || row.Nickname != "女儿" || row.Relation != 4 || row.Remark != "闺女" {
 		t.Errorf("row mapping wrong: %+v", row)
 	}
-	if !row.Permission.SensLocation || row.Permission.SensCall {
-		t.Errorf("permission switches mapped wrong: %+v", row.Permission)
+	// The client renders `Date(createAt * 1000L)`, so a millisecond value here is a date in the 58000s.
+	if row.CreateAt < 1_700_000_000 || row.CreateAt > 9_999_999_999 {
+		t.Errorf("createAt must stay epoch seconds, got %d", row.CreateAt)
+	}
+	if row.Sex != 0 {
+		t.Errorf("the stub friend has no sex recorded, got %d", row.Sex)
+	}
+	raw := string(answered.Data)
+	if strings.Contains(raw, "\"permission\":{") {
+		t.Error("relation/list must not carry the detail screen's permission object")
+	}
+	if !strings.Contains(raw, "\"createAt\":") {
+		t.Error("the client's key is createAt, not createTime")
 	}
 }
 
@@ -578,7 +590,7 @@ func TestQuotaUsesTheConfiguredLimitNotAnInventedOne(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	answered := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code="+idOf(other.MatchCode), nil, token)
+	answered := h.request(t, http.MethodGet, "/api/relation/pre_confirm", "code="+idOf(other.ID), nil, token)
 	found := decode[struct {
 		IsFriendLimit bool `json:"isFriendLimit"`
 	}](t, answered.Data)

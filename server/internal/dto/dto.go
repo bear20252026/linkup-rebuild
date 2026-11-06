@@ -109,22 +109,26 @@ type FriendRequestList struct {
 	UnreadCount   *int             `json:"unreadCount"`
 }
 
-// FriendRow is one row of "my friends".
+// FriendRow is one row of "my friends". This shape is `bean/FriendList.Info`, which is NOT the same
+// bean as the detail screen's `FriendInfo`: here `relation` and `sex` are numbers, the timestamp key
+// is `createAt` (seconds, because the adapter does `Date(createAt * 1000L)` at
+// FriendListVAdapter.kt:80), and there is no `permission` object at all.
+//
+// Fields the shipped client declares but this backend has no value for are left out so Gson applies
+// its own defaults, rather than invented: `av`, `deleteAt`, `id`, `imSuspend`, `location`, `newFriend`,
+// `permissionValue` (bound to a row checkbox — looks like transient UI state), `receivedFirstMsg`,
+// `remarkToMe`, `riskTypes`, `selected`, `sendFirstMsg`, `unregisterTime`. They are listed as unknowns
+// in the README; emitting a guess would look identical to a recovered value.
 type FriendRow struct {
-	Anniversary any         `json:"anniversary,omitempty"`
-	Avatar      *string     `json:"avatar"`
-	Client      *string     `json:"client"`
-	CreateTime  int64       `json:"createTime"`
-	Nickname    *string     `json:"nickname"`
-	Permission  *Permission `json:"permission"`
-	Relation    *string     `json:"relation"`
-	Remark      *string     `json:"remark"`
-	RiskLevel   any         `json:"riskLevel,omitempty"`
-	Sex         *string     `json:"sex"`
-	Source      int         `json:"source"`
-	UnreadCount int         `json:"unreadCount"`
-	UserID      int64       `json:"userId"`
-	VipExpire   int64       `json:"vipExpireTime"`
+	Avatar    *string `json:"avatar"`
+	CreateAt  int64   `json:"createAt"`
+	Nickname  *string `json:"nickname"`
+	Relation  int     `json:"relation"`
+	Remark    *string `json:"remark"`
+	RiskLevel *int    `json:"riskLevel"`
+	Sex       int     `json:"sex"`
+	UserID    int64   `json:"userId"`
+	VipExpire int64   `json:"vipExpireTime"`
 }
 
 // FriendList is `api/relation/list`'s answer.

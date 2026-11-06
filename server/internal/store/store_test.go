@@ -64,30 +64,23 @@ func TestVerificationCodesExpireAndAreBurned(t *testing.T) {
 	}
 }
 
-func TestAccountsIdsAndMatchCodes(t *testing.T) {
+func TestAccountIdsAreEightDigitsBecauseTheyAreTheMatchCode(t *testing.T) {
 	s := mustOpen(t, "")
-	phones := make([]string, 0, 50)
+	seen := map[int64]bool{}
 	for i := 0; i < 50; i++ {
-		phones = append(phones, IMID(int64(13800000200+i)))
-	}
-	byCode := map[int64]int64{}
-	ids := map[int64]bool{}
-	for _, phone := range phones {
-		u, err := s.CreateAccount(phone)
+		u, err := s.CreateAccount(IMID(int64(13800000200 + i)))
 		if err != nil {
 			t.Fatal(err)
 		}
-		if _, taken := byCode[u.MatchCode]; taken {
-			t.Fatalf("match code %d was issued twice", u.MatchCode)
+		// AddFriendActivity only treats a typed or scanned input of exactly 8 characters as a match
+		// code, and that code is the user id — a 5-digit id never reaches the server.
+		if u.ID < 10_000_000 || u.ID > 99_999_999 {
+			t.Fatalf("id %d is not 8 digits, so the client will refuse it as a match code", u.ID)
 		}
-		byCode[u.MatchCode] = u.ID
-		ids[u.ID] = true
-	}
-	// The add-friend field also accepts an account id, so no code may double as one.
-	for code := range byCode {
-		if ids[code] {
-			t.Fatalf("match code %d collides with an account id", code)
+		if seen[u.ID] {
+			t.Fatalf("id %d issued twice", u.ID)
 		}
+		seen[u.ID] = true
 	}
 
 	first := s.Accounts()[0]
@@ -95,7 +88,7 @@ func TestAccountsIdsAndMatchCodes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if again.ID != first.ID || again.MatchCode != first.MatchCode {
+	if again.ID != first.ID {
 		t.Fatalf("re-login minted a second identity: %+v vs %+v", again, first)
 	}
 	if err := s.RecordDevice(first.ID, "cid-1", "apns-1"); err != nil {
@@ -105,17 +98,15 @@ func TestAccountsIdsAndMatchCodes(t *testing.T) {
 	if err != nil || reloaded.GetuiCid != "cid-1" || reloaded.PushToken != "apns-1" {
 		t.Fatalf("device record lost: %+v %v", reloaded, err)
 	}
-	if u, err := s.ByMatchCode(first.MatchCode); err != nil || u.ID != first.ID {
-		t.Fatalf("the match code must resolve: %+v %v", u, err)
+	// pre_confirm?code= and the apply body's code both carry the id.
+	if u, err := s.ByID(first.ID); err != nil || u.ID != first.ID {
+		t.Fatalf("the id must resolve as the match code: %+v %v", u, err)
 	}
-	if u, err := s.ByMatchCode(first.ID); err != nil || u.ID != first.ID {
-		t.Fatalf("an id typed into the same field must resolve: %+v %v", u, err)
+	if _, err := s.ByID(99999999); err != ErrNotFound {
+		t.Errorf("an unknown code should be ErrNotFound, got %v", err)
 	}
-	if _, err := s.ByMatchCode(99999999); err != ErrNotFound {
-		t.Errorf("unknown match code should be ErrNotFound, got %v", err)
-	}
-	if _, err := s.ByID(424242); err != ErrNotFound {
-		t.Errorf("unknown id should be ErrNotFound, got %v", err)
+	if _, err := s.ByID(1); err != ErrNotFound {
+		t.Errorf("a 1-digit code should be ErrNotFound, got %v", err)
 	}
 
 	updated, err := s.UpdateProfile(first.ID, Profile{
@@ -224,7 +215,7 @@ func TestStoreReloadsFromDisk(t *testing.T) {
 	if err != nil {
 		t.Fatalf("nothing survived the restart: %v", err)
 	}
-	if reloaded.ID != u.ID || reloaded.MatchCode != u.MatchCode {
+	if reloaded.ID != u.ID || reloaded.Nickname != "小花" {
 		t.Fatalf("identity drifted across reload: %+v vs %+v", reloaded, u)
 	}
 	if reloaded.Nickname != "小花" || reloaded.Avatar != "http://a/1.png" || reloaded.Sex != 2 {

@@ -1264,6 +1264,90 @@ res 引用 Material 属性，但测试变体的类路径上没有 material 依�
 待验 47 / 48 / 49 已划掉。**仍然没验的**：`isRegister` 对三方登录该答什么（待验 50，要真客户端配合）、
 剩余 80 条路由的字段、以及"环信那边到底要不要换掉"这个产品决定。
 
+## 五点二十四、客户端与自建网关第一次会师（#21 尾声，2026-11-05）
+
+`server` 与 `net` 之前各自都绿：Go 侧证明"服务端按我以为的形状发"，`:net` 证明"客户端按我以为的形状收"。
+这一节是**把两个"我以为"接到一起**：`net/src/.../GatewayVerify.kt` 用真 Retrofit 接口、真签名拦截器、
+真 Gson 模型，打真网关（网关再打真 OpenIM）。结果 **30/30 全绿**，但过程里抓到三条谁都不会报的错。
+
+### 一、`@Body Map<String, Any?>` 让 47 条 POST 一调用就崩（最严重）
+
+真会师第一次跑，抛的是：
+
+```
+IllegalArgumentException: Parameter type must not include a type variable or wildcard:
+java.util.Map<java.lang.String, ?> (parameter #1) for method LinkUpApi.smsClickToLogin
+```
+
+Retrofit 在**调用时**校验 `@Body` 的泛型类型，含通配符就拒。而 Kotlin 的**只读** `Map<K, V>` 把 `V` 声明成
+协变（`out V`），所以 `Map<String, Any?>` 编译进 class 文件就是 `Map<String, ?>`。
+关键在**变型**而不是可空性：原版编译出来的签名是 `java.util.Map<String, Object>`
+（`_raw/src166/sources/gh/a.java:293`），也就是说原工程写的是**不变**的 `MutableMap`。
+
+- 改法：接口里 40 个 `Map<String, Any?>` ⇒ `MutableMap<String, Any?>`（签名回到 `Map<String, Object>`，
+  null 值仍然能放）；调用点 `mapOf(` ⇒ `mutableMapOf(`（`FriendRepository` 7 处、`LoginRepository` 2 处、
+  `GatewayVerify` 7 处）。
+- 为什么原来的测试永远发现不了：Robolectric 那 235 条走的是**假仓库**，真 Retrofit 方法从来没被调用过。
+- 现在钉它的东西：`net/src/test/.../BodyParameterTypesTest.kt` **反射遍历所有 `@Body` 参数**，
+  只要出现通配符就红；另一条把 `smsClickToLogin` 的签名逐字钉成 `java.util.Map<java.lang.String, java.lang.Object>`。
+  两条在改之前实测都**是红的**（先看到红，才敢说这条门禁有效）。
+- 顺带一条 Gson 事实：`serializeNulls` 默认关，所以 map 里的 null 值**整个键被丢掉**——原版也是这个行为，
+  所以"phone 为 null"在网络上就是"没有 phone 键"，服务端不必区分。
+
+### 二、"匹配码"就是 userId，而且 id 必须是 8 位
+
+`AddFriendActivity.java:862-864`：显示的匹配码是 `String.valueOf(user.userId)` 每 4 位插空格；
+`AddFriendViewModel.MATCH_CODE_LENGTH == 8` 决定"输入/扫码满 8 位才当匹配码"。`User` bean 里**没有**
+匹配码字段。⇒ 服务端不该另造一套码，`pre_confirm?code=` 与 apply 的 `code` 就是用户 id；
+而我的网关原来从 10001 起号，**5 位数在客户端就被判"请输入正确的匹配码"**，根本发不出来。
+
+改：`store` 删掉 `MatchCode`/`freeCodeLocked`/`ByMatchCode`，`firstUserID = 10_000_001`（8 位），
+查询统一走 `ByID`；测试里钉住"id 是 8 位，否则客户端拒收"。
+
+### 三、好友列表那一行的 bean 和详情那个 bean 不是一套字段
+
+`bean/FriendList.Info` ≠ `bean/FriendInfo`。会师前我按详情那个形状发列表，三处会静默读成 0/null：
+
+| 字段 | 列表 `FriendList.Info` | 详情 `FriendInfo` | 我之前发的（列表） |
+|---|---|---|---|
+| 时间 | **`createAt`，秒**（`Date(createAt * 1000L)`，`FriendListVAdapter.kt:80`） | `createAt` | `createTime` ❌ |
+| 关系 | **`relation: Int`** | `relation: String?` | 字符串 ❌ |
+| 性别 | **`sex: Int`** | `sex: String?` | 字符串 ❌ |
+| 权限 | **没有 permission 对象**，只有一个 `permissionValue: Boolean`（绑行首勾选框） | `permission: Permission?` | 发了整个对象 ❌ |
+
+现在 `dto.FriendRow` 照 `FriendList.Info` 重写；`Extra.Since` 也从毫秒改成秒（同一个坑的镜像面）。
+Info 里这个后端**给不出值**的键一律**不发**（`av`/`deleteAt`/`id`/`imSuspend`/`location`/`newFriend`/
+`permissionValue`/`receivedFirstMsg`/`remarkToMe`/`riskTypes`/`selected`/`sendFirstMsg`/`unregisterTime`），
+让 Gson 用它自己的默认值——编一个看起来像恢复值的东西才是最坏的。
+
+### 四、公钥页脚那条待验 26，这次是**用客户端自己的代码**判的
+
+`GatewayVerify` 直接调 `ContactSearchEnvelope.build(...)`（就是真机上那条剥皮+RSA-OAEP 路径）
+吃网关回的公钥，非 null 才算过 ✓ ⇒ 对**我们的**后端，四横杠 `----END PUBLIC KEY-----` 的取舍
+已经被客户端真代码验证（线上那台的真实页脚仍属未验，见下表 26 行）。
+
+### 现在的数字
+
+| 层次 | 命令 | 结果 |
+|---|---|---|
+| 客户端离线 | `sh tools/gradle.sh :net:test :app:testDebugUnitTest` | **266 绿**（+2：`BodyParameterTypesTest`） |
+| 服务端离线 | `cd server && go test ./...` | **36 绿** |
+| 真进程+死 IM | `bash server/scripts/smoke.sh` | **28 绿** |
+| 真栈端到端 | `bash server/scripts/openim-e2e.sh` | **20 绿** |
+| 真服集成测试 | `LINKUP_OPENIM_URL=… go test ./internal/openim -run Live` | **3 绿** |
+| **客户端 ↔ 网关** | `sh tools/gradle.sh :net:gatewayVerify --args="http://127.0.0.1:8090/ 000000"` | **30 绿**，`CLIENT_MEETS_OWN_SERVER=1` |
+
+`gatewayVerify` 打的 `/api/sms/send` 是**重建网关**，它没有任何短信通道，所以不发真短信——
+这条不违反"不碰线上写接口"的红线。
+
+### 待验表里因此新增/改动的行
+
+26 改为"对我们自己的后端已验（客户端真代码路径），线上真实页脚仍未验"；新增 53–57：
+`FriendList.Info` 那 13 个给不出的键到底该填什么（`permissionValue`、`remarkToMe`、`location`、
+每行 `unreadCount`…）、匹配码即 id 在**线上老账号**上是不是同一回事（老用户 id 位数分布未知）、
+`hadFriend`/`otherFriendLimit` 这些布尔的原始算法、以及 `apply` 时申请方的 `sensSetting`
+服务端原来到底存不存（我按"存"实现）。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1363,7 +1447,7 @@ res 引用 Material 属性，但测试变体的类路径上没有 material 依�
 | 23 | ~~`showPermissionChannel` 走三方配置 SDK~~ → **更正（#17）**：是我们自己的一个 OkHttp GET（`cfg.51wnl-cq.com` 302 → `configsys.51wnl-cq.com/api/config/getconfigs`），值全 base64，`Parameter_Map` 摊进设置 | 客户端已重建并用 2026-11-04 真回包钉住（18 个键、`showPermissionChannel=["3300","3301","-1"]`、令牌 `r` 已实测）。**另注**：1.6.6 已不读这个键，判据见第 28 条 |
 | 24 | 老用户升级时 `user2` 读不到之后的旧 Parcelable 回读 | 我们的 DTO 不是 Parcelable，这段没搬；那批老用户装新包会显示成未登录，等登录流接管写入时一并定 |
 | 25 | 真机上让 `user2` 真的有值 | 写入通道已通（#16），**登录屏与短信弹窗也已重建（#18 前半）**，所以真机上点"手机号→收码→登录"就会落 `user2`+`token`。仍不能本机代跑的原因只有一个：`/api/sms/send` 会发真短信，我不去调它。过渡办法仍是探针屏那条 `GET api/user/info`（前提是先灌进一个有效 token） |
-| 26 | 服务端公钥 PEM 的**页脚到底是四个还是五个横杠** | 原版按 `----END PUBLIC KEY-----`（四横杠）字面剥离；标准五横杠会残留 `-` → Base64 解不出 → 走 10086"匹配码无效都不弹"的静默分支。装包后打一次通讯录搜索即可判定 |
+| 26 ◐**部分已验 2026-11-05** | 服务端公钥 PEM 的页脚是四个还是五个横杠 | **对我们自己的后端已验**：`gradle :net:gatewayVerify` 用客户端真那条剥皮路径（`ContactSearchEnvelope.build`）吃网关回的公钥，非 null 才算过，四横杠 `----END PUBLIC KEY-----` 由此定案。**线上那台（link.tttick.com）的真实页脚仍未验**——那要真机打线上通讯录搜索才能判定 |
 | 27 | VIP 状态变化的四个副作用 | `AccountSideEffects.onVipStateChanged` 只有条件被测试钉住；IM 会话刷新、桌面 widget、掉 VIP 时地图模式复位 + 关权限提醒 + 总线广播，都要等 IM/widget 那两张卡
 | 28 | 加完好友后弹不弹权限设置，真机上按哪条判据 | **判据差异 #17 已量清**：线上包渠道是 `3305`，1.6.6 规则（`==3301`）恒不弹；1.5.6 规则在今天配置 `["3300","3301","-1"]` 下有 `-1` 通配 ⇒ 恒弹。剩下的是决定：重建包按哪条、打标打哪个号（第 22 条） |
 | 29 | 匹配码"四位一组"的显示与"裸 id"的复制 | 逻辑与文案已由测试钉住；实际观感（等宽字体 `sf_pro_rounded_bold_subset`、超长 id 换行、复制后系统剪贴板提示）要装包看 |
@@ -1390,6 +1474,11 @@ res 引用 Material 属性，但测试变体的类路径上没有 material 依�
 | 50 | 三方登录的 `isRegister` 该答 true 还是 false | 它决定客户端 `UserManager.store(fromLogin=false)` 走"停车等补资料"还是直接落库。APK 只看得到消费端，看不到服务端怎么给 |
 | 51 | 线上网关要不要补签名校验 | `link.tttick.com` 实测不校验，密钥在那台形同虚设；重建版默认校验。改线上是运维决定，不是我能在这台机器上做的 |
 | 52 | `-friend-limit` 与 `api/client/config` 九个开关的真实取值 | 只有 CI/运营能给出。重建版全部是启动 flag，默认值都取"客户端自己的 fallback"，没编数字 |
+| 53 | `FriendList.Info` 里后端给不出的 13 个键该填什么 | 现在一律**不发**（Gson 用默认值）：`av`、`deleteAt`、`id`、`imSuspend`、`location`、`newFriend`、`permissionValue`（绑行首勾选框，看着像纯 UI 态）、`receivedFirstMsg`、`remarkToMe`、`riskTypes`、`selected`、`sendFirstMsg`、`unregisterTime`。其中 `remarkToMe`（对方给我设的备注）和每行 `unreadCount` 语义在 IM 侧，OpenIM 现模型给不出；要真值只能等线上源码或产品定 |
+| 54 | 匹配码即 userId，在**线上老账号**上成立吗 | 重建库从 10000001 起号保证 8 位；老用户 id 的位数分布未知，若不是 8 位，原版"长度==8 才当匹配码"这条对老用户就是另一条路（也许老用户根本用手机号加友）。只有对线上库才能查 |
+| 55 | `hadFriend`、`otherFriendLimit`、`hadVipPlan` 这些布尔的原始算法 | 重建按字面语义给（有无好友、对方是否满配额、是否订阅过）；服务端源码没找到前，值对不对只能靠产品口径 |
+| 56 | `apply` 时申请方的 `sensSetting` 服务端原来存不存 | 我按"存"实现：pending 记录带 relation+三项开关，confirm 时各方向留各自的。若原版只按确认方覆盖两边，行为差别要在真两端对拍才看得出 |
+| 57 | `:net` 里 `MutableMap` 这条签名改动对**抓包对齐**的影响 | 键序可能因此变化（mapOf→mutableMapOf 保序行为相同，但 40 处调用点的字面顺序是我按原版抄的）。若以后要逐字节对线上请求，得重新抓一次包 |
 
 ## 十、下一步顺序（建议）
 

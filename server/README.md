@@ -19,6 +19,10 @@ go test ./...
 # 真进程 + 真 socket：28 条用例，签名由第三个实现（openssl）产出
 bash scripts/smoke.sh
 
+# 客户端 ↔ 本网关会师：30 条（要求网关已在跑，且它打的是本网关，不发真短信）
+#   ./linkup-gateway -addr 127.0.0.1:8090 -jwt-secret … -openim-secret … -dev-sms-code 000000 &
+#   cd .. && sh tools/gradle.sh :net:gatewayVerify --args="http://127.0.0.1:8090/ 000000"
+
 # 真栈端到端：20 条用例（要求 OpenIMServer 在跑，见下面"把真栈跑起来"）
 OPENIM_URL=http://127.0.0.1:10002 OPENIM_SECRET=<非默认密钥> bash scripts/openim-e2e.sh
 
@@ -74,8 +78,25 @@ go run ./cmd/server -dev -store= -openim-secret= -dev-sms-code 000000
 - 好友配额按 **extras 行数**算（申请未通过不计数），因为 `apply` 时不写 extras
 - confirm 时**两个方向各留各的选择**：申请方的 relation/开关来自它自己 `apply` 提交的那份
 
+**照客户端，改不了（本目录与 `:net` 会师之后新增的三条）**
+
+- **匹配码就是 userId**，而且 id 必须 8 位：`AddFriendActivity.java:862-864` 显示的是
+  `String.valueOf(user.userId)` 每 4 位插空格，`MATCH_CODE_LENGTH == 8` 决定输入/扫码满 8 位才当匹配码，
+  `User` bean 里没有第二个码字段。所以 `pre_confirm?code=` 与 apply 的 `code` 都是用户 id，
+  而 `firstUserID = 10000001` 不是风格问题——5 位 id 在客户端就被判"请输入正确的匹配码"。
+- **`api/relation/list` 的行是 `bean/FriendList.Info`，不是详情的 bean**：时间键是 `createAt`（**秒**，
+  客户端做 `Date(createAt * 1000L)`），`relation`/`sex` 是**数字**（详情那边才是字符串），
+  而且这一层**没有 permission 对象**。按详情的形状发列表 = 客户端静默读 0。
+- **`@Body` 的 map 必须是不变型 `MutableMap`**：Kotlin 只读 `Map` 的值参数是协变的，
+  `Map<String, Any?>` 编译成 `Map<String, ?>`，Retrofit 调用即抛
+  `Parameter type must not include a type variable or wildcard`。原版的 class 文件签名是
+  `java.util.Map<String, Object>`（`gh/a.java:293`）。门禁在 `:net` 的 `BodyParameterTypesTest`。
+
 **未知，留给真服对比**：`api/client/config` 线上答 12 个键（客户端模型只有 9 个）；一键登录 typeId 1/3
-的真实入参；`relation/main_user`、`match_by_phone` 这些没实现的路由的字段。
+的真实入参；`relation/main_user`、`match_by_phone` 这些没实现的路由的字段；
+`FriendList.Info` 里本后端给不出值的 13 个键（`av`/`deleteAt`/`id`/`imSuspend`/`location`/`newFriend`/
+`permissionValue`/`receivedFirstMsg`/`remarkToMe`/`riskTypes`/`selected`/`sendFirstMsg`/`unregisterTime`）——
+现在一律**不发**，让 Gson 用它自己的默认值；线上老账号的 id 位数是否都满足"8 位当匹配码"这条。
 
 ## 与线上现状两处**刻意**不同
 

@@ -244,7 +244,8 @@ func (g *Gateway) preConfirm(c *gin.Context) {
 		c.JSON(http.StatusOK, contract.Fail(StatusNotFoundUser, "账号不存在"))
 		return
 	}
-	found, err := g.opts.Store.ByMatchCode(code)
+	// `code` is the user id: the client shows `userId` as the match code and types it back in.
+	found, err := g.opts.Store.ByID(code)
 	if err != nil {
 		c.JSON(http.StatusOK, contract.Fail(StatusNotFoundUser, "该用户不存在"))
 		return
@@ -285,7 +286,7 @@ func permission(e store.Extra) *dto.Permission {
 func (g *Gateway) apply(c *gin.Context) {
 	form := body(c)
 	me := g.claims(c).UserID
-	target, err := g.opts.Store.ByMatchCode(num(form, "code"))
+	target, err := g.opts.Store.ByID(num(form, "code"))
 	if err != nil {
 		c.JSON(http.StatusOK, contract.Fail(StatusNotFoundUser, "该用户不存在"))
 		return
@@ -442,15 +443,15 @@ func (g *Gateway) friendList(c *gin.Context) {
 			remark = extra.Remark
 		}
 		list = append(list, &dto.FriendRow{
-			Avatar:     dto.Text(f.FriendUser.FaceURL),
-			Client:     dto.Text(""),
-			CreateTime: f.CreateTime,
-			Nickname:   dto.Text(f.FriendUser.Nickname),
-			Permission: permission(extra),
-			Relation:   dto.Text(strconv.Itoa(extra.Relation)),
-			Remark:     dto.Text(remark),
-			Sex:        dto.Text(strconv.Itoa(sexOf(g.opts.Store, id))),
-			UserID:     id,
+			Avatar: dto.Text(f.FriendUser.FaceURL),
+			// OpenIM's createTime is epoch seconds and this bean's createAt is consumed as
+			// `Date(createAt * 1000L)`, so it passes straight through.
+			CreateAt: f.CreateTime,
+			Nickname: dto.Text(f.FriendUser.Nickname),
+			Relation: extra.Relation,
+			Remark:   dto.Text(remark),
+			Sex:      sexOf(g.opts.Store, id),
+			UserID:   id,
 		})
 	}
 	c.JSON(http.StatusOK, contract.OK(dto.FriendList{List: list}))

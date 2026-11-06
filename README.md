@@ -5,8 +5,11 @@
 ## 现在能跑的命令
 
 ```bash
-# 客户端离线回归：264 个 JVM/Robolectric 测试（:net 29 + :app 235），不需要手机也不需要网络
+# 客户端离线回归：266 个 JVM/Robolectric 测试（:net 31 + :app 235），不需要手机也不需要网络
 sh tools/gradle.sh :net:test :app:testDebugUnitTest
+
+# 客户端 ↔ 重建网关会师：30 条（网关要先起来；打的是本网关，不发真短信）
+sh tools/gradle.sh :net:gatewayVerify --args="http://127.0.0.1:8090/ 000000"
 
 # 实机验证：用重建的网络层向真实测试服发一条签名请求
 sh tools/gradle.sh :net:liveVerify      # 期望打印 PROTOCOL_RECOVERED=1
@@ -38,10 +41,11 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
-已验证：带签名的 GET 被真实服务端接受（`status=200`）；`net`/`app` 264 个测试全绿；`server` 36 个 Go 测试
+已验证：带签名的 GET 被真实服务端接受（`status=200`）；`net`/`app` 266 个测试全绿；`server` 36 个 Go 测试
 + 28 条真 socket 用例全绿；同一条签名契约在 **JVM 客户端、Go、OpenSSL** 三个实现下产出同一段密文
 （JVM 样本向量钉在 `server/internal/contract`，POST 体的 md5 规则由 MockWebServer 离线锁定）。
-**重建网关 ↔ 真 OpenIMServer 已跑通**：20 条端到端用例 + 3 个在线集成测试全绿，OpenIM 的原始应答
+**重建网关 ↔ 真 OpenIMServer 已跑通**：20 条端到端用例 + 3 个在线集成测试全绿；
+**重建客户端 ↔ 重建网关已会师**：`gatewayVerify` 30 条全绿（真 Retrofit + 真签名 + 真 Gson 模型打自家服务端），OpenIM 的原始应答
 留证在 `recovered/openim_live_evidence_2026-11-05/`（真栈是把 Ubuntu WSL rootfs import 到 D 盘的独立
 发行版里跑的，Docker Desktop 与 C 盘都没被碰）。
 

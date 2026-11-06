@@ -22,10 +22,14 @@ import (
 )
 
 // User is a LinkUp account. The OpenIM userID is the decimal id, so no mapping table is needed.
+//
+// There is no separate "match code": AddFriendActivity shows `String.valueOf(user.userId)` chunked in
+// fours as 匹配码 (1.6.6 `AddFriendActivity.java:862-864`) and accepts a typed or scanned input only at
+// exactly 8 characters (`AddFriendViewModel.MATCH_CODE_LENGTH`) before calling `pre_confirm?code=`.
+// So the id *is* the code, and ids must therefore be 8 digits — see firstUserID.
 type User struct {
 	ID         int64  `json:"id"`
 	Phone      string `json:"phone"`
-	MatchCode  int64  `json:"matchCode"`
 	UnionID    string `json:"unionId"`
 	Platform   int    `json:"platform"`
 	Nickname   string `json:"nickname"`
@@ -104,13 +108,18 @@ type Store struct {
 	data Data
 }
 
+// firstUserID is 8 digits because that is the length the add-friend screen insists a match code has
+// (`MATCH_CODE_LENGTH`), and the match code is the user id: an id of 10001 would be refused with
+// "请输入正确的匹配码" before it ever reached the server.
+const firstUserID = 10_000_001
+
 // ErrNotFound is what lookups return for a missing account.
 var ErrNotFound = errors.New("linkup/store: not found")
 
 // Open loads (or creates) the file. An empty path keeps everything in memory, which is what the
 // tests do.
 func Open(path string) (*Store, error) {
-	s := &Store{path: path, data: Data{NextID: 10001, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
+	s := &Store{path: path, data: Data{NextID: firstUserID, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
 	if path == "" {
 		return s, nil
 	}
@@ -135,8 +144,8 @@ func Open(path string) (*Store, error) {
 	if s.data.Codes == nil {
 		s.data.Codes = map[string]Code{}
 	}
-	if s.data.NextID == 0 {
-		s.data.NextID = 10001
+	if s.data.NextID < firstUserID {
+		s.data.NextID = firstUserID
 	}
 	return s, nil
 }
@@ -159,9 +168,8 @@ func (s *Store) save() error {
 	return os.Rename(tmp, s.path)
 }
 
-// CreateAccount assigns ids and a unique 8-digit match code. Codes are 8 digits because that is what
-// the add-friend screen's input filter and pre_confirm lookup accept; 6-digit values are the short
-// code the same field also accepts, so codes must never collide with another account's id either.
+// CreateAccount assigns the next 8-digit id. That id doubles as the account's match code, which is
+// why the sequence starts at 10000001 rather than at 1.
 func (s *Store) CreateAccount(phone string) (*User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -226,7 +234,6 @@ func (s *Store) createLocked(phone, unionID string, platform int) *User {
 		Phone:      phone,
 		UnionID:    unionID,
 		Platform:   platform,
-		MatchCode:  s.freeCodeLocked(),
 		Nickname:   fmt.Sprintf("守护用户%04d", s.data.NextID%10000),
 		MainUserID: s.data.NextID,
 		IsRegister: true,
@@ -236,21 +243,8 @@ func (s *Store) createLocked(phone, unionID string, platform int) *User {
 	return &s.data.Users[len(s.data.Users)-1]
 }
 
-func (s *Store) freeCodeLocked() int64 {
-	taken := map[int64]bool{}
-	for i := range s.data.Users {
-		taken[s.data.Users[i].MatchCode] = true
-		taken[s.data.Users[i].ID] = true
-	}
-	for {
-		code := int64(10000000 + rand.Intn(90000000))
-		if !taken[code] {
-			return code
-		}
-	}
-}
-
-// ByID, ByPhone, ByMatchCode are the three lookups the login and add-friend screens need.
+// ByID is both the session lookup and the match-code lookup: `pre_confirm?code=` and the apply
+// body's `code` carry the user id, because that is what the client displays and types.
 func (s *Store) ByID(id int64) (User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -269,18 +263,6 @@ func (s *Store) ByPhone(phone string) (User, error) {
 	phone = strings.TrimSpace(phone)
 	for _, u := range s.data.Users {
 		if u.Phone == phone {
-			return u, nil
-		}
-	}
-	return User{}, ErrNotFound
-}
-
-// ByMatchCode resolves the 8-digit code the client types, or a 6-digit one it typed as an id.
-func (s *Store) ByMatchCode(code int64) (User, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	for _, u := range s.data.Users {
-		if u.MatchCode == code || u.ID == code {
 			return u, nil
 		}
 	}
