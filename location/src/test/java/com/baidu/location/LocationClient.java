@@ -15,7 +15,7 @@ import java.util.List;
  *
  * Both `registerLocationListener` overloads exist on purpose (`LocationClient.java:1203,1213`), because
  * which one the adapter picks is the whole reason the listener is a dynamic proxy. There is deliberately no
- * `unregisterLocationListener`: neither APK declares one (`recovered/baidu_location_api_156.txt:13-15`), so
+ * `unregisterLocationListener`: neither APK declares one (`recovered/baidu_location_api_156.txt:15-16`), so
  * a double that had one would let the binding pass a test the real SDK could never answer.
  */
 public class LocationClient {

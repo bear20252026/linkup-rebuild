@@ -535,7 +535,7 @@ class BaiduLocationProviderTest {
         )
         assertFalse(
             LocationClient::class.java.methods.any { it.name.contains("nregister") },
-            "neither APK declares one (recovered/baidu_location_api_156.txt:13-15), so the double must not " +
+            "neither APK declares one (recovered/baidu_location_api_156.txt:15-16), so the double must not " +
                 "offer one either or the binding would pass a test the real SDK cannot answer",
         )
         assertFalse(
