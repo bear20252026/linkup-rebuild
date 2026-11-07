@@ -44,6 +44,7 @@ import com.youloft.watcher.data.local.PermissionChannelGate
 import com.youloft.watcher.data.local.PrivacyGate
 import com.youloft.linkup.net.ConfigService
 import com.youloft.watcher.data.local.StoredRemoteConfig
+import com.youloft.watcher.data.local.refreshRemoteConfig
 import com.youloft.watcher.data.local.RemoteConfig
 import com.youloft.watcher.data.local.UserCache
 import com.youloft.watcher.view.MatchCodeQrPainter
@@ -204,6 +205,14 @@ open class LinkUpApplication : Application() {
     open val imApi by lazy { LinkUpClient(context = deviceContext()).api }
 
     private val imScope: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+
+    /**
+     * 待验 41 的拍板执行：远程配置的启动拉取在**隐私同意的时刻**发生（未同意前不打 configsys
+     * 域名）。挂在图上让同意入口（EmptyLoginActivity 的"同意并进入"）与测试都能触发。
+     */
+    open fun onPrivacyAgreed() {
+        imScope.launch { runCatching { keyValueStores.refreshRemoteConfig(configService) } }
+    }
 
     /**
      * Local key-value storage. Production is MMKV; tests inject the in-memory double so nothing here

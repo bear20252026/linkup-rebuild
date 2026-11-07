@@ -24,7 +24,7 @@ import org.robolectric.annotation.Config
 
 /** Covers the account write path that #16 exists for: response → MMKV → observable identity. */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], application = com.youloft.watcher.StorelessApp::class)
 class UserManagerTest {
 
     private class FakeUserRepository(var next: ApiResponse<User> = ApiResponse(500, "no fixture")) : UserRepository {

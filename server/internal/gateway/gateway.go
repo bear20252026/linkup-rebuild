@@ -153,6 +153,12 @@ func New(opts Options) (*gin.Engine, error) {
 		api.POST("/relation/unlock", g.unlock)
 		api.POST("/relation/lock/cover/del", g.lockCoverDel)
 
+		// Device state + widget domain (待验 59): pairing = confirmed relation, per-device facts
+		// recorded by api/phone/state/report.
+		api.POST("/phone/state/report", g.phoneStateReport)
+		api.GET("/widget/location", g.widgetLocation)
+		api.GET("/widget/track", g.widgetTrack)
+
 		// Location domain: report, then read one day back.
 		api.POST("/location/report", g.locationReport)
 		api.GET("/location/days", g.locationDays)

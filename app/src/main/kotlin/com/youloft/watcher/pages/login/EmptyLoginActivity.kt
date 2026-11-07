@@ -70,6 +70,7 @@ class EmptyLoginActivity : AppCompatActivity() {
     }
 
     private fun agreeAndProceed() {
+        appGraph(this).onPrivacyAgreed()
         gate.agree()
         LoginActivity.start(this)
         finish()

@@ -279,3 +279,51 @@ type LockImageRow struct {
 type LockImageList struct {
 	List []*LockImageRow `json:"list"`
 }
+
+
+// FriendState is bean/FriendState — the guarded device's own facts for the cards.
+type FriendState struct {
+	CurrentBattery     int     `json:"currentBattery"`
+	IsCharging         bool    `json:"isCharging"`
+	LastOfflineTime    int64   `json:"lastOfflineTime"`
+	LastRecoverTime    int64   `json:"lastRecoverTime"`
+	LockTime           int     `json:"lockTime"`
+	NetworkType        int     `json:"networkType"`
+	OfflineTipTimeConf int64   `json:"offlineTipTimeConf"`
+	ScreenTime         int64   `json:"screenTime"`
+	ScreenType         int     `json:"screenType"`
+	ServerTime         int64   `json:"serverTime"`
+	Wifi               *string `json:"wifi"`
+}
+
+// LocationWidget is bean/LocationWidget for `api/widget/location`.
+type LocationWidget struct {
+	FriendLocation *FriendLocation `json:"friendLocation"`
+	FriendState    *FriendState    `json:"friendState"`
+	SensLocation   bool            `json:"sensLocation"`
+	ServerTime     int64           `json:"serverTime"`
+	SysLocation    bool            `json:"sysLocation"`
+}
+
+// StayRow is bean/StayInfo.
+type StayRow struct {
+	ArriveTime int64   `json:"arriveTime"`
+	City       *string `json:"city"`
+	District   *string `json:"district"`
+	Duration   int64   `json:"duration"`
+	PoiName    *string `json:"poiName"`
+	Province   *string `json:"province"`
+	Street     *string `json:"street"`
+}
+
+// TrackWidget is bean/TrackWidget for `api/widget/track`.
+type TrackWidget struct {
+	FriendLocation *FriendLocation `json:"friendLocation"`
+	SensTrack      bool            `json:"sensTrack"`
+	ServerTime     int64           `json:"serverTime"`
+	StayNumToday   int             `json:"stayNumToday"`
+	Stays          []*StayRow      `json:"stays"`
+	SysLocation    bool            `json:"sysLocation"`
+	TotalDistance  float64         `json:"totalDistance"`
+	TotalStayTime  int64           `json:"totalStayTime"`
+}

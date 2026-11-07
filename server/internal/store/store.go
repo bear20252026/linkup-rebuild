@@ -108,8 +108,25 @@ type Data struct {
 	Extras    map[string]Extra   `json:"extras"`
 	Applies   map[string]Apply   `json:"applies"`
 	Codes     map[string]Code    `json:"codes"`
-	Locations []fix              `json:"locations"`
-	Locks     map[string]LockState `json:"locks,omitempty"`
+	Locations []fix                 `json:"locations"`
+	Locks     map[string]LockState  `json:"locks,omitempty"`
+	Devices   map[int64]DeviceState `json:"devices,omitempty"`
+}
+
+// DeviceState is what `api/phone/state/report` last recorded for one device — the fields the
+// widget cards and the lock screens read. This is the seed of the sensitive-event domain
+// (recovered 待验 59): pairing lives in Extras, the per-device facts live here.
+type DeviceState struct {
+	Battery         int    `json:"battery"`
+	IsCharging      bool   `json:"isCharging"`
+	NetworkType     int    `json:"networkType"`
+	ScreenTime      int64  `json:"screenTime"`
+	ScreenType      int    `json:"screenType"`
+	LastOfflineTime int64  `json:"lastOfflineTime"`
+	LastRecoverTime int64  `json:"lastRecoverTime"`
+	OfflineTipConf  int64  `json:"offlineTipTimeConf"`
+	Wifi            string `json:"wifi"`
+	RecordedAt      int64  `json:"recordedAt"`
 }
 
 // LockState is what `api/relation/lock` records for one guarded direction. The command itself
@@ -540,6 +557,24 @@ func (s *Store) Fixes(userID int64) []location.Point {
 	}
 	location.Sort(out)
 	return out
+}
+
+// SetDeviceState records (or refreshes) one device's self-report.
+func (s *Store) SetDeviceState(userID int64, state DeviceState) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.data.Devices == nil {
+		s.data.Devices = map[int64]DeviceState{}
+	}
+	s.data.Devices[userID] = state
+	s.save()
+}
+
+// DeviceStateFor answers the last self-report; zero value when the device never reported.
+func (s *Store) DeviceStateFor(userID int64) DeviceState {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.data.Devices[userID]
 }
 
 // LatestFix is the position the track screen and the cards show as "现在".

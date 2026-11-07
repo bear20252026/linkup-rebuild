@@ -74,4 +74,9 @@
 <string name="locked_default_title">设备已被锁机</string>
     <string name="lock_answer_hint">输入答案字母</string>
     <string name="lock_answer_wrong">答案不对，再想想</string>
+<string name="widget_title">LinkUp 守护</string>
+    <string name="widget_login_required">登录后可见</string>
+    <string name="widget_track_summary">今日停留 %1$d 处</string>
+    <string name="widget_friend_time">对方更新于 %1$d</string>
+    <string name="widget_friend_battery">对方电量 %1$d%%</string>
 </resources>
