@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.youloft.watcher.R
 import com.youloft.watcher.data.appGraph
 import com.youloft.watcher.databinding.FragmentMineBinding
+import android.widget.Toast
 import com.youloft.watcher.databinding.ItemMineMenuBinding
 
 /**
@@ -38,14 +39,23 @@ class MineFragment : Fragment() {
         binding.rvMenu.adapter = MineMenuAdapter(MineMenu.MENUS)
 
         // 静态行：目标屏未重建，行为是可见但不跳（原版每行一个二级页）。
-        listOf(binding.tvWidget, binding.tvSecurity, binding.tvAppPsw, binding.tvContact, binding.tvAbout)
-            .forEach { row -> row.setOnClickListener { } }
+        binding.tvWidget.setOnClickListener { toast("小组件卡") }
+        binding.tvSecurity.setOnClickListener { start<PermissionListActivity>() }
+        binding.tvAppPsw.setOnClickListener { start<AppPswHomeActivity>() }
+        binding.tvContact.setOnClickListener { start<ContactUsActivity>() }
+        binding.tvAbout.setOnClickListener { start<AboutUsActivity>() }
     }
 
     override fun onResume() {
         super.onResume()
         binding.userInfoView.setData(appGraph(requireContext()).users.current())
     }
+
+    private inline fun <reified T : android.content.Context> start() {
+        startActivity(android.content.Intent(requireContext(), T::class.java))
+    }
+
+    private fun toast(msg: String) = Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
 
     override fun onDestroyView() {
         _binding = null
@@ -78,6 +88,16 @@ private class MineMenuAdapter(private val items: List<MineMenu>) :
         holder.binding.tvName.setText(items[position].titleRes)
         holder.binding.ivIcon.setImageResource(items[position].iconRes)
         // 二级屏未重建：点击记录不跳（同上）。
-        holder.binding.root.setOnClickListener { }
+        holder.binding.root.setOnClickListener {
+            val ctx = holder.binding.root.context
+            val target = when (items[position].id) {
+                4 -> PermissionListActivity::class.java
+                2 -> AutoReportSettingsActivity::class.java
+                5 -> MapSettingsActivity::class.java
+                6 -> PrivacySettingsActivity::class.java
+                else -> null
+            }
+            target?.let { ctx.startActivity(android.content.Intent(ctx, it)) }
+        }
     }
 }

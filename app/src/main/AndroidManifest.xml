@@ -65,6 +65,15 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <activity android:name=".pages.mine.PermissionListActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".pages.mine.AutoReportSettingsActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".pages.mine.MapSettingsActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".pages.mine.PrivacySettingsActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".pages.mine.DataSecurityActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".pages.mine.AppPswHomeActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".pages.mine.ContactUsActivity" android:exported="false" android:screenOrientation="portrait" />
+        <activity android:name=".pages.mine.AboutUsActivity" android:exported="false" android:screenOrientation="portrait" />
+
         <activity
             android:name=".pages.camera.CameraActivity"
             android:exported="false"

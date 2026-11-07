@@ -213,6 +213,18 @@ interface LinkUpApi {
     suspend fun addressTag(@Body payload: MutableMap<String, Any?>): ApiResponse<JsonElement>
 
     /** GET api/user/im_token — the OpenIM identity + token + ws address the client SDK logs in with. */
+    @GET("api/setting/im")
+    suspend fun settingImGet(): ApiResponse<Map<String, Any?>>
+
+    @POST("api/setting/im")
+    suspend fun settingImUpdate(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+
+    @GET("api/setting/user_list")
+    suspend fun privacyUserList(): ApiResponse<Map<String, Any?>>
+
+    @POST("api/setting/update")
+    suspend fun privacyUpdate(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+
     @GET("api/user/im_token")
     suspend fun imToken(): ApiResponse<ImToken>
 
