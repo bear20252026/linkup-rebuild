@@ -17,6 +17,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"linkup.local/server/internal/contract"
+	"linkup.local/server/internal/dto"
 	"linkup.local/server/internal/openim"
 	"linkup.local/server/internal/store"
 )
@@ -66,6 +67,8 @@ func (s *stubIM) handle(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/auth/get_admin_token":
 		data = `{"token":"t","expireTimeSeconds":3600}`
+	case "/auth/get_user_token":
+		data = `{"token":"im-token-1","expireTimeSeconds":86400}`
 	case "/friend/get_friend_list":
 		data = `{"friendsInfo":[{"ownerUserID":"1","remark":"","createTime":1700000000,` +
 			`"friendUser":{"userID":"2","nickname":"女儿","faceURL":"http://a/2.png","ex":""}}],"total":1}`
@@ -705,4 +708,47 @@ func truncate(s string) string {
 		return s[:60] + "…"
 	}
 	return s
+}
+
+func TestImTokenIssuesAnOpenIMTokenForTheSignedInAccount(t *testing.T) {
+	h := newTest(t)
+	token, me := h.login(t, "13800000011")
+
+	ans := h.request(t, http.MethodGet, "/api/user/im_token", "", nil, token)
+	if ans.Status != 200 {
+		t.Fatalf("im_token: %+v", ans)
+	}
+	var data dto.ImToken
+	if err := json.Unmarshal(ans.Data, &data); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if data.ImUserId != idOf(me.ID) {
+		t.Errorf("token keyed to the signed-in account, got %q want %q", data.ImUserId, idOf(me.ID))
+	}
+	if data.ImToken == "" || data.ImToken != "im-token-1" {
+		t.Errorf("the stub's token did not reach the client: %q", data.ImToken)
+	}
+	if data.WsUrl == "" {
+		t.Error("the ws address must come from the server; an empty one leaves the client nowhere to dial")
+	}
+
+	calls := h.im.record("/auth/get_user_token")
+	if len(calls) != 1 {
+		t.Fatalf("expected one get_user_token call, got %d", len(calls))
+	}
+	if platform, _ := calls[0]["platformID"].(float64); platform != openim.PlatformAndroid {
+		t.Errorf("the device platform id is the Android one (2), got %#v", calls[0]["platformID"])
+	}
+}
+
+func TestImTokenAnswersUnavailableWhenOpenIMIsDown(t *testing.T) {
+	h := newTest(t, func(o *Options) {
+		o.IM = openim.New("http://127.0.0.1:1", testImSk, "imAdmin")
+	})
+	token, _ := h.login(t, "13800000012")
+
+	ans := h.request(t, http.MethodGet, "/api/user/im_token", "", nil, token)
+	if ans.Status != http.StatusInternalServerError {
+		t.Fatalf("a dead OpenIM must read as 服务暂时不可用, got %+v", ans)
+	}
 }

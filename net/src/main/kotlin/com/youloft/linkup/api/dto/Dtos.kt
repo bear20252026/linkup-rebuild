@@ -936,3 +936,12 @@ data class WxPay(
     val sign: String? = null,
     val timestamp: String? = null,
 ) : java.io.Serializable
+
+
+/** `api/user/im_token`'s answer: the OpenIM identity, its token, and the msg_gateway address. */
+data class ImToken(
+    val imUserId: String = "",
+    val imToken: String = "",
+    val expireTimeSeconds: Long = 0L,
+    val wsUrl: String = "",
+) : java.io.Serializable

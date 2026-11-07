@@ -214,3 +214,13 @@ type TrackRecord struct {
 	Tracks            []location.Track         `json:"tracks"`
 	UserID            int64                    `json:"userId"`
 }
+
+// ImToken is `api/user/im_token`'s answer: the OpenIM identity and token the client SDK logs in with,
+// plus the msg_gateway address to connect to. Field names match the client's Gson model (Dtos.kt) —
+// the JSON key is the Kotlin property name, the same rule every recovered bean followed.
+type ImToken struct {
+	ImUserId          string `json:"imUserId"`
+	ImToken           string `json:"imToken"`
+	ExpireTimeSeconds int64  `json:"expireTimeSeconds"`
+	WsUrl             string `json:"wsUrl"`
+}

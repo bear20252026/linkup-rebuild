@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Chat shell colors, copied from the recovered bank (res166 values/colors.xml). -->
+    <color name="em_toolbar_color_title">#324058</color>
+    <color name="white">#ffffffff</color>
+</resources>

@@ -1682,6 +1682,76 @@ JVM 侧新增5条外壳测试（半展开/展开折叠渐变/小窗/inset/日期
 launcher ANR 噪声，非本应用崩溃）。客户端全量418条（app294/定位93/网络31）重跑通过。
 POST_NOTIFICATIONS 询问时机仍照搬原版、等用户拍板；一键登录/微信链依赖拿不到的厂商 jar，未动。
 
+## 五点三十、采集卡与定位抽象扩展（#27，2026-11-07）
+
+依据用户拍板的"核心四块"第一、二块。三条线：
+
+**定位抽象：高德第二提供方。** `provider/amap/`（`AmapSdk` + `AmapLocationProvider`），反射绑定
+**官方高德定位 SDK API**——原版从未带过高德，没有反编译对照可引，绑定对着公开签名与
+`location/src/test/java/com/amap/api/location` 的替身，测试里钉死的事实有四条：回调对失败也触发
+（`getErrorCode()!=0` 即失败，先于坐标读取）；`getSpeed()` 继承自 `android.location.Location`
+**已是 m/s**（百度的 km/h ÷3.6 在这里没有对应物，除第二次会让节律变紧 3.6 倍）；datum 从
+`getCoordType()` 读回（GCJ02→WGS84 走 golden 换算）；两步隐私门
+（`updatePrivacyShow/updatePrivacyAgree`）在构造前。**`AMAP_LOCATION_KEY` 留空**：三方账号随源码
+一起丢了，空 key 让高德诚实缺席目录，找回账号即是全量开启。提供方目录从写死改为配置驱动：
+MMKV 键 `locationProviderId`（`LocationProviderSettings`）设了且已安装才生效，否则落回链序
+（baidu→amap→system）；独立性门豁免扩到 `provider/amap/` 并断言两个绑定文件仍存在。
+`LocationTuning` 补全 17 键（`manager/l.java:64-80` 逐行核对默认值）。
+
+**停留/离开状态机移植（x0.java:164-265）。** `StayLeaveClassifier`，真值表测试逐分支钉住；采集器
+分型上报（STAY/LEAVE 真实写 `type`），`R()` 的 widget 副本规则照搬（停留存在且未分类 → type=4）。
+两个记录在案的取舍：①**待验 62 取原版读法**（潜在停留范围出口用 `n()`=200m，与键名语义
+`k()`=20m 差 10 倍），构造参数 `potentialExitMeters` 一行可换；②距离在 WGS84 大圆上算
+（原版 BD09 `DistanceUtil`），数值同源不同基准；步行自适应的"位移当速度"（原版拿原始位移和 m/s
+阈值直接比）改为真除法，语义按比较式本意执行。
+
+**前台服务与三道门。** `TrackCollectService`（`foregroundServiceType="location"`，主进程——与原版
+`:remote` 的偏离记录在案：collector/网关/账号缓存都在主进程，第二进程会把 MMKV 图拆开，迁移是
+隔离优化不是协议变更）；`ACCESS_BACKGROUND_LOCATION`/`FOREGROUND_SERVICE_LOCATION` 归 app 清单
+（:location 模块清单当初就为这张卡留着位置）；widget 副本只走日志（桌面小组件是后续卡）。
+`CollectController` 三道门：隐私同意 ∧ 定位权限 ∧ 已登录——原版只看隐私门（服务随装随跑），
+重建后 report 路由在 JWT 之后，无账号的采集无人接收。
+
+## 五点三十一、地图卡（#28，2026-11-07）
+
+新模块 `:map`，镜像 `:location` 的形状：`TrackMap`/`TrackMapProvider`/`TrackMapProviders` +
+`MapLayerIndependenceTest`（vendor 命名只许进 `provider/baidu|amap/`，import 到处都禁，构建脚本
+只许 platform + `:location`）。两家反射适配器，坐标规则全文件只有一条：**overlay 到达时是 WGS84，
+百度画 BD09、高德画 GCJ02，每个点都过 `:location` 的 golden 换算**（wgs84→bd09/gcj02 的
+`(39.90469,116.40717)` 两位样本钉死），跳过换算就是半公里偏移。`:location` 依赖是刻意的：换算只
+许有一份真源。
+
+本机没有地图 AAR，所以轨迹页行为分两态：目录里有已安装提供方 → 嵌入其 view、隐藏占位画、
+`TrackRecordBean` 解码喂 `showTrack`（tracks type=2 为停留针，`TrackOverlayMapper` 纯函数）；没有 →
+维持"尚未接入"占位原样（红线：不画假底图）。渲染常量（线宽/颜色/zoom）标注为本项目选择——
+原版轨迹页从未画到过地图，没有"恢复值"可引。高德地图的 key 走 manifest meta-data（SDK 设计如此，
+反射注不进去），随未来 AAR 的清单一起到。
+
+## 五点三十二、IM 卡（#29，2026-11-07）
+
+**传输拍板：OpenIM 官方 SDK 直连**（`io.openim:android-sdk:3.8.3.1` + `core-sdk:3.8.3-patch15`，与
+服务端 v3.8.3-patch.18 同线；原版环信 jar 拿不到，OpenIMServer 是重建后端已跑通的那一半）。SDK
+类型只许进 `:im` 模块；`:app` 只见 `ImClient` 接口。
+
+- **服务端** `GET api/user/im_token`：`openim.Client.UserToken`（存在至今无人调用）首次接线，回
+  `{imUserId, imToken, expireTimeSeconds, wsUrl}`；`-openim-ws` 默认 `ws://10.0.2.2:10001`（模拟器
+  宿主回环，e2e 脚本同路径已证可达）。handler 测试两条（含 OpenIM 死亡 → 500）。
+- **`:im`**：`ImClient` 接口 + `OpenImImClient` 胶水 + `ImMappings`（SDK POJO→中立模型，JVM 可测：
+  方向判定、毫秒→秒、`latestMsg` JSON 两种历史形态的容错）。**监听注册必须在 initSDK 之后**——
+  manager 的 setter 会触 Go 绑定的静态初始化（加载 gojni），JVM 上构造即炸，这是 53 条测试
+  NoClassDef 换来的分层事实。
+- **app**：`ImFriendListSource` 换下占位实现——**friendList 的写入方补上**（待验 9 闭合）：IM 事件 →
+  重拉 `relation/list` → 写缓存（`FriendCache.KEY_FRIENDS`，待验 53 的 13 个键仍由服务端回答，不
+  在客户端编造）→ 发布 LiveData → 转 `CmdFriendBean`（ADD/DELETE/UPDATE 原版数值）。
+  `friend_delete` 广播（`FriendEvents`）走同一条刷新路径。构造全程零触达（stores/users/imClient
+  皆是 provider，cache 惰性，`start()` 由首个活跃观察者触发）——否则裸 app 实例与全部旧测试为
+  MMKV/native 买单，这是 126 条失败换来的分层。
+- **聊天页**：外壳是原版 `activity_chat.xml`（三枚 webp + 两色入 app，`@id` 引用规整为 `@+id`）；
+  正文是本工程自建的最小两行气泡——原版 `ease_row_*` 是环信 SDK 资源，SDK 已随源码丢失，**不伪造
+  看不出来的库 UI**；文本收发走 `ImClient`，媒体（图/语音/视频）要火山 TOS 上传链，留给下一轮。
+- **登录/登出**：`AccountSideEffects` 新增 `onSignedOut()`；登录 → 采集门重估 + IM 连接
+  （`api/user/im_token` → SDK login），登出镜像。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
@@ -1826,6 +1896,12 @@ POST_NOTIFICATIONS 询问时机仍照搬原版、等用户拍板；一键登录/
 | 68 | `line.type=5` 与 `lostType=1/3` 的业务意义 | 原版渲染已还原（灰色时长/隐藏地址，以及两类相同的红点），但没有证据替这些数字命名为某种业务状态；需要真实轨迹样本或服务端源码 |
 | 69 | 地图和原版滑动面板 | 当前仅提供独立 `track_map_container` 占位。原版 SheetLayout 手势状态、TextureMapView 生命周期、轨迹覆盖物和点选联动都未实现，不是替换一个 View 即完成 |
 | 70 | 轨迹页 VIP/隐私/提醒及后台采集 | 原版 VIP 遮罩、sensTrack 门禁、定位权限提示和 IM 提醒按钮未接，故仅在恢复入口提供本人列表；常驻采集服务和停留/离开状态机仍是后续工程 |
+| 71 | 两个地图 AAR（百度/高德）从哪来 + 真机像素验收 | 反射适配器已就绪，AAR 入依赖即亮；像素层 Robolectric 不可信（本机画红读白，见五点十九） |
+| 72 | OpenIM SDK 真机登录与收发 | SDK 带 gojni 原生库，JVM 只能测到映射层；另需首验模拟器 `10.0.2.2:10001` → WSL 栈的连通性 |
+| 73 | IM 媒体消息（图片/语音/视频） | 要火山 TOS 上传链（`api/volcano/token` 路由客户端有类型、服务端未实现） |
+| 74 | 一键锁机/实时语音/实时截屏/水印拍照 | 97 条路由里契约在、客户端部分 bean 仍是 `JsonElement`，服务端"业务表+推送"未建（服务端 README 建议顺序：定位/锁机 → 纪念日/截图 → VIP） |
+| 75 | `locationProviderId` 的调试入口与远程下发 | 键与选择规则已落地（`LocationProviderSettings`），入口屏幕与 configsys 通道是产品决定 |
+| 76 | 高德定位/地图的 vendor key | 三方账号随源码丢失（第八节 3）；key 回来即把 `AMAP_LOCATION_KEY` 填上，高德提供方自动进链 |
 
 ## 十、下一步顺序（建议）
 

@@ -21,7 +21,10 @@ sh tools/gradle.sh :net:liveVerify      # 期望打印 PROTOCOL_RECOVERED=1
 # 出 APK
 sh tools/gradle.sh :app:assembleDebug
 
-# 服务端回归：49 个 Go 测试，全离线（不需要 Docker）
+# 地图与 IM 模块回归
+sh tools/gradle.sh :map:testDebugUnitTest :im:testDebugUnitTest
+
+# 服务端回归：全离线（不需要 Docker）
 cd server && go test ./...
 
 # 服务端真进程 + 真 socket：28 条用例，签名由 openssl 产出
@@ -36,7 +39,9 @@ bash server/scripts/smoke.sh
 | 路径 | 内容 |
 |---|---|
 | `net/` | 纯 JVM 网络层模块：AES 签名、公共参数拦截器、97 条路由的 Retrofit 接口 |
-| `location/` | 定位抽象层：一家 `LocationProvider`/`PlaceResolver`/`LocationGateway` 接口 + 系统源与百度源两家实现，无厂商定位/地图 SDK 依赖（使用 Kotlin 协程） |
+| `location/` | 定位抽象层：一家 `LocationProvider`/`PlaceResolver`/`LocationGateway` 接口 + 系统源与百度/高德三家实现（反射绑定），17 键调优与停留/离开状态机（`StayLeaveClassifier`），无厂商 SDK 依赖 |
+| `map/` | 地图抽象层：`TrackMap`/`TrackMapProvider` 接口 + 百度/高德两家反射实现（WGS84→BD09/GCJ02 换算复用 `:location` 的 golden），无 AAR 时轨迹页维持"尚未接入"占位 |
+| `im/` | IM 层：`ImClient` 接口 + OpenIM 官方 SDK 直连（`OpenImImClient`），SDK 类型不出本模块；映射层 JVM 可测 |
 | `app/` | Android 壳，包名沿用 `com.youloft.watcher`，已带入 1.6.6 的 25MB assets |
 | `fastkit/` | 自研组件库的还原（弹窗基类、ShapeView、Spannable 工具等） |
 | `server/` | 重建后端：Go 网关 + OpenIMServer 适配层 + 定位域（20 条路由） |
@@ -45,6 +50,11 @@ bash server/scripts/smoke.sh
 | `_raw/` | 两个 APK、反编译输出、apktool 输出（**体积大且含内部代码，不入库**） |
 
 ## 恢复状态
+
+**守护线三大块已落地（#27–#29）**：定位采集（前台服务 + 停留/离开状态机 + 三道门
+隐私/权限/登录）、地图（`:map` 抽象 + 两家反射适配器，AAR 到位即亮，无 AAR 保持占位）、IM
+（OpenIM SDK 直连 + `api/user/im_token` + friendList 缓存写入方 + 聊天页）。真机项（FGS 常驻、
+SDK 登录收发、地图像素、模拟器↔WSL 连通）见 DESIGN 待验 71–76。
 
 已验证：带签名的 GET 被真实服务端接受（`status=200`）；`location`/`net`/`app` 累计418个测试通过（本轮全量重跑 app 294，定位93/网络31未改动且 UP-TO-DATE）；`server` 49 个 Go 测试
 + 28 条真 socket 用例全绿；同一条签名契约在 **JVM 客户端、Go、OpenSSL** 三个实现下产出同一段密文

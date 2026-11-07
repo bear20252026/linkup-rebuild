@@ -56,6 +56,11 @@ type Options struct {
 	// DayZone is the timezone days are counted in; `api/location/days` answers date strings and
 	// `api/location/v2/tracks` takes one back, so the same zone must serve both.
 	DayZone *time.Location
+
+	// OpenIMWs is the msg_gateway address handed to the client by `api/user/im_token`. The Android
+	// emulator reaches host loopback only through 10.0.2.2, so that is the default; the client never
+	// hardcodes the address, it reads it from this response.
+	OpenIMWs string
 }
 
 // Gateway holds the routes' shared state.
@@ -102,6 +107,9 @@ func New(opts Options) (*gin.Engine, error) {
 	if opts.DayZone == nil {
 		opts.DayZone = time.Local
 	}
+	if opts.OpenIMWs == "" {
+		opts.OpenIMWs = "ws://10.0.2.2:10001"
+	}
 	pemText, err := contract.PublicKeyPEM(&opts.PublicKey.PublicKey)
 	if err != nil {
 		return nil, err
@@ -124,6 +132,7 @@ func New(opts Options) (*gin.Engine, error) {
 		// Authenticated.
 		api.GET("/user/info", g.userInfo)
 		api.POST("/user/update/info", g.updateUserInfo)
+		api.GET("/user/im_token", g.imToken)
 		api.GET("/tool/rsa/public_key", g.publicKey)
 
 		api.GET("/relation/pre_confirm", g.preConfirm)

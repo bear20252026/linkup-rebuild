@@ -2,6 +2,7 @@ package com.youloft.watcher.pages.friend
 
 import android.app.Activity
 import com.youloft.linkup.api.dto.FriendRequest
+import com.youloft.watcher.pages.chat.ChatActivity
 import com.youloft.watcher.pages.friend.dialog.FriendNumLimitDialog
 import com.youloft.watcher.pages.friend.dialog.FriendPermissionsSettingsDialog
 
@@ -60,7 +61,9 @@ class DefaultFriendFlowNavigation(
         FriendInfoActivity.start(activity, userId, type, name)
     }
 
-    override fun openChat(userId: Long) = Unit
+    override fun openChat(userId: Long) {
+        ChatActivity.start(activity, userId, peerName = null)
+    }
 
     override fun openContactList() {
         ContactInfoListActivity.start(activity)

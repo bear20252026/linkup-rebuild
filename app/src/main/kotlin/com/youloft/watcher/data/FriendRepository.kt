@@ -3,6 +3,10 @@ package com.youloft.watcher.data
 import android.app.Application
 import android.content.Context
 import android.os.Build
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import com.youloft.linkup.api.dto.ConfirmAdd
 import com.youloft.linkup.api.dto.Friend
 import com.youloft.linkup.api.dto.FriendApply
@@ -21,6 +25,10 @@ import com.youloft.linkup.location.provider.system.LocationPermissions
 import com.youloft.linkup.map.TrackMapProviders
 import com.youloft.linkup.map.provider.amap.AmapTrackMapProvider
 import com.youloft.linkup.map.provider.baidu.BaiduTrackMapProvider
+import com.youloft.linkup.im.ImClient
+import com.youloft.linkup.im.OpenImImClient
+import com.youloft.watcher.data.im.ImFriendListSource
+import com.youloft.watcher.data.im.ImRepository
 import com.youloft.watcher.AndroidDeviceContext
 import com.youloft.watcher.data.local.FriendCache
 import com.youloft.watcher.data.local.InstallChannel
@@ -172,10 +180,29 @@ open class LinkUpApplication : Application() {
     private fun deviceContext() = AndroidDeviceContext(this, accountCache, installChannel)
 
     /**
-     * The live friend list and push channel the friend screens observe. The IM manager behind it is a
-     * separate card, so the default keeps the shape of the contract without inventing push behaviour.
+     * The live friend list and push channel the friend screens observe. The IM card now drives it:
+     * OpenIM pushes → relation/list refresh → cache write → publish, and the friend screens' contract
+     * is unchanged (see `data/im/ImFriendListSource.kt`).
      */
-    open val friendList: FriendListSource by lazy { PendingFriendListSource() }
+    open val friendList: FriendListSource by lazy {
+        ImFriendListSource(
+            refresh = { imApi.relationList(page = 1, pageSize = 200, key = "") },
+            storesProvider = { keyValueStores },
+            usersProvider = { accountCache },
+            imClientProvider = { imClient },
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+        )
+    }
+
+    /** The OpenIM transport for this account; the SDK types stay inside `:im`. */
+    open val imClient: ImClient by lazy { OpenImImClient(this) }
+
+    /** The session half: `api/user/im_token` → SDK login, and the sign-out mirror. */
+    open val imRepository: ImRepository by lazy { ImRepository(imApi, imClient, imScope) }
+
+    private val imApi by lazy { LinkUpClient(context = deviceContext()).api }
+
+    private val imScope: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     /**
      * Local key-value storage. Production is MMKV; tests inject the in-memory double so nothing here
@@ -283,10 +310,9 @@ open class LinkUpApplication : Application() {
     }
 
     /**
-     * What the recovered `LoginManager` did after storing an account. Only the collection trigger is
-     * rebuilt so far: the account the user just signed in with is what makes the report route accept
-     * fixes, so a login (or a sign-out leaving `userId == 0`) is a collection state change and the
-     * controller re-evaluates it. IM bind and the rest stay with their own cards.
+     * What the recovered `LoginManager` did after storing an account. Two rebuilt triggers: the
+     * collection controller re-evaluates its gates (an account is what makes the report route accept
+     * fixes), and the IM session connects — `api/user/im_token` → SDK login. Sign-out mirrors both.
      */
     open val accountSideEffects: AccountSideEffects by lazy {
         val controller = collectController
@@ -295,6 +321,12 @@ open class LinkUpApplication : Application() {
 
             override fun onSignedIn(user: User) {
                 controller.refresh()
+                imRepository.connectAsync(user.userId)
+            }
+
+            override fun onSignedOut() {
+                controller.refresh()
+                imScope.launch { imRepository.disconnect() }
             }
         }
     }
@@ -302,6 +334,8 @@ open class LinkUpApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         collectController.attach(this)
+        // The friend source boots on its first active observer (see ImFriendListSource.friends): the
+        // application onCreate must stay free of MMKV and IM SDK work that a test app never asked for.
     }
 }
 

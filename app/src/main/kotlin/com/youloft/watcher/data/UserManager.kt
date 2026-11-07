@@ -27,6 +27,9 @@ interface AccountSideEffects {
 
     /** What `LoginManager` did after storing an account: bind IM, `lf.b.b(userId)`, Umeng sign-in. */
     fun onSignedIn(user: User)
+
+    /** The sign-out mirror: drop the IM session, stop the collection service, clear per-user state. */
+    fun onSignedOut() {}
 }
 
 object NoAccountSideEffects : AccountSideEffects {
@@ -114,6 +117,7 @@ class UserManager(
      * written back through the same key — not deleted.
      */
     fun signOut() {
+        sideEffects.onSignedOut()
         cache.saveToken("")
         cache.save(User())
         _user.value = User()

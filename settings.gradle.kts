@@ -19,6 +19,7 @@ rootProject.name = "linkup-rebuild"
 include(":net")
 include(":location")
 include(":map")
+include(":im")
 include(":res166")
 include(":fastkit")
 include(":app")

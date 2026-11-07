@@ -39,6 +39,7 @@ func main() {
 		staySeconds = flag.Int64("stay-seconds", 120, "how long a phone must sit still before the day counts another arrival point (not observable from the APK)")
 		gapSeconds  = flag.Int64("gap-seconds", 1800, "how long a silence becomes 没有新定位 instead of movement (not observable from the APK)")
 		dayZone     = flag.String("loc-timezone", "Asia/Shanghai", "timezone the track days are counted in")
+		imWs        = flag.String("openim-ws", "ws://10.0.2.2:10001", "msg_gateway address handed to clients by api/user/im_token (10.0.2.2 is the emulator's host loopback)")
 		dev         = flag.Bool("dev", false, "allow the published OpenIM demo secret and an empty JWT secret")
 	)
 	flag.Parse()
@@ -101,6 +102,7 @@ func main() {
 		ClientConfig:     gateway.DefaultClientConfig(),
 		LocationSettings: location.Settings{StaySeconds: *staySeconds, GapSeconds: *gapSeconds},
 		DayZone:          zone,
+		OpenIMWs:         *imWs,
 	})
 	if err != nil {
 		log.Error("build gateway", "err", err)

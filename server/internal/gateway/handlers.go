@@ -229,6 +229,30 @@ func (g *Gateway) updateUserInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, contract.OK(g.toUser(updated, "")))
 }
 
+// imToken issues the OpenIM user token the client SDK logs in with — the first caller of
+// `openim.Client.UserToken`, which existed unused until this route existed. The client supplies neither
+// the IM id nor the ws address from its own constants: both come from here, keyed to the signed-in
+// account, so a token can never outlive the session it was issued from.
+func (g *Gateway) imToken(c *gin.Context) {
+	u, err := g.opts.Store.ByID(g.claims(c).UserID)
+	if err != nil {
+		c.JSON(http.StatusOK, contract.Fail(StatusNotFoundUser, "账号不存在"))
+		return
+	}
+	token, expire, err := g.opts.IM.UserToken(c.Request.Context(), store.IMID(u.ID), openim.PlatformAndroid)
+	if err != nil {
+		g.log.Warn("openim user token failed", "err", err)
+		c.JSON(http.StatusOK, contract.Fail(http.StatusInternalServerError, "服务暂时不可用，请稍后重试"))
+		return
+	}
+	c.JSON(http.StatusOK, contract.OK(dto.ImToken{
+		ImUserId:          store.IMID(u.ID),
+		ImToken:           token,
+		ExpireTimeSeconds: expire,
+		WsUrl:             g.opts.OpenIMWs,
+	}))
+}
+
 func (g *Gateway) publicKey(c *gin.Context) {
 	c.JSON(http.StatusOK, contract.OK(dto.PublicKey{PublicKey: dto.Text(g.pem)}))
 }
