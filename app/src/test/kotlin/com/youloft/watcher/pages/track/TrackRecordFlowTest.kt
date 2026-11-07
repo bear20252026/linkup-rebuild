@@ -289,6 +289,115 @@ class TrackRecordFlowTest {
         assertEquals(2, (list(activity).adapter as ConcatAdapter).adapters.size)
     }
 
+    @Test fun `date labels and circular backgrounds match original instead of blue month day text`() {
+        val activity = launch()
+        val tabs = activity.findViewById<LinearLayout>(R.id.track_dates)
+        val today = LocalDate.now()
+        val selectedDate = tabs.getChildAt(0).findViewById<TextView>(R.id.tv_date)
+        assertEquals(today.dayOfMonth.toString(), selectedDate.text.toString())
+        assertEquals(activity.getColor(R.color.appPrimary), selectedDate.currentTextColor)
+        assertEquals(
+            activity.getColor(R.color.colorBrand),
+            (selectedDate.background as android.graphics.drawable.GradientDrawable).color!!.defaultColor,
+        )
+        assertEquals(
+            arrayOf("一", "二", "三", "四", "五", "六", "日")[today.dayOfWeek.value - 1],
+            tabs.getChildAt(0).findViewById<TextView>(R.id.tv_week).text.toString(),
+        )
+        tabs.getChildAt(1).performClick()
+        idle()
+        assertEquals(
+            android.graphics.Color.parseColor("#0f000000"),
+            (selectedDate.background as android.graphics.drawable.GradientDrawable).color!!.defaultColor,
+        )
+        assertNull(tabs.getChildAt(2).findViewById<TextView>(R.id.tv_date).background)
+    }
+
+    private fun layoutScreen(activity: TrackRecordActivity, width: Int = 400, height: Int = 800) {
+        val root = activity.findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0)
+        root.layoutParams = root.layoutParams.apply { this.width = width; this.height = height }
+        repeat(3) {
+            root.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY))
+            root.layout(0, 0, width, height)
+            shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(1))
+        }
+    }
+
+    @Test @Config(qualifiers = "mdpi")
+    fun `sheet starts at original 383dp height and clips the 32dp rounded header`() {
+        val activity = launch()
+        layoutScreen(activity)
+        val sheet = activity.findViewById<View>(R.id.track_sheet)
+        val parent = activity.findViewById<View>(R.id.track_coordinator)
+        val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
+        assertEquals(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HALF_EXPANDED, behavior.state)
+        assertEquals(123, behavior.peekHeight)
+        assertFalse(behavior.isHideable)
+        assertFalse(behavior.isFitToContents)
+        fun offset(name: String) = com.google.android.material.bottomsheet.BottomSheetBehavior::class.java.getDeclaredField(name).apply { isAccessible = true }.get(behavior)
+        assertTrue(kotlin.math.abs(parent.height - sheet.top - 383) <= 1,
+            "parent=${parent.height}, sheetTop=${sheet.top}, sheetH=${sheet.height}, ratio=${behavior.halfExpandedRatio}, half=${offset("halfExpandedOffset")}, collapsed=${offset("collapsedOffset")}, expanded=${offset("expandedOffset")}, fit=${offset("fitToContentsOffset")}, state=${behavior.state}")
+        assertTrue(sheet.clipToOutline)
+        val outline = android.graphics.Outline()
+        sheet.outlineProvider.getOutline(sheet, outline)
+        assertEquals(32f, outline.radius)
+        assertEquals(0f, activity.findViewById<View>(R.id.track_title).alpha, 0.01f)
+        assertEquals(1f, activity.findViewById<View>(R.id.track_tab_background).alpha, 0.01f)
+        assertTrue(activity.findViewById<View>(R.id.track_map_container).height > 383)
+    }
+
+    @Test @Config(qualifiers = "mdpi")
+    fun `expanded and collapsed states move the panel and crossfade the original chrome`() {
+        val activity = launch()
+        layoutScreen(activity)
+        val sheet = activity.findViewById<View>(R.id.track_sheet)
+        val parent = activity.findViewById<View>(R.id.track_coordinator)
+        val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
+        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        layoutScreen(activity)
+        assertEquals(0, sheet.top)
+        assertEquals(1f, activity.findViewById<View>(R.id.track_title).alpha)
+        assertEquals(1f, activity.findViewById<View>(R.id.track_map_mask).alpha)
+        assertEquals(0f, activity.findViewById<View>(R.id.track_tab_background).alpha)
+        assertEquals(View.INVISIBLE, activity.findViewById<View>(R.id.track_reset_card).visibility)
+        behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_COLLAPSED
+        layoutScreen(activity)
+        assertEquals(123, parent.height - sheet.top)
+        assertEquals(0f, activity.findViewById<View>(R.id.track_title).alpha)
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.track_reset_card).visibility)
+        assertEquals((sheet.top - 52).toFloat(), activity.findViewById<View>(R.id.track_reset_card).translationY)
+    }
+
+    @Test @Config(qualifiers = "mdpi")
+    fun `small windows expand rather than leaving a panel above the screen`() {
+        val activity = launch()
+        layoutScreen(activity, height = 350)
+        val sheet = activity.findViewById<View>(R.id.track_sheet)
+        val behavior = com.google.android.material.bottomsheet.BottomSheetBehavior.from(sheet)
+        assertEquals(com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED, behavior.state)
+        assertEquals(0, sheet.top)
+        assertEquals(306, sheet.height)
+    }
+
+    @Test @Config(qualifiers = "mdpi")
+    fun `system bars and side cutouts do not cover title or sheet content`() {
+        val activity = launch()
+        val root = activity.findViewById<android.view.ViewGroup>(android.R.id.content).getChildAt(0)
+        androidx.core.view.ViewCompat.dispatchApplyWindowInsets(root,
+            androidx.core.view.WindowInsetsCompat.Builder().setInsets(
+                androidx.core.view.WindowInsetsCompat.Type.systemBars(),
+                androidx.core.graphics.Insets.of(8, 24, 12, 32),
+            ).build(),
+        )
+        layoutScreen(activity)
+        assertEquals(24, root.paddingTop)
+        assertEquals(32, root.paddingBottom)
+        assertEquals(8, root.paddingLeft)
+        assertEquals(12, root.paddingRight)
+        assertEquals(380, activity.findViewById<View>(R.id.track_sheet).width)
+        assertEquals(700, activity.findViewById<View>(R.id.track_coordinator).height)
+    }
+
     @Test fun `host loading and empty overlay follow request completion`() {
         val response = CompletableDeferred<ApiResponse<TrackRecordBean>>()
         repository.record = { response.await() }
@@ -347,6 +456,7 @@ class TrackRecordFlowTest {
         val dialog = ShadowDialog.getLatestDialog()
         assertTrue(dialog is NoTrackReasonDialog)
         assertTrue(dialog.isShowing)
+        assertEquals(android.view.Gravity.BOTTOM, dialog.window!!.attributes.gravity)
         dialog.findViewById<View>(R.id.tv_ok).performClick()
         assertFalse(dialog.isShowing)
     }

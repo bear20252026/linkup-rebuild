@@ -1620,6 +1620,42 @@ APK 构建成功，64,723,895字节，并检查到 DEX 含 `TrackRecordActivity`
 Robolectric 不是设备实测：本轮 `adb devices -l` 没有设备，未安装 APK，未验真机像素、字体与系统窗口效果；
 没有新增线上请求，也没有把历史 gatewayVerify / OpenIM 联调结果当本轮实测。待验项见67–70。
 
+## 五点二十八、轨迹页原版 UI 外壳（#25，2026-11-06）
+
+以 1.6.6 的 `activity_track_record.xml` 和 `TrackRecordActivity.java:791-803,859-867,917-965` 为依据，
+替换 #24 的临时纵向布局：全屏地图槽、44dp 标题、32dp 顶部圆角、120dp 原图渐变背景、36×5dp 拖柄、
+65dp 日期条和16dp列表间隔。缺失的 FastKit `SheetLayout` 用已有 Material `BottomSheetBehavior` 承载，
+折叠123dp、半展开383dp、全展开顶齐标题下沿、不可隐藏；随窗口高度重算半展开比例，小窗口直接全展开。
+拖动时标题与浅色遮罩渐显，原图背景、拖柄与地图控件渐隐。系统栏与侧边 inset 不遮盖交互区域。
+
+日期纠正为原版星期单字和日号：选中使用 `shape_track_date_selected`，未选中的今天使用
+`shape_track_date_today`，文字保持 `appPrimary`，不再显示自造的蓝色月日字符串。
+原版摘要、轨迹行、圆体字体、空态及说明图继续复用；`NoTrackReasonDialog` 明确设置底部窗口重力。
+
+边界：地图仍未接 SDK，不画假底图或轨迹，不显示百度署名；原复位图标仅作禁用状态展示。
+保留恢复宿主的刷新操作，面板手势可独立验收，但不声称恢复原版 VIP/隐私决定“是否可拖”的业务规则。
+好友入口、权限提醒与 IM 消息仍未接，不新增任何线上写操作。返回箭头在无地图时用深色版
+`ic_arrow_left_32_32`（原版白色箭头是压在地图上的，浅底上不可见）。
+
+可执行验证（原生，离线测试数据，不触网）：
+
+```bash
+sh tools/gradle.sh --offline :app:assembleDebug :app:assembleDebugAndroidTest
+adb -s emulator-5580 install -r -t app/build/outputs/apk/debug/app-debug.apk
+adb -s emulator-5580 install -r -t app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+adb -s emulator-5580 shell am instrument -w \
+  com.youloft.watcher.debug.test/com.youloft.watcher.pages.track.TrackUiInstrumentation
+```
+
+`TrackUiInstrumentation` 是测试 APK 内的系统 `Instrumentation`，用 `InMemoryKeyValueStores` 与离线
+`TrackRepository` 替换生产依赖，`newApplication` 不起任何线上初始化。本轮在只读模拟器
+（`aegis_smoke`，API33，320×640 mdpi，`-read-only -no-snapshot`）实测通过：初始半展开383dp±1px、
+`sendPointerSync` 真拖动展开并标题/遮罩渐显、日期点击切日、列表选中/取消、`NoTrackReasonDialog`
+真打开且窗口底边贴屏幕底部、确认关闭、折叠123dp、错误刷新与空态；六阶段截图留证
+`build/track-ui-shots/files/track-ui-{half,expanded,dialog,collapsed,error,empty}.png`。
+JVM 侧新增5条外壳测试（半展开/展开折叠渐变/小窗/inset/日期样式），轨迹合计42条。
+模拟器验收不等于真机像素验收，也不代表地图/VIP/隐私业务完成；待验67–70仍有效。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。

@@ -13,6 +13,7 @@ android {
         targetSdk = 34
         versionCode = 166
         versionName = "1.6.6"
+        testInstrumentationRunner = "com.youloft.watcher.pages.track.TrackUiInstrumentation"
     }
 
     buildTypes {

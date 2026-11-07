@@ -15,5 +15,6 @@ class NoTrackReasonDialog(context: Context) : Dialog(context) {
         binding.tvOk.setOnClickListener { dismiss() }
         window?.setBackgroundDrawableResource(android.R.color.transparent)
         window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT)
+        window?.setGravity(android.view.Gravity.BOTTOM)
     }
 }
