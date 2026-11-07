@@ -25,6 +25,15 @@ interface KeyValueStore {
     fun boolean(key: String, default: Boolean = false): Boolean
 
     fun putBoolean(key: String, value: Boolean)
+
+    /**
+     * `decodeLong`/`encode` — the guard-target id and the couple of row ids the recovered app stored
+     * as longs. Kept beside int because a userId outgrows 32 bits in principle, even though today's
+     * 8-digit space does not.
+     */
+    fun long(key: String, default: Long = 0L): Long
+
+    fun putLong(key: String, value: Long)
 }
 
 interface KeyValueStores {
@@ -48,6 +57,11 @@ private class MmkvStore(private val mmkv: MMKV) : KeyValueStore {
 
     override fun boolean(key: String, default: Boolean): Boolean = mmkv.decodeBool(key, default)
     override fun putBoolean(key: String, value: Boolean) {
+        mmkv.encode(key, value)
+    }
+
+    override fun long(key: String, default: Long): Long = mmkv.decodeLong(key, default)
+    override fun putLong(key: String, value: Long) {
         mmkv.encode(key, value)
     }
 }
@@ -100,6 +114,11 @@ class InMemoryKeyValueStores(
             values[key]?.toBooleanStrictOrNull() ?: default
 
         override fun putBoolean(key: String, value: Boolean) {
+            values[key] = value.toString()
+        }
+
+        override fun long(key: String, default: Long): Long = values[key]?.toLongOrNull() ?: default
+        override fun putLong(key: String, value: Long) {
             values[key] = value.toString()
         }
     }

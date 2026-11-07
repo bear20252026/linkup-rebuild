@@ -25,9 +25,18 @@ class LoginFlags(private val stores: KeyValueStores) {
         stores.forUser(userId).putBoolean(KEY_REQUESTED_NOTIFICATION, true)
     }
 
+    /** `CacheUtils.v()` — the guide has been seen up to this version; the shipped sentinel was 4. */
+    fun guideSeenVersion(): Int = stores.shared.int(KEY_GUIDE_SEEN_VERSION)
+
+    /** `CacheUtils.H1(version)` — written by the guide's skip/finish. */
+    fun markGuideSeen(version: Int) {
+        stores.shared.putInt(KEY_GUIDE_SEEN_VERSION, version)
+    }
+
     companion object {
         const val KEY_LAST_LOGIN_TYPE = "lastLoginType"
         const val KEY_REQUESTED_NOTIFICATION = "isRequestedNotification"
+        const val KEY_GUIDE_SEEN_VERSION = "guideSeenVersion"
 
         /** The `platform` / `typeId` numbers the recovered app wrote into `lastLoginType`. */
         const val PLATFORM_WECHAT = 4

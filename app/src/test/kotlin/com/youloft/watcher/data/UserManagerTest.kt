@@ -45,6 +45,10 @@ class UserManagerTest {
         override fun onSignedIn(user: User) {
             signedIn += user.userId
         }
+
+        override fun onSignedOut() {
+            signedIn -= signedIn
+        }
     }
 
     /** Records the order keys are written, which is the one thing the login write path is about. */
@@ -59,6 +63,10 @@ class UserManagerTest {
             override fun string(key: String): String? = inner.string(key)
             override fun int(key: String, default: Int): Int = inner.int(key, default)
             override fun boolean(key: String, default: Boolean): Boolean = inner.boolean(key, default)
+            override fun long(key: String, default: Long): Long = inner.long(key, default)
+            override fun putLong(key: String, value: Long) {
+                inner.putLong(key, value)
+            }
             override fun putString(key: String, value: String) {
                 writes += key
                 inner.putString(key, value)

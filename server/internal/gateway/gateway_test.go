@@ -33,8 +33,9 @@ const (
 // stubIM is the slice of OpenIM the gateway touches. It answers with the field names from the
 // protocol module and records what it was asked, so both directions of the contract are asserted.
 type stubIM struct {
-	mu    sync.Mutex
-	calls []stubCall
+	mu                sync.Mutex
+	calls             []stubCall
+	refuseIsFriendFor string
 }
 
 type stubCall struct {
@@ -69,6 +70,14 @@ func (s *stubIM) handle(w http.ResponseWriter, r *http.Request) {
 		data = `{"token":"t","expireTimeSeconds":3600}`
 	case "/auth/get_user_token":
 		data = `{"token":"im-token-1","expireTimeSeconds":86400}`
+	case "/friend/is_friend":
+		// The stub is stateless; the stranger account in TestLockDomain needs a real no, so the
+		// second id decides rather than a constant.
+		if s.refuseIsFriendFor != "" && strings.Contains(string(raw), s.refuseIsFriendFor) {
+			data = `{"inUser1Friends":false,"inUser2Friends":false}`
+		} else {
+			data = `{"inUser1Friends":true,"inUser2Friends":true}`
+		}
 	case "/friend/get_friend_list":
 		data = `{"friendsInfo":[{"ownerUserID":"1","remark":"","createTime":1700000000,` +
 			`"friendUser":{"userID":"2","nickname":"女儿","faceURL":"http://a/2.png","ex":""}}],"total":1}`
@@ -750,5 +759,67 @@ func TestImTokenAnswersUnavailableWhenOpenIMIsDown(t *testing.T) {
 	ans := h.request(t, http.MethodGet, "/api/user/im_token", "", nil, token)
 	if ans.Status != http.StatusInternalServerError {
 		t.Fatalf("a dead OpenIM must read as 服务暂时不可用, got %+v", ans)
+	}
+}
+
+func TestLockDomainRecordsAndAnswersLockState(t *testing.T) {
+	h := newTest(t)
+	tokenA, a := h.login(t, "13800000013")
+	tokenB, b := h.login(t, "13800000014")
+
+	// 建好友关系（走既有 apply/confirm 路径），锁机只对好友生效。
+	if applied := h.request(t, http.MethodPost, "/api/relation/apply", "", map[string]any{
+		"code": b.ID, "relation": 1,
+		"sensSetting": map[string]any{"sensLocation": true, "sensAppUse": false},
+	}, tokenA); applied.Status != 200 {
+		t.Fatalf("apply: %+v", applied)
+	}
+	if confirmed := h.request(t, http.MethodPost, "/api/relation/confirm", "code="+idOf(a.ID), map[string]any{
+		"code": a.ID, "relation": 2,
+		"sensSetting": map[string]any{"sensLocation": true, "sensCall": true, "sensAppUse": true},
+	}, tokenB); confirmed.Status != 200 {
+		t.Fatalf("confirm: %+v", confirmed)
+	}
+
+	// 题库与封面：题库是重建内容（非空），封面库为空（TOS 未接，待验 77）。
+	if questions := h.request(t, http.MethodGet, "/api/relation/lock/question_list", "", nil, tokenA); questions.Status != 200 {
+		t.Fatalf("question_list: %+v", questions)
+	} else if len(questions.Data) == 0 || string(questions.Data) == "{\"list\":[]}" {
+		t.Errorf("question bank must carry the rebuilt riddles, got %s", questions.Data)
+	}
+	if covers := h.request(t, http.MethodGet, "/api/relation/lock/cover/list", "", nil, tokenA); covers.Status != 200 {
+		t.Fatalf("cover/list: %+v", covers)
+	}
+
+	if locked := h.request(t, http.MethodPost, "/api/relation/lock", "", map[string]any{
+		"friendId": b.ID, "lockDuration": 600, "lockTitle": "写作业啦",
+	}, tokenA); locked.Status != 200 {
+		t.Fatalf("lock: %+v", locked)
+	}
+
+	if list := h.request(t, http.MethodGet, "/api/relation/lock_list", "", nil, tokenA); list.Status != 200 {
+		t.Fatalf("lock_list: %+v", list)
+	} else if !strings.Contains(string(list.Data), "\"lockTime\":") {
+		t.Errorf("lock_list must carry the recorded lock state, got %s", list.Data)
+	}
+
+	if unlocked := h.request(t, http.MethodPost, "/api/relation/unlock", "", map[string]any{
+		"friendId": b.ID,
+	}, tokenA); unlocked.Status != 200 {
+		t.Fatalf("unlock: %+v", unlocked)
+	}
+	if list := h.request(t, http.MethodGet, "/api/relation/lock_list", "", nil, tokenA); list.Status != 200 {
+		t.Fatalf("lock_list after unlock: %+v", list)
+	} else if strings.Contains(string(list.Data), "\"lockTime\":1") {
+		t.Errorf("unlock must clear the lock state, got %s", list.Data)
+	}
+
+	// 锁非好友被 403 拒。
+	_, stranger := h.login(t, "13800000015")
+	h.im.refuseIsFriendFor = idOf(stranger.ID)
+	if denied := h.request(t, http.MethodPost, "/api/relation/lock", "", map[string]any{
+		"friendId": stranger.ID,
+	}, tokenA); denied.Status != contract.StatusForbidden {
+		t.Fatalf("locking a stranger must be forbidden, got %+v", denied)
 	}
 }

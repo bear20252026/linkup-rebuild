@@ -145,6 +145,14 @@ func New(opts Options) (*gin.Engine, error) {
 		api.POST("/relation/update", g.updateRelation)
 		api.POST("/relation/update_remark", g.updateRemark)
 
+		// Lock domain: the ledger; the command itself rides the IM channel (lockMachine CMD).
+		api.GET("/relation/lock_list", g.lockList)
+		api.GET("/relation/lock/question_list", g.lockQuestionList)
+		api.GET("/relation/lock/cover/list", g.lockCoverList)
+		api.POST("/relation/lock", g.lock)
+		api.POST("/relation/unlock", g.unlock)
+		api.POST("/relation/lock/cover/del", g.lockCoverDel)
+
 		// Location domain: report, then read one day back.
 		api.POST("/location/report", g.locationReport)
 		api.GET("/location/days", g.locationDays)

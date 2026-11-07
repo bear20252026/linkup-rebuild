@@ -3,5 +3,5 @@
   xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
     <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/why_location_not_update" />
     <ImageView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="21.0dp" android:src="@drawable/img_no_track_reason" android:adjustViewBounds="true" />
-    <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_ok" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="24.0dp" android:text="@string/i_known" style="@style/normalButtonStyle" />
+    <com.mc.fastkit.view.shape.ShapedTextView android:id="@+id/tv_ok" android:layout_width="match_parent" android:layout_height="54.0dp" android:layout_marginTop="24.0dp" android:text="@string/i_known" style="@style/normalButtonStyle" />
 </com.mc.fastkit.view.shape.ShapedLinearLayout>

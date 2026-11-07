@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout android:background="@color/colorWhite" android:layout_width="match_parent" android:layout_height="match_parent"
   xmlns:android="http://schemas.android.com/apk/res/android">
-    <include android:id="@id/layout_login" layout="@layout/activity_login" />
-    <View android:id="@id/view_transparent" android:layout_width="match_parent" android:layout_height="match_parent" />
-    <FrameLayout android:id="@id/fl_dialog_container" android:background="#7f000000" android:layout_width="match_parent" android:layout_height="match_parent">
-        <include android:id="@id/dialog_privacy_policy" layout="@layout/dialog_privacy_policy" />
+    <include android:id="@+id/layout_login" layout="@layout/activity_login" />
+    <View android:id="@+id/view_transparent" android:layout_width="match_parent" android:layout_height="match_parent" />
+    <FrameLayout android:id="@+id/fl_dialog_container" android:background="#7f000000" android:layout_width="match_parent" android:layout_height="match_parent">
+        <include android:id="@+id/dialog_privacy_policy" layout="@layout/dialog_privacy_policy" />
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

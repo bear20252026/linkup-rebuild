@@ -3,4 +3,20 @@
     <!-- Chat shell colors, copied from the recovered bank (res166 values/colors.xml). -->
     <color name="em_toolbar_color_title">#324058</color>
     <color name="white">#ffffffff</color>
+<color name="anythink_color_40000000">#40000000</color>
+    <color name="appPrimary">#324058</color>
+    <color name="appSecondary">#80324058</color>
+    <color name="appSecondaryVariant">#40324058</color>
+    <color name="colorBrand">#f6db7b</color>
+    <color name="colorCardVariant">#f8f8f8</color>
+    <color name="colorDivider">#1a324058</color>
+    <color name="colorVipPrimary">#e2fb6f</color>
+    <color name="colorWarning">#ec5c56</color>
+    <color name="colorWhite">#ffffff</color>
+    <color name="colorWindow">#f9f9f9</color>
+    <color name="color_24000000">#24000000</color>
+    <color name="color_7b90b4">#7b90b4</color>
+    <color name="color_cdfabc">#cdfabc</color>
+    <color name="color_e2fb6f">#e2fb6f</color>
+    <color name="transparent">@android:color/transparent</color>
 </resources>

@@ -38,7 +38,9 @@ class DefaultLoginNavigation(
 
     override fun openImproveUserInfo(avatar: String, nickname: String, fromH5: Boolean, matchCode: Long) = Unit
 
-    override fun openMain() = Unit
+    override fun openMain() {
+        com.youloft.watcher.pages.main.MainActivity.start(context)
+    }
 
     override fun openPrivacyPolicy() =
         com.youloft.watcher.pages.web.CommonWebActivity.start(

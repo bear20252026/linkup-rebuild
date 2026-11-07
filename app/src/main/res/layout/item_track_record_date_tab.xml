@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="52.0dp" android:layout_height="65.0dp"
   xmlns:android="http://schemas.android.com/apk/res/android">
-    <TextView android:textSize="12.0sp" android:textStyle="bold" android:textColor="@color/appSecondary" android:gravity="center" android:id="@id/tv_week" android:layout_width="wrap_content" android:layout_height="17.0dp" />
-    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:id="@id/tv_date" android:layout_width="32.0dp" android:layout_height="32.0dp" android:layout_marginTop="8.0dp" android:includeFontPadding="false" />
-    <View android:id="@id/view_dot" android:background="@drawable/shape_track_date_dot" android:visibility="invisible" android:layout_width="4.0dp" android:layout_height="4.0dp" android:layout_marginTop="4.0dp" />
+    <TextView android:textSize="12.0sp" android:textStyle="bold" android:textColor="@color/appSecondary" android:gravity="center" android:id="@+id/tv_week" android:layout_width="wrap_content" android:layout_height="17.0dp" />
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:id="@+id/tv_date" android:layout_width="32.0dp" android:layout_height="32.0dp" android:layout_marginTop="8.0dp" android:includeFontPadding="false" />
+    <View android:id="@+id/view_dot" android:background="@drawable/shape_track_date_dot" android:visibility="invisible" android:layout_width="4.0dp" android:layout_height="4.0dp" android:layout_marginTop="4.0dp" />
 </LinearLayout>

@@ -102,13 +102,25 @@ const maxCodeAttempts = 5
 
 // Data is the on-disk shape.
 type Data struct {
-	NextID    int64            `json:"nextID"`
-	NextFix   int64            `json:"nextFix"`
-	Users     []User           `json:"users"`
-	Extras    map[string]Extra `json:"extras"`
-	Applies   map[string]Apply `json:"applies"`
-	Codes     map[string]Code  `json:"codes"`
-	Locations []fix            `json:"locations"`
+	NextID    int64              `json:"nextID"`
+	NextFix   int64              `json:"nextFix"`
+	Users     []User             `json:"users"`
+	Extras    map[string]Extra   `json:"extras"`
+	Applies   map[string]Apply   `json:"applies"`
+	Codes     map[string]Code    `json:"codes"`
+	Locations []fix              `json:"locations"`
+	Locks     map[string]LockState `json:"locks,omitempty"`
+}
+
+// LockState is what `api/relation/lock` records for one guarded direction. The command itself
+// travels over the IM channel (the original's `lockMachine` CMD); the store is the ledger the
+// lock_list reads back.
+type LockState struct {
+	LockTime    int64  `json:"lockTime"`
+	LockDuration int64 `json:"lockDuration"`
+	LockTitle   string `json:"lockTitle"`
+	LockBackPic string `json:"lockBackPic"`
+	Question    string `json:"question"`
 }
 
 // Store guards Data and persists it on every write.
@@ -351,6 +363,33 @@ func (s *Store) PutExtra(e Extra) error {
 
 // ExtraFor reads one direction, or a zero-value Extra when nothing was recorded (the client's own
 // default then applies).
+// LockFor answers the recorded lock for one direction; the zero value means "not locked".
+func (s *Store) LockFor(owner, friend int64) LockState {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.data.Locks[lockKey(owner, friend)]
+}
+
+// SetLock records (or refreshes) a lock; ClearLock removes it. Both persist like every other write.
+func (s *Store) SetLock(owner, friend int64, state LockState) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.data.Locks == nil {
+		s.data.Locks = map[string]LockState{}
+	}
+	s.data.Locks[lockKey(owner, friend)] = state
+	s.save()
+}
+
+func (s *Store) ClearLock(owner, friend int64) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.data.Locks, lockKey(owner, friend))
+	s.save()
+}
+
+func lockKey(owner, friend int64) string { return extraKey(owner, friend) }
+
 func (s *Store) ExtraFor(owner, friend int64) Extra {
 	s.mu.Lock()
 	defer s.mu.Unlock()

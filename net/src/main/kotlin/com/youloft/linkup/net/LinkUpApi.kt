@@ -93,7 +93,7 @@ interface LinkUpApi {
     suspend fun feedbackCheckpop(@Query("userId") userId: Long): ApiResponse<EvaluateRes>
 
     @GET("api/relation/lock_list")
-    suspend fun relationLockList(): ApiResponse<ListBean<JsonElement>>
+    suspend fun relationLockList(): ApiResponse<ListBean<LockInfo>>
 
     @GET("api/widget/track")
     suspend fun widgetTrack(): ApiResponse<TrackWidget>
@@ -235,7 +235,7 @@ interface LinkUpApi {
     suspend fun feedbackCheck(@Query("userId") userId: Long, @Query("deviceId") deviceId: String): ApiResponse<FeedbackPopBean>
 
     @GET("api/relation/lock/question_list")
-    suspend fun relationLockQuestionList(): ApiResponse<ListBean<JsonElement>>
+    suspend fun relationLockQuestionList(): ApiResponse<ListBean<QuestionBean>>
 
     @GET("api/ad_config/list")
     suspend fun adConfigList(): ApiResponse<AdConfigRes>
@@ -253,10 +253,10 @@ interface LinkUpApi {
     suspend fun userUpdateInfo(@Body payload: MutableMap<String, Any?>): ApiResponse<User>
 
     @GET("api/relation/lock/cover/list")
-    suspend fun relationLockCoverList(): ApiResponse<ListBean<JsonElement>>
+    suspend fun relationLockCoverList(): ApiResponse<ListBean<LockImage>>
 
     @GET("api/screenshot/list")
-    suspend fun screenshotList(): ApiResponse<ListBean<JsonElement>>
+    suspend fun screenshotList(): ApiResponse<ListBean<ScreenshotData>>
 
     @GET("api/sms/login/cut")
     suspend fun smsLoginCut(): ApiResponse<Cut>

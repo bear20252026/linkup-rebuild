@@ -224,3 +224,58 @@ type ImToken struct {
 	ExpireTimeSeconds int64  `json:"expireTimeSeconds"`
 	WsUrl             string `json:"wsUrl"`
 }
+
+
+// LockInfoRow is the client's bean/lock/LockInfo (api/relation/lock_list). av/client ride the
+// phone-state card and stay empty until it lands.
+type LockInfoRow struct {
+	UserID            int64          `json:"userId"`
+	Remark            *string        `json:"remark"`
+	Nickname          *string        `json:"nickname"`
+	Sex               int            `json:"sex"`
+	Avatar            *string        `json:"avatar"`
+	Av                *string        `json:"av"`
+	Client            *string        `json:"client"`
+	Relation          int            `json:"relation"`
+	CreateAt          int64          `json:"createAt"`
+	ServerTime        int64          `json:"serverTime"`
+	LockTime          int64          `json:"lockTime"`
+	LockDuration      int64          `json:"lockDuration"`
+	LockTitle         *string        `json:"lockTitle"`
+	LockBackPic       *string        `json:"lockBackPic"`
+	Question          *string        `json:"question"`
+}
+
+type LockInfoList struct {
+	List []*LockInfoRow `json:"list"`
+}
+
+// QuestionRow is the client's bean/lock/QuestionBean; the bank content is a rebuild choice.
+type QuestionRow struct {
+	Content       string                `json:"content"`
+	Options       []*QuestionOptionRow  `json:"options"`
+	CorrectAnswer string                `json:"correctAnswer"`
+}
+
+type QuestionOptionRow struct {
+	Label   string `json:"label"`
+	Content string `json:"content"`
+}
+
+type QuestionList struct {
+	List []QuestionRow `json:"list"`
+}
+
+// LockImageRow is the client's bean/lock/LockImage; the cover bank answers empty until a media
+// store exists (待验 77).
+type LockImageRow struct {
+	ID      int    `json:"id"`
+	UserID  int    `json:"userId"`
+	Image   string `json:"image"`
+	Tinyimg string `json:"tinyimg"`
+	Client  string `json:"client"`
+}
+
+type LockImageList struct {
+	List []*LockImageRow `json:"list"`
+}

@@ -27,12 +27,48 @@
 
         <activity
             android:name=".RecoveryProbeActivity"
-            android:exported="true">
+            android:exported="false" />
+
+        <activity
+            android:name=".pages.SplashActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Watcher">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".pages.main.MainActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".pages.guide.GuideActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".pages.lock.LockListActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".pages.voice.RealtimeVoiceActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".pages.shot.ScreenshotActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".pages.camera.CameraActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
 
         <activity
             android:name=".pages.friend.FriendRequestListActivity"

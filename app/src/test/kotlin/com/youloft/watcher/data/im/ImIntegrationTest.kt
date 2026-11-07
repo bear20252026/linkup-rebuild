@@ -211,6 +211,7 @@ class ImIntegrationTest {
         override val connectionState = MutableStateFlow(ImConnection.CONNECTED)
         override val friendEvents = MutableSharedFlow<ImFriendEvent>(extraBufferCapacity = 8)
         override val messages = MutableSharedFlow<ImMessage>(extraBufferCapacity = 8)
+        override val commands = MutableSharedFlow<com.youloft.linkup.im.ImCommand>(extraBufferCapacity = 8)
 
         val logins = mutableListOf<ImLoginCall>()
         var logouts = 0
@@ -228,6 +229,8 @@ class ImIntegrationTest {
         override suspend fun history(peerUserId: Long, count: Int): List<ImMessage> = emptyList()
 
         override suspend fun sendText(peerUserId: Long, text: String) = Unit
+
+        override suspend fun sendCommand(peerUserId: Long, action: String, data: String) = Unit
 
         suspend fun emitFriend(event: ImFriendEvent) {
             friendEvents.emit(event)

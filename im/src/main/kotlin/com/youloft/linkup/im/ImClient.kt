@@ -31,6 +31,13 @@ interface ImClient {
     val messages: SharedFlow<ImMessage>
 
     /**
+     * 设备间命令流（原版 `widget/im/CmdMsgManager` 的 CMD 消息）：锁机（`lockMachine`）、截屏
+     * （`screenShot`，166 新增）等。`action` 走 OpenIM custom message 的 extension，`data` 是原版
+     * 语义里的 JSON（`LockScreen` 等），两边都与反编译字典逐字对应。
+     */
+    val commands: SharedFlow<ImCommand>
+
+    /**
      * Initializes the SDK (once per process) and logs the account in. `imUserId`/`token`/`wsUrl` are the
      * `api/user/im_token` response verbatim; the caller does not synthesize any of them.
      */
@@ -51,6 +58,13 @@ interface ImClient {
 
     /** Sends one text message. Throws on transport failure; the caller decides what the user sees. */
     suspend fun sendText(peerUserId: Long, text: String)
+
+    /**
+     * Sends one device command as an OpenIM custom message — the port of the original's
+     * `EMMessage.createSendMessage(Type.CMD)` + `setAttribute("data", gson(...))`, with the cmdType
+     * action carried in the custom message's extension field.
+     */
+    suspend fun sendCommand(peerUserId: Long, action: String, data: String)
 }
 
 /** Connection state, in the order a login actually goes through it. */
@@ -94,3 +108,19 @@ data class ImConversation(
     val unread: Int,
     val updatedAtSeconds: Long,
 )
+
+/** 设备间命令：`action` 是原版 `CmdType` 的 action 字符串，`data` 是随行的 JSON。 */
+data class ImCommand(val peerUserId: Long, val action: String, val data: String, val incoming: Boolean)
+
+/**
+ * The recovered `CmdType` action strings (`annotation/CmdType.java`, 156; 166 adds `screenShot`).
+ * 传输层只认识 action 串本身——语义在各功能卡。
+ */
+object CmdType {
+    const val LOCK_MACHINE = "lockMachine"
+    const val SCREEN_SHOT = "screenShot"
+    const val UPDATE_LOCATION = "update_location"
+    const val APP_USAGE = "app_usage"
+    const val UPDATE_PERMISSIONS = "update_permissions"
+    const val PING = "ping"
+}

@@ -945,3 +945,71 @@ data class ImToken(
     val expireTimeSeconds: Long = 0L,
     val wsUrl: String = "",
 ) : java.io.Serializable
+
+
+/** `bean/lock/QuestionBean` — the lock-screen riddle: pick the option matching `correctAnswer`. */
+data class QuestionBean(
+    val content: String = "",
+    val options: List<QuestionOption?>? = null,
+    val correctAnswer: String = "",
+) : java.io.Serializable {
+
+    /** recovered from bean/lock/QuestionBean.java */
+    data class QuestionOption(
+        val label: String = "",
+        val content: String = "",
+    ) : java.io.Serializable
+}
+
+/** `bean/lock/LockImage` — a lock-screen cover from the server bank; id -1 marks a custom upload. */
+data class LockImage(
+    val id: Int = 0,
+    val userId: Int = 0,
+    val image: String = "",
+    val tinyimg: String = "",
+    val client: String = "",
+) : java.io.Serializable
+
+/**
+ * `bean/lock/LockInfo` — one row of `api/relation/lock_list`, per guarded direction. The lock fields
+ * are the guarded device's own state; `lockDuration == 0` means "locked until unlocked".
+ */
+data class LockInfo(
+    val userId: Long = 0L,
+    val remark: String? = null,
+    val nickname: String = "",
+    val sex: Int = 0,
+    val avatar: String = "",
+    val av: String = "",
+    val client: String = "",
+    val osVersion: String? = null,
+    val relation: Int = 0,
+    val createAt: Long = 0L,
+    val permission: PermissionUpdateBean? = null,
+    val lockTime: Long = 0L,
+    val serverTime: Long = 0L,
+    val screenTime: Long = 0L,
+    val screenType: Int = 0,
+    val lastOfflineTime: Long = 0L,
+    val lastRecoverTime: Long = 0L,
+    val offlineTipTimeConf: Long = 0L,
+    val lockTitle: String? = null,
+    val lockBackPic: String? = null,
+    val tinyimg: String? = null,
+    val lockDuration: Long = 0L,
+) : java.io.Serializable
+
+/** `bean/ScreenshotData` (166) — one row of `api/screenshot/list`; a friend-state row for that screen. */
+data class ScreenshotData(
+    val av: String? = null,
+    val avatar: String? = null,
+    val client: String? = null,
+    val nickname: String? = null,
+    val osVersion: String? = null,
+    val createAt: Int = 0,
+    val lastOfflineTime: Int = 0,
+    val lastRecoverTime: Int = 0,
+    val lockTime: Int = 0,
+    val offlineTipTimeConf: Int = 0,
+    val userId: Long = 0L,
+) : java.io.Serializable

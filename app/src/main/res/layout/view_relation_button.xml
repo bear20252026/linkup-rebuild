@@ -1,32 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout android:gravity="center_horizontal" android:layout_width="match_parent" android:layout_height="134.0dp"
   xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
-    <FrameLayout android:id="@id/label_lover" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintEnd_toStartOf="@id/label_good_friend" app:layout_constraintHorizontal_chainStyle="packed" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
+    <FrameLayout android:id="@+id/label_lover" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintEnd_toStartOf="@id/label_good_friend" app:layout_constraintHorizontal_chainStyle="packed" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
         <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-            <ImageView android:id="@id/iv_lover" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_lover" />
-            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@id/tv_lover" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lover" />
+            <ImageView android:id="@+id/iv_lover" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_lover" />
+            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@+id/tv_lover" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/lover" />
         </LinearLayout>
-        <ImageView android:layout_gravity="end|top" android:id="@id/iv_lover_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
+        <ImageView android:layout_gravity="end|top" android:id="@+id/iv_lover_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
     </FrameLayout>
-    <FrameLayout android:id="@id/label_good_friend" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/label_relatives" app:layout_constraintStart_toEndOf="@id/label_lover">
+    <FrameLayout android:id="@+id/label_good_friend" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toStartOf="@id/label_relatives" app:layout_constraintStart_toEndOf="@id/label_lover">
         <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-            <ImageView android:id="@id/iv_good_friend" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_friend" />
-            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@id/tv_good_friend" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/good_friend" />
+            <ImageView android:id="@+id/iv_good_friend" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_friend" />
+            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@+id/tv_good_friend" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/good_friend" />
         </LinearLayout>
-        <ImageView android:layout_gravity="end|top" android:id="@id/iv_good_friend_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
+        <ImageView android:layout_gravity="end|top" android:id="@+id/iv_good_friend_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
     </FrameLayout>
-    <FrameLayout android:id="@id/label_relatives" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintEnd_toStartOf="@id/label_other" app:layout_constraintStart_toEndOf="@id/label_good_friend" app:layout_constraintTop_toTopOf="parent">
+    <FrameLayout android:id="@+id/label_relatives" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintEnd_toStartOf="@id/label_other" app:layout_constraintStart_toEndOf="@id/label_good_friend" app:layout_constraintTop_toTopOf="parent">
         <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-            <ImageView android:id="@id/iv_relatives" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_family" />
-            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@id/tv_relatives" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/relatives" />
+            <ImageView android:id="@+id/iv_relatives" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_family" />
+            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@+id/tv_relatives" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/relatives" />
         </LinearLayout>
-        <ImageView android:layout_gravity="end|top" android:id="@id/iv_relatives_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
+        <ImageView android:layout_gravity="end|top" android:id="@+id/iv_relatives_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
     </FrameLayout>
-    <FrameLayout android:id="@id/label_other" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toEndOf="@id/label_relatives">
+    <FrameLayout android:id="@+id/label_other" android:background="@drawable/shape_corner_100_card_variant" android:layout_width="80.0dp" android:layout_height="80.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toEndOf="@id/label_relatives">
         <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="match_parent" android:layout_height="match_parent">
-            <ImageView android:id="@id/iv_other" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_other" />
-            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@id/tv_other" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/other" />
+            <ImageView android:id="@+id/iv_other" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/ic_common_relation_other" />
+            <TextView android:textSize="14.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:id="@+id/tv_other" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/other" />
         </LinearLayout>
-        <ImageView android:layout_gravity="end|top" android:id="@id/iv_other_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
+        <ImageView android:layout_gravity="end|top" android:id="@+id/iv_other_label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8.0dp" android:src="@drawable/ic_common_relation_other_label" />
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

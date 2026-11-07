@@ -49,6 +49,9 @@ class OpenImImClient(
     private val _messages = MutableSharedFlow<ImMessage>(extraBufferCapacity = 64)
     override val messages: SharedFlow<ImMessage> = _messages
 
+    private val _commands = MutableSharedFlow<ImCommand>(extraBufferCapacity = 64)
+    override val commands: SharedFlow<ImCommand> = _commands
+
     /** Who the SDK session belongs to, needed to tell incoming from outgoing on every message. */
     private var loginUserId: String? = null
     private var initialized = false
@@ -97,6 +100,34 @@ class OpenImImClient(
         val message: Message = OpenIMClient.getInstance().messageManager.createTextMessage(text)
         suspendCancellableCoroutine { continuation ->
             // sendMessage demands OnMsgSendCallback (OnBase<Message> plus a progress hook), not OnBase.
+            OpenIMClient.getInstance().messageManager.sendMessage(
+                object : io.openim.android.sdk.listener.OnMsgSendCallback {
+                    override fun onSuccess(data: Message) {
+                        if (continuation.isActive) continuation.resume(data)
+                    }
+
+                    override fun onError(code: Int, error: String) {
+                        if (continuation.isActive) {
+                            continuation.resumeWith(Result.failure(ImTransportException(code, error)))
+                        }
+                    }
+                },
+                message,
+                peerUserId.toString(),
+                /* groupID = */ "",
+                OfflinePushInfo(),
+            )
+        }
+    }
+
+    override suspend fun sendCommand(peerUserId: Long, action: String, data: String) {
+        val message: Message = OpenIMClient.getInstance().messageManager.createCustomMessage(
+            /* data = */ data,
+            /* extension = */ action,
+            /* description = */ "",
+        )
+        suspendCancellableCoroutine { continuation ->
+            // sendMessage demands OnMsgSendCallback, same as the text path.
             OpenIMClient.getInstance().messageManager.sendMessage(
                 object : io.openim.android.sdk.listener.OnMsgSendCallback {
                     override fun onSuccess(data: Message) {
@@ -179,6 +210,20 @@ class OpenImImClient(
     private val messageListener = object : OnAdvanceMsgListener {
         override fun onRecvNewMessage(message: Message) {
             val me = loginUserId ?: return
+            // Custom messages are the device-command channel, not chat rows: a payload with an
+            // extension (the original's cmdType) routes to [commands] and never to the chat list.
+            val custom = message.customElem
+            if (custom != null && !custom.extension.isNullOrBlank()) {
+                _commands.tryEmit(
+                    ImCommand(
+                        peerUserId = (message.sendID).toLongOrNull() ?: 0L,
+                        action = custom.extension,
+                        data = custom.data.orEmpty(),
+                        incoming = true,
+                    ),
+                )
+                return
+            }
             _messages.tryEmit(ImMappings.toImMessage(message, me))
         }
     }

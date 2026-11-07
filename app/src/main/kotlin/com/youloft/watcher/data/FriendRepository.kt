@@ -200,7 +200,8 @@ open class LinkUpApplication : Application() {
     /** The session half: `api/user/im_token` → SDK login, and the sign-out mirror. */
     open val imRepository: ImRepository by lazy { ImRepository(imApi, imClient, imScope) }
 
-    private val imApi by lazy { LinkUpClient(context = deviceContext()).api }
+    /** IM 域之外的第二个 api 入口（锁机等新卡共用同一签名客户端）。 */
+    open val imApi by lazy { LinkUpClient(context = deviceContext()).api }
 
     private val imScope: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 

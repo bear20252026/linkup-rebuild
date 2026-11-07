@@ -2,9 +2,9 @@
 <com.mc.fastkit.view.shape.ShapedLinearLayout android:layout_gravity="bottom" android:orientation="vertical" android:paddingBottom="32.0dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="32.0dp" app:mc_contentColor="@color/colorCard" app:mc_topLeftRadius="32.0dp" app:mc_topRightRadius="32.0dp"
   xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
     <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:layout_width="match_parent" android:layout_height="64.0dp" android:text="@string/dialog_privacy_policy_read_remind_title" />
-    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_content" android:layout_width="match_parent" android:layout_height="wrap_content" android:lineHeight="21.0dp" />
+    <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@+id/tv_content" android:layout_width="match_parent" android:layout_height="wrap_content" android:lineHeight="21.0dp" />
     <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="24.0dp">
-        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_confirm" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="@string/read_agree_and_continue" style="@style/normalButtonStyle" />
-        <com.mc.fastkit.view.shape.ShapedTextView android:id="@id/tv_cancel" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="@string/disagree_and_exit" app:layout_constraintBottom_toBottomOf="parent" style="@style/transparentButtonStyle" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@+id/tv_confirm" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="@string/read_agree_and_continue" style="@style/normalButtonStyle" />
+        <com.mc.fastkit.view.shape.ShapedTextView android:id="@+id/tv_cancel" android:layout_width="match_parent" android:layout_height="54.0dp" android:text="@string/disagree_and_exit" app:layout_constraintBottom_toBottomOf="parent" style="@style/transparentButtonStyle" />
     </LinearLayout>
 </com.mc.fastkit.view.shape.ShapedLinearLayout>

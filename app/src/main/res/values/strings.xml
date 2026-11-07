@@ -8,4 +8,67 @@
     <string name="privacy_gate_probe">首启隐私门</string>
     <string name="guard_location_channel">守护定位</string>
     <string name="guard_location_notification">正在守护定位</string>
+<string name="about_us">关于我们</string>
+    <string name="add_friend">添加好友</string>
+    <string name="app_psw">应用密码</string>
+    <string name="baidu_net_com_technology">北京百度网讯科技有限公司</string>
+    <string name="contact_us">联系我们</string>
+    <string name="data_security">数据安全</string>
+    <string name="day">天</string>
+    <string name="demo_data_scroll_tip">当前为演示数据，添加后可查看Ta的数据</string>
+    <string name="format_ta_offline_last_update">Ta离线啦，最后更新于%s</string>
+    <string name="get_douyin_coupon">抖音领券</string>
+    <string name="go_deal">去处理</string>
+    <string name="home_data_server_error">正在修复中，请稍后再试</string>
+    <string name="limited_time_wool">限时羊毛</string>
+    <string name="map_fragment_lock_phone_desc">随时锁定Ta的手机</string>
+    <string name="more_voice_desc">锁屏或静音也会播放</string>
+    <string name="one_btn_lock">一键锁机</string>
+    <string name="real_time_voice">实时语音</string>
+    <string name="screen_shot_realtime">实时截屏</string>
+    <string name="screen_shot_realtime_desc">截图Ta当前的手机屏幕</string>
+    <string name="switch_friends">切换好友</string>
+    <string name="tab_more_func_tips">更多功能正在赶来的路上ing～</string>
+
+    <string name="tip_map_loc_enable">有必要权限未开启，数据可能会异常</string>
+
+    <string name="tip_msg_list_notification">打开通知权限，不错过Ta的任何动态提醒</string>
+
+    <string name="todo_list">四象限清单</string>
+
+    <string name="user_info_step_over">跳过</string>
+
+    <string name="vip_card_normal_user_desc">新年狂欢×双重福利</string>
+
+    <string name="vip_card_normal_user_title">开启守护 让彼此更安心</string>
+
+    <string name="watermark_camera">水印相机</string>
+    <string name="copy_success">复制成功</string>
+    <string name="mine_match_code_text">匹配码：</string>
+    <string name="my_friends">我的好友</string>
+    <string name="friend_request">好友申请</string>
+    <string name="switch_success">切换成功</string>
+    <string name="real_time_location">实时位置</string>
+    <string name="usage_records">使用记录</string>
+    <string name="report_reminder">报备提醒</string>
+    <string name="guide_lock_phone_title">锁机功能</string>
+    <string name="start_your_linkup_journey">开启LinkUp之旅</string>
+    <string name="set_your_anniversary">设置你们的纪念日</string>
+    <string name="good_friend">挚友</string>
+    <string name="relatives">亲人</string>
+    <string name="lover">恋人</string>
+    <string name="other">其他</string>
+    <string name="permission_setup">权限设置</string>
+    <string name="notify_settings">通知设置</string>
+    <string name="map_settings">地图设置</string>
+    <string name="privacy_settings">隐私设置</string>
+    <string name="more">更多</string>
+    <string name="confirm">确认</string>
+    <string name="cancel">取消</string>
+    <string name="lock_title_hint">锁屏标题（可选）</string>
+    <string name="lock_dialog_message">锁机命令会立刻发给对方，对方屏幕将被锁住</string>
+    <string name="lock_state_locked">已锁机</string>
+    <string name="lock_state_free">未锁机</string>
+    <string name="lock_action_unlock">解锁</string>
+    <string name="voice_quota_format">今日还可发送 %1$d 条（共 %2$d 条）</string>
 </resources>

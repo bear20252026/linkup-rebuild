@@ -3,19 +3,19 @@
   xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
     <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent">
         <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
-            <TextView android:textSize="20.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_stay_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:fontFamily="@font/sf_pro_rounded_bold_subset" />
+            <TextView android:textSize="20.0sp" android:textColor="@color/appPrimary" android:id="@+id/tv_stay_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" android:fontFamily="@font/sf_pro_rounded_bold_subset" />
             <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:text="@string/stop_point" />
         </LinearLayout>
         <View android:background="@color/colorDivider" android:layout_width="2.0dp" android:layout_height="match_parent" android:layout_marginVertical="24.0dp" />
         <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
-            <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_stay_duration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" />
+            <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:id="@+id/tv_stay_duration" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" />
             <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:text="@string/stay_duration" />
         </LinearLayout>
         <View android:background="@color/colorDivider" android:layout_width="2.0dp" android:layout_height="match_parent" android:layout_marginVertical="24.0dp" />
         <LinearLayout android:gravity="center" android:orientation="vertical" android:layout_width="0.0dp" android:layout_height="match_parent" android:layout_weight="1.0">
-            <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_distance" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" />
+            <TextView android:textSize="12.0sp" android:textColor="@color/appPrimary" android:id="@+id/tv_distance" android:layout_width="wrap_content" android:layout_height="wrap_content" android:includeFontPadding="false" />
             <TextView android:textSize="14.0sp" android:textColor="@color/appSecondary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4.0dp" android:text="@string/move_distance" />
         </LinearLayout>
     </LinearLayout>
-    <ImageView android:layout_gravity="end|top" android:id="@id/iv_vip" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-2.0dp" android:src="@drawable/ic_track_list_vip" />
+    <ImageView android:layout_gravity="end|top" android:id="@+id/iv_vip" android:visibility="gone" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="-2.0dp" android:src="@drawable/ic_track_list_vip" />
 </com.mc.fastkit.view.shape.ShapedFrameLayout>
