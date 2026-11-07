@@ -1,5 +1,7 @@
 package com.youloft.watcher.pages.friend
 
+import com.youloft.watcher.StorelessApp
+
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -28,7 +30,7 @@ import org.robolectric.annotation.Config
  * The camera itself is behind [QRCodeScanActivity.CameraBinder] and stays unbound in tests.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], application = StorelessApp::class)
 class QRCodeScanActivityTest {
 
     private val context: Context get() = ApplicationProvider.getApplicationContext()
@@ -175,7 +177,7 @@ class QRCodeScanGalleryPermissionTest {
 }
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], application = StorelessApp::class)
 class QRCodeScanModernPermissionTest {
 
     @Test

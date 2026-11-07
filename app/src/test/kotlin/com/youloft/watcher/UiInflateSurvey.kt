@@ -16,7 +16,7 @@ import org.robolectric.annotation.Config
  * The assertion covers the FastKit-backed sample; the ranked cause list is the planning artifact.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34], qualifiers = "w411dp-h891dp-xhdpi")
+@Config(sdk = [34], qualifiers = "w411dp-h891dp-xhdpi", application = StorelessApp::class)
 class UiInflateSurvey {
 
     private val marker = "Error inflating class "

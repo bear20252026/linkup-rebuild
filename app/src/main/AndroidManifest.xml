@@ -11,6 +11,11 @@
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The collection card: the location layer's module manifest deliberately carries only fine/coarse;
+         background access and the foreground-service permissions arrive here, where the service lives. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <application
         android:name=".data.LinkUpApplication"
@@ -81,6 +86,11 @@
             android:name=".pages.track.TrackRecordActivity"
             android:exported="false"
             android:screenOrientation="portrait" />
+
+        <service
+            android:name=".service.TrackCollectService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
     </application>
 
     <!-- The add-friend screen asks whether WeChat/QQ are installed. On API 30+ that query is only

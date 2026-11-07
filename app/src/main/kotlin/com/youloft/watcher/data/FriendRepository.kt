@@ -11,9 +11,13 @@ import com.youloft.linkup.api.dto.FriendRequestList
 import com.youloft.linkup.api.dto.Permission
 import com.youloft.linkup.api.dto.PublicKey
 import com.youloft.linkup.api.dto.SearchFriend
+import com.youloft.linkup.api.dto.User
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.linkup.net.LinkUpApi
 import com.youloft.linkup.net.LinkUpClient
+import com.youloft.linkup.location.LocationProviders
+import com.youloft.linkup.location.canLocate
+import com.youloft.linkup.location.provider.system.LocationPermissions
 import com.youloft.watcher.AndroidDeviceContext
 import com.youloft.watcher.data.local.FriendCache
 import com.youloft.watcher.data.local.InstallChannel
@@ -33,6 +37,7 @@ import com.youloft.watcher.data.local.RemoteConfig
 import com.youloft.watcher.data.local.UserCache
 import com.youloft.watcher.view.MatchCodeQrPainter
 import com.youloft.watcher.view.QrCodeRenderer
+import com.youloft.watcher.service.CollectController
 
 /**
  * `repository/FriendRepository` in the recovered app: one class covers every relation endpoint,
@@ -154,7 +159,7 @@ open class LinkUpApplication : Application() {
     open val oneTapAuth: OneTapAuth get() = UnavailableOneTapAuth
 
     /** `manager/s2` + `manager/z0`: the single owner of the account record and its cache write. */
-    open val users: UserManager by lazy { UserManager(userRepository, accountCache) }
+    open val users: UserManager by lazy { UserManager(userRepository, accountCache, accountSideEffects) }
 
     /** The cached account record, shared by the app graph readers and the user manager. */
     open val accountCache: UserCache by lazy { UserCache(keyValueStores) }
@@ -230,6 +235,57 @@ open class LinkUpApplication : Application() {
      * painter is rebuilt, so production draws for real and only tests opt out.
      */
     open val qrRenderer: QrCodeRenderer get() = MatchCodeQrPainter()
+
+    /**
+     * The vendor catalog for the location layer: Baidu first (what shipped), AMap second (its key is
+     * empty until the third-party account is recovered, so it honestly removes itself), the framework
+     * last as the only guaranteed source. Which one actually runs is [preferredProvider]'s call once the
+     * [locationProviderSettings] preference is applied — see `data/LocationSources.kt`.
+     */
+    open val locationProviders: LocationProviders by lazy {
+        locationProviders(context = this, privacyAgreed = { privacyGate.agreed() })
+    }
+
+    /** The `locationProviderId` override, read from the shared store so a debug screen can flip vendors. */
+    open val locationProviderSettings: LocationProviderSettings
+        get() = LocationProviderSettings(keyValueStores.shared)
+
+    /**
+     * The guard collection switch: consent + permission + account, re-evaluated at every lifecycle
+     * transition, driving [com.youloft.watcher.service.TrackCollectService].
+     */
+    open val collectController: CollectController by lazy {
+        CollectController.forProduction(
+            this,
+            CollectController.Gates(
+                privacyAgreed = { privacyGate.agreed() },
+                canLocate = { LocationPermissions.of(this).state().canLocate() },
+                signedIn = { users.current().userId > 0L },
+            ),
+        )
+    }
+
+    /**
+     * What the recovered `LoginManager` did after storing an account. Only the collection trigger is
+     * rebuilt so far: the account the user just signed in with is what makes the report route accept
+     * fixes, so a login (or a sign-out leaving `userId == 0`) is a collection state change and the
+     * controller re-evaluates it. IM bind and the rest stay with their own cards.
+     */
+    open val accountSideEffects: AccountSideEffects by lazy {
+        val controller = collectController
+        object : AccountSideEffects {
+            override fun onVipStateChanged(user: User, wasVip: Boolean) = Unit
+
+            override fun onSignedIn(user: User) {
+                controller.refresh()
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        collectController.attach(this)
+    }
 }
 
 fun appGraph(context: Context): LinkUpApplication = context.applicationContext as LinkUpApplication

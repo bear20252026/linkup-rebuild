@@ -11,9 +11,10 @@ import kotlinx.coroutines.launch
  * Kept apart from [LocationCollector] because it is state-only and synchronous: the whole truth table can
  * be tested without a coroutine, a provider or a fake clock racing anything.
  *
- * **This is a subset of the original, on purpose.** The rest of `c()` (`x0.java:164-265`) classifies
- * stay / potential-stay / departure and stamps `type` 2 and 3; that state machine is the track-screen card
- * and needs its own truth table, not a paraphrase written while building an interface.
+ * This is the gate the collector uses **when no [StayLeaveClassifier] is configured** — the configuration
+ * the interface round shipped with, where everything goes out [ReportKind.UNCLASSIFIED] because the stay
+ * state machine had not been ported. With a classifier configured, the classifier's own gates take over
+ * and this one only keeps its `lastReported` for symmetry with the flush path.
  */
 class ReportGate(private val tuning: LocationTuning = LocationTuning()) {
     /** The fix that reached the server last, which is what the original compared against (`x0.java:914`). */
@@ -40,12 +41,25 @@ class ReportGate(private val tuning: LocationTuning = LocationTuning()) {
     }
 }
 
+/** One queued report: the fix and the reason it is being sent, kept together through a network outage. */
+private data class QueuedFix(val fix: LocationFix, val kind: ReportKind)
+
 /**
- * The loop the app actually needs: follow a [LocationProvider], filter through [ReportGate], push accepted
- * fixes to a [LocationGateway], and keep the ones the network refused.
+ * The loop the app actually needs: follow a [LocationProvider], filter, push accepted fixes to a
+ * [LocationGateway], and keep the ones the network refused.
  *
- * Nothing in here names a vendor or a backend, which is the point: the same collector runs against the
- * framework provider today and against Baidu the day the AAR arrives.
+ * Two filtering configurations, sharing one queue:
+ *
+ * - **with a [StayLeaveClassifier]** — the recovered app's shape. Each fix runs the intake pacer
+ *   (foreground only; the dormancy request owns the interval while backgrounded), then the classifier's
+ *   gate; only fixes the classifier reports are queued, already carrying their [ReportKind] (STAY/LEAVE).
+ *   After the gateway takes one, the widget callback fires with the copy the original's `R()` would have
+ *   pushed: the reported fix, with `type=4` substituted when a stay exists and the fix was unclassified.
+ * - **without one** — the interface-round shape: [ReportGate]'s cadence decides and every fix goes out
+ *   [ReportKind.UNCLASSIFIED]. Event strings in this mode are the ones this loop has always emitted.
+ *
+ * Nothing in here names a vendor or a backend: the same collector runs against the framework provider
+ * today and against Baidu the day the AAR arrives.
  *
  * Failure handling differs from the original in one way that should not be mistaken for equivalence —
  * its `LinkedBlockingQueue` (`x0.java:63`) was unbounded, so a long outage grew memory; this queue is
@@ -58,9 +72,13 @@ class LocationCollector(
     private val tuning: LocationTuning = LocationTuning(),
     private val scope: CoroutineScope,
     private val onEvent: (String) -> Unit = {},
+    /** The recovered stay/leave gate; null keeps the cadence-only shape (and its event strings). */
+    private val classifier: StayLeaveClassifier? = null,
+    /** The widget stream the original's `R()` fed; default swallows, the service layer wires the real one. */
+    private val onWidget: (LocationFix, ReportKind) -> Unit = { _, _ -> },
 ) {
     private val gate = ReportGate(tuning)
-    private val pending = ArrayDeque<LocationFix>()
+    private val pending = ArrayDeque<QueuedFix>()
     private var backgrounded = false
     private var isFlushing = false
 
@@ -99,14 +117,39 @@ class LocationCollector(
         return changed
     }
 
-    /** Feeds one fix through the gate; called by [listener], and by anything else that has a fix to offer. */
+    /** Feeds one fix through the configured gate; called by [listener], and by anything else with a fix. */
     fun accept(fix: LocationFix) {
-        if (!gate.shouldReport(fix)) {
-            onEvent("定位采集 过滤 ${fix.coord.lat},${fix.coord.lng} 上次上报后不足节律")
-            return
+        val kind: ReportKind = if (classifier != null) {
+            if (fix.isInvalid) {
+                onEvent("定位采集 过滤 ${fix.coord.lat},${fix.coord.lng} 无效点")
+                return
+            }
+            // Intake order is the original's: the pacer runs before the gate, and only owns the interval
+            // in the foreground — backgrounded, the dormancy request decides (x0.java:316-330 vs A()).
+            if (!backgrounded) {
+                classifier.pace(fix)?.let { suggested ->
+                    val applied = provider.update(tuning.followingRequest().copy(intervalMillis = suggested))
+                    onEvent("定位采集 节奏调整 interval=${suggested}ms 已重配=$applied")
+                }
+            }
+            val decision = classifier.classify(fix)
+            if (!decision.report) {
+                onEvent("定位采集 过滤 ${fix.coord.lat},${fix.coord.lng} ${decision.reason}")
+                return
+            }
+            onEvent("定位采集 分类 ${fix.coord.lat},${fix.coord.lng} type=${decision.kind.wireType} ${decision.reason}")
+            decision.kind
+        } else {
+            if (!gate.shouldReport(fix)) {
+                onEvent("定位采集 过滤 ${fix.coord.lat},${fix.coord.lng} 上次上报后不足节律")
+                return
+            }
+            // No classifier: everything goes out unclassified, which is also what the recovered bean
+            // carried when the SDK delivered it (type 0 at x0.java:304).
+            ReportKind.UNCLASSIFIED
         }
         if (pending.size >= tuning.pendingLimit) pending.removeFirst()
-        pending.addLast(fix)
+        pending.addLast(QueuedFix(fix, kind))
         scope.launch { flush() }
     }
 
@@ -116,18 +159,19 @@ class LocationCollector(
         isFlushing = true
         try {
             while (pending.isNotEmpty()) {
-                val fix = pending.first()
-                // The server has no notion of "this fix was already classified as a departure" until the
-                // stay state machine exists, so everything goes out unclassified -- which is also what the
-                // recovered bean carried when the SDK delivered it (type 0 at x0.java:304).
-                runCatching { gateway.report(fix, ReportKind.UNCLASSIFIED) }
+                val entry = pending.first()
+                runCatching { gateway.report(entry.fix, entry.kind) }
                     .onSuccess {
                         pending.removeFirst()
-                        gate.reported(fix)
-                        onEvent("定位上报 ok ${fix.coord.lat},${fix.coord.lng} 剩余=${pending.size}")
+                        // Both gates learn the fix landed: the cadence one for its own comparisons, the
+                        // classifier because `lastReported` is the anchor of its spacing rules (line 914).
+                        gate.reported(entry.fix)
+                        classifier?.onReported(entry.fix)
+                        onWidget(entry.fix, classifier?.widgetCopyKind(entry.kind) ?: entry.kind)
+                        onEvent("定位上报 ok ${entry.fix.coord.lat},${entry.fix.coord.lng} 剩余=${pending.size}")
                     }
                     .onFailure {
-                        onEvent("定位上报 失败 ${fix.coord.lat},${fix.coord.lng} 剩余=${pending.size} 原因=$it")
+                        onEvent("定位上报 失败 ${entry.fix.coord.lat},${entry.fix.coord.lng} 剩余=${pending.size} 原因=$it")
                         return
                     }
             }

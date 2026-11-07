@@ -22,7 +22,7 @@ import org.robolectric.annotation.Config
  * they reference is wrong, this fails here rather than on a phone.
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [34])
+@Config(sdk = [34], application = StorelessApp::class)
 class RecoveredUiTest {
 
     private fun themedInflater(): LayoutInflater {

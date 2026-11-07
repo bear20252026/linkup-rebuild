@@ -15,10 +15,11 @@ import org.junit.Test
  * where the recovery evidence legitimately lives: comments are stripped first, because every file in this
  * module cites the decompiled class it was reconstructed from and those citations name vendors by design.
  *
- * The two adapter files under `location/provider/baidu/` are deliberately exempt: naming the SDK is the
- * adapter's whole job. The exemption is checked, not assumed -- [only the baidu adapters name a vendor]
- * asserts the exempt set is exactly those files, so a new vendor-naming file anywhere else fails, and a
- * vendor name creeping into an import fails everywhere.
+ * The adapter files under `location/provider/baidu/` and `location/provider/amap/` are deliberately
+ * exempt: naming the SDK is the adapter's whole job. The exemption is checked, not assumed -- the
+ * [only the vendor adapters name a vendor][only-the-vendor-adapters-name-a-vendor] test asserts the exempt
+ * set is exactly those files and that both binding files still exist, so a new vendor-naming file anywhere
+ * else fails, a vendor name creeping into an import fails everywhere, and a deleted adapter fails loudly.
  */
 class LocationLayerIndependenceTest {
 
@@ -79,7 +80,7 @@ class LocationLayerIndependenceTest {
     }
 
     @Test
-    fun `only the baidu adapters name a vendor, and they are all under provider slash baidu`() {
+    fun `only the vendor adapters name a vendor, and they all live under provider slash`() {
         val naming = mainSources.filter { source ->
             val code = source.codeLines()
             vendorPackages.any { packageName -> code.any { it.contains(packageName) } }
@@ -95,6 +96,11 @@ class LocationLayerIndependenceTest {
             naming.any { it.relativePath.endsWith("BaiduSdk.kt") },
             "BaiduSdk.kt holds the reflection constants (com.baidu.location.*); if it no longer appears " +
                 "here, either the adapter is gone or this scan stopped working",
+        )
+        assertTrue(
+            naming.any { it.relativePath.endsWith("AmapSdk.kt") },
+            "AmapSdk.kt holds the reflection constants (com.amap.api.location.*); if it no longer appears " +
+                "here, either the second adapter is gone or this scan stopped working",
         )
         assertTrue(
             naming.isNotEmpty(),
@@ -153,6 +159,10 @@ class LocationLayerIndependenceTest {
             "the baidu adapter moved, so the exemption rule above needs updating",
         )
         assertTrue(
+            mainSources.any { it.relativePath.contains("/provider/amap/") },
+            "the amap adapter moved, so the exemption rule above needs updating",
+        )
+        assertTrue(
             mainSources.any { it.relativePath.contains("/provider/system/") },
             "the framework adapter moved, so the layer layout changed",
         )
@@ -166,7 +176,8 @@ class LocationLayerIndependenceTest {
 
     private class SourceFile(val file: File, val relativePath: String) {
         /** Adapters may name the SDK they adapt; nothing else in the module may. */
-        val isVendorAdapter: Boolean get() = relativePath.contains("/provider/baidu/")
+        val isVendorAdapter: Boolean
+            get() = relativePath.contains("/provider/baidu/") || relativePath.contains("/provider/amap/")
 
         /** The file's source with comments removed, one entry per original line. */
         fun codeLines(): List<String> = stripComments(file.readText())
