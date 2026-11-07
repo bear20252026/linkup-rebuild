@@ -69,6 +69,15 @@
             android:exported="false"
             android:screenOrientation="portrait" />
         <activity
+            android:name=".pages.login.EmptyLoginActivity"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".pages.web.CommonWebActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+        <activity
             android:name=".pages.track.TrackRecordActivity"
             android:exported="false"
             android:screenOrientation="portrait" />

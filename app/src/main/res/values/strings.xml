@@ -5,4 +5,5 @@
     <string name="track_map_pending">地图尚未接入</string>
     <string name="track_list_login_required">请先登录，再查看自己的轨迹</string>
     <string name="track_list_probe">查看我的轨迹</string>
+    <string name="privacy_gate_probe">首启隐私门</string>
 </resources>

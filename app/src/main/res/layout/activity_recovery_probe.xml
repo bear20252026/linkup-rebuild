@@ -12,6 +12,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/track_list_probe" />
+        <Button
+            android:id="@+id/probe_privacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/privacy_gate_probe" />
         <TextView
             android:id="@+id/probe_result"
             android:layout_width="match_parent"

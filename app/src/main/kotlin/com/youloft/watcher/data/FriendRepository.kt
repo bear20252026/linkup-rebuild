@@ -26,6 +26,7 @@ import com.youloft.watcher.pages.login.UnavailableOneTapAuth
 import com.youloft.watcher.data.local.AddFriendTipsPolicy
 import com.youloft.watcher.data.local.AddFriendTips
 import com.youloft.watcher.data.local.PermissionChannelGate
+import com.youloft.watcher.data.local.PrivacyGate
 import com.youloft.linkup.net.ConfigService
 import com.youloft.watcher.data.local.StoredRemoteConfig
 import com.youloft.watcher.data.local.RemoteConfig
@@ -141,6 +142,9 @@ open class LinkUpApplication : Application() {
 
     /** `CacheUtils.L()` / `Z0()` — the two account flags outside the user record. */
     open val loginFlags: LoginFlags get() = LoginFlags(keyValueStores)
+
+    /** `CacheUtils.M0()` / `r1()` — the install-level privacy consent gate. */
+    open val privacyGate: PrivacyGate get() = PrivacyGate(keyValueStores)
 
     /**
      * The carrier one-tap SDK (`com.g.gysdk`, `cn.fly.verify`). Neither jar can be taken out of the APK

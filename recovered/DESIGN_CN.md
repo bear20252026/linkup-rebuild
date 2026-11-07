@@ -1656,6 +1656,32 @@ adb -s emulator-5580 shell am instrument -w \
 JVM 侧新增5条外壳测试（半展开/展开折叠渐变/小窗/inset/日期样式），轨迹合计42条。
 模拟器验收不等于真机像素验收，也不代表地图/VIP/隐私业务完成；待验67–70仍有效。
 
+## 五点二十九、首启隐私门（#18 续，2026-11-06）
+
+依据 1.6.6 `pages/login/EmptyLoginActivity.java`、`pages/login/dialog/PrivacyPolicyDialog.java`、
+`utils/CacheUtils.java`（M0/r1）、`web/CommonWebActivity.java`（A/C 常量）与 `ag/a.java`（H5 base）恢复：
+
+- `PrivacyGate`：默认 MMKV 键 `isAgreePrivacyPolicy`，默认 false；只有“同意并进入”写 true。
+  原包由 `SplashActivity` 据此分流到 EmptyLogin；Splash 与 GuideActivity 尚未重建，不伪造，
+  重建从恢复入口直接进 EmptyLogin，同意后直进 LoginActivity。
+- `EmptyLoginActivity`：登录页压在 `#7f000000` 遮罩下，遮罩内联同意书。同意→写标志+进登录+finish；
+  不同意→仅隐藏遮罩（不写标志、不退出）；再点被盖住的登录页/登录按钮→弹挽留 `PrivacyPolicyDialog`，
+  其不同意是空实现仅 dismiss。返回键 finish 退出（原包无 onBackPressed 覆写）。
+- `PrivacyPolicyDialog`：标题“欢迎使用LinkUp”，内容 `dialog_privacy_policy_content`，
+  《用户协议》《隐私政策》两个 span 开网页；back/外部触摸禁用（原包 setDismissOnBackPressed/TouchOutside false）。
+- `CommonWebActivity`：最小文档宿主（加载/标题/loading/error/返回），复用原 `activity_common_web.xml`
+  与已有 `WebComponent`/`CommonWebView`。隐私/用户协议 URL = `https://web-link.tttick.com/business/protocol/{privacy,user}.html?fullscreen=true`，
+  fullscreen 隐藏标题栏。只接受 http(s)，拒绝 file/content/javascript。JS bridge、鉴权 hand-off、协议 dispatcher
+  仍是 H5 容器自己的卡，不在此 stub。`LoginNavigation` 的三个网页跳转由此真正落地。
+
+验证：`PrivacyGateFlowTest` 9 条（标志默认/写入、同意进登录、不同意仅隐藏、挽留弹窗及其同意/不同意、
+内容 span 路由、导航开网页 fullscreen、非 web scheme 拒绝），JVM 侧真实 inflate EmptyLogin（含登录页与同意书）。
+**Robolectric 4.11 inflate 真实 WebView 会阻塞**，故网页侧只断言跳转意图与 URL 常量，WebView 真实渲染留待真机。
+只读模拟器（API33）已确认隐私门渲染：标题“欢迎使用LinkUp”、蓝色《用户协议》《隐私政策》span、
+“同意并进入/不同意”按钮、背后压暗登录页（截图 `build/track-ui-shots/privacy-gate.png`；该模拟器本轮有系统
+launcher ANR 噪声，非本应用崩溃）。客户端全量418条（app294/定位93/网络31）重跑通过。
+POST_NOTIFICATIONS 询问时机仍照搬原版、等用户拍板；一键登录/微信链依赖拿不到的厂商 jar，未动。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。

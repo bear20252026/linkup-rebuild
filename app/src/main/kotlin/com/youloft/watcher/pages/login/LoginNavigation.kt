@@ -31,7 +31,7 @@ interface LoginNavigation {
     fun openCarrierPolicy(url: String, title: String)
 }
 
-/** Not rebuilt yet: `ImproveUserInfoActivity`, `MainActivity`, `CommonWebActivity`. */
+/** `ImproveUserInfoActivity` and `MainActivity` are still their own cards; the web links now open for real. */
 class DefaultLoginNavigation(
     protected val context: Context,
 ) : LoginNavigation {
@@ -40,9 +40,21 @@ class DefaultLoginNavigation(
 
     override fun openMain() = Unit
 
-    override fun openPrivacyPolicy() = Unit
+    override fun openPrivacyPolicy() =
+        com.youloft.watcher.pages.web.CommonWebActivity.start(
+            context, com.youloft.watcher.pages.web.CommonWebActivity.PRIVACY_URL,
+            context.getString(com.youloft.watcher.R.string.privacy_policy_u), fullscreen = true,
+        )
 
-    override fun openUserAgreement() = Unit
+    override fun openUserAgreement() =
+        com.youloft.watcher.pages.web.CommonWebActivity.start(
+            context, com.youloft.watcher.pages.web.CommonWebActivity.USER_AGREEMENT_URL,
+            context.getString(com.youloft.watcher.R.string.user_agreement_u), fullscreen = true,
+        )
 
-    override fun openCarrierPolicy(url: String, title: String) = Unit
+    override fun openCarrierPolicy(url: String, title: String) {
+        if (com.youloft.watcher.pages.web.CommonWebActivity.isWebUrl(url)) {
+            com.youloft.watcher.pages.web.CommonWebActivity.start(context, url, title)
+        }
+    }
 }

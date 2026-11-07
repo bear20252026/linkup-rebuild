@@ -5,7 +5,7 @@
 ## 现在能跑的命令
 
 ```bash
-# 客户端离线回归：409 个 JVM/Robolectric 测试（:location 93 + :net 31 + :app 285），不需要手机也不需要网络
+# 客户端离线回归：418 个 JVM/Robolectric 测试（:location 93 + :net 31 + :app 294），不需要手机也不需要网络
 sh tools/gradle.sh :location:testDebugUnitTest :net:test :app:testDebugUnitTest
 
 # 轨迹页原生 UI 验收（只读模拟器 + 离线测试数据，不触网；见设计文档五点二十八）
@@ -46,7 +46,7 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
-已验证：带签名的 GET 被真实服务端接受（`status=200`）；`location`/`net`/`app` 累计409个测试通过（本轮全量重跑 app 285，定位93/网络31未改动且 UP-TO-DATE）；`server` 49 个 Go 测试
+已验证：带签名的 GET 被真实服务端接受（`status=200`）；`location`/`net`/`app` 累计418个测试通过（本轮全量重跑 app 294，定位93/网络31未改动且 UP-TO-DATE）；`server` 49 个 Go 测试
 + 28 条真 socket 用例全绿；同一条签名契约在 **JVM 客户端、Go、OpenSSL** 三个实现下产出同一段密文
 （JVM 样本向量钉在 `server/internal/contract`，POST 体的 md5 规则由 MockWebServer 离线锁定）。
 **重建网关 ↔ 真 OpenIMServer 已跑通**：20 条端到端用例 + 3 个在线集成测试全绿；
@@ -66,6 +66,12 @@ bash server/scripts/smoke.sh
 原生验收在只读模拟器（API33）用离线测试数据跑通：真拖动展开、日期/列表点击、底部弹窗、折叠、错误刷新与空态，
 六阶段截图留证 `build/track-ui-shots/`；JVM 侧轨迹合计42条。地图容器仍明确标注尚未接入，不画假底图。
 原版地图 SDK、VIP/隐私与 IM 提醒、后台采集及停留/离开判定仍未完成；模拟器不等于真机像素验收，见设计文档五点二十七/二十八、待验67–70。
+
+首启隐私门已恢复：`isAgreePrivacyPolicy` 同意标志、`PrivacyPolicyDialog`（欢迎使用LinkUp，协议链接开网页）、
+最小 `CommonWebActivity`（privacy/user 协议文档，fullscreen，只接受 http(s)）与 `EmptyLoginActivity`
+（同意写标志并进登录；不同意仅隐藏遮罩；再点登录按钮弹挽留弹窗）。`LoginNavigation` 的网页跳转真正落地。
+新增9条测试；Robolectric inflate 真实 WebView 会阻塞，故网页侧只断言跳转意图，真实渲染留待模拟器/真机。
+Splash 分流与 GuideActivity 尚未重建（不伪造），一键登录/微信链依赖拿不到的厂商 jar，POST_NOTIFICATIONS 时机仍待拍板。见设计文档五点二十九。
 
 未验证：**向真服发一条带 body 的签名 POST**（要真登录态，且容易撞上写接口，没做）；97 条里剩下的 80 条
 路由字段与业务规则（需要线上源码）。逐条见 `recovered/DESIGN_CN.md` 第九节的待验清单。

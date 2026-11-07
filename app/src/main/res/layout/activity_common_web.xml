@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout android:layout_width="match_parent" android:layout_height="match_parent"
+  xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.mc.fastkit.view.host.StatusBarHost android:id="@id/statusBar" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent" />
+    <TextView android:textSize="16.0sp" android:textStyle="bold" android:textColor="@color/appPrimary" android:gravity="center" android:orientation="horizontal" android:id="@id/tv_title" android:layout_width="match_parent" android:layout_height="44.0dp" app:layout_constraintTop_toBottomOf="@id/statusBar" />
+    <FrameLayout android:layout_width="match_parent" android:layout_height="0.0dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintTop_toBottomOf="@id/tv_title">
+        <com.youloft.webview.WebComponent android:id="@id/webView" android:layout_width="match_parent" android:layout_height="match_parent" />
+        <FrameLayout android:id="@id/state_loading" android:background="@color/white" android:layout_width="match_parent" android:layout_height="match_parent">
+            <com.opensource.svgaplayer.SVGAImageView android:layout_gravity="center" android:layout_width="40.0dp" android:layout_height="20.0dp" android:src="@drawable/ic_loading" app:autoPlay="true" app:loopCount="-1" app:source="loading.svga" />
+        </FrameLayout>
+        <LinearLayout android:gravity="center" android:orientation="vertical" android:id="@id/state_error" android:background="@color/white" android:visibility="gone" android:layout_width="match_parent" android:layout_height="match_parent">
+            <ImageView android:id="@id/iv_image" android:layout_width="wrap_content" android:layout_height="wrap_content" android:src="@drawable/img_web_load_failed" />
+            <TextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="暂无网络连接，请稍后再试" android:layout_marginVertical="8.0dp" />
+            <com.mc.fastkit.view.shape.ShapedTextView android:textSize="14.0sp" android:textColor="@color/appPrimary" android:id="@id/tv_text" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="重新加载" android:fontFamily="@font/alibaba_puhuiti_bold" android:paddingHorizontal="16.0dp" android:paddingVertical="13.0dp" app:mc_contentColor="@color/colorBrand" app:mc_radius="12.0dp" />
+        </LinearLayout>
+    </FrameLayout>
+    <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent">
+        <com.mc.fastkit.view.host.StatusBarHost android:layout_width="match_parent" android:layout_height="wrap_content" />
+        <ImageView android:id="@id/iv_back" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6.0dp" android:src="@drawable/ic_arrow_left_32_32" android:layout_marginStart="16.0dp" />
+    </LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>
