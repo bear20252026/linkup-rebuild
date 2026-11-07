@@ -108,9 +108,10 @@ type Data struct {
 	Extras    map[string]Extra   `json:"extras"`
 	Applies   map[string]Apply   `json:"applies"`
 	Codes     map[string]Code    `json:"codes"`
-	Locations []fix                 `json:"locations"`
-	Locks     map[string]LockState  `json:"locks,omitempty"`
-	Devices   map[int64]DeviceState `json:"devices,omitempty"`
+	Locations []fix                    `json:"locations"`
+	Locks     map[string]LockState     `json:"locks,omitempty"`
+	Devices   map[int64]DeviceState    `json:"devices,omitempty"`
+	Settings  map[int64]map[string]string `json:"settings,omitempty"`
 }
 
 // DeviceState is what `api/phone/state/report` last recorded for one device — the fields the
@@ -557,6 +558,30 @@ func (s *Store) Fixes(userID int64) []location.Point {
 	}
 	location.Sort(out)
 	return out
+}
+
+// SettingFor answers one settings slot ("im" today) for an account; empty when never written.
+func (s *Store) SettingFor(userID int64, slot string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.data.Settings == nil {
+		return ""
+	}
+	return s.data.Settings[userID][slot]
+}
+
+// SetSetting stores one settings slot verbatim (the client's own bean JSON).
+func (s *Store) SetSetting(userID int64, slot, value string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.data.Settings == nil {
+		s.data.Settings = map[int64]map[string]string{}
+	}
+	if s.data.Settings[userID] == nil {
+		s.data.Settings[userID] = map[string]string{}
+	}
+	s.data.Settings[userID][slot] = value
+	s.save()
 }
 
 // SetDeviceState records (or refreshes) one device's self-report.

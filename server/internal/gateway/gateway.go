@@ -159,6 +159,14 @@ func New(opts Options) (*gin.Engine, error) {
 		api.GET("/widget/location", g.widgetLocation)
 		api.GET("/widget/track", g.widgetTrack)
 
+		// Settings + aggregation domain.
+		api.GET("/setting/im", g.settingIMGet)
+		api.POST("/setting/im", g.settingIMUpdate)
+		api.GET("/setting/user_list", g.privacyUserList)
+		api.POST("/setting/update", g.privacyUpdate)
+		api.GET("/index", g.index)
+		api.GET("/version/check", g.versionCheck)
+
 		// Location domain: report, then read one day back.
 		api.POST("/location/report", g.locationReport)
 		api.GET("/location/days", g.locationDays)
