@@ -1752,6 +1752,60 @@ MMKV 键 `locationProviderId`（`LocationProviderSettings`）设了且已安装�
 - **登录/登出**：`AccountSideEffects` 新增 `onSignedOut()`；登录 → 采集门重估 + IM 连接
   （`api/user/im_token` → SDK login），登出镜像。
 
+## 五点三十三、主界面与启动（#30，2026-11-07）
+
+Splash 分流照原版 `SplashActivity.M()/t0()`：task-root 去重 → **隐私门（EmptyLogin 本身是门）** →
+引导（`guideSeenVersion=4`，对应 `CacheUtils.H1(4)/v()>=4`）→ 登录；有 token → 主界面。广告与
+热启动两条外部分支无 SDK 可触达，去掉。MainActivity 四个 Tab 是**硬编码字面量**（"守护/消息中心/
+更多/我的"，原版即字面量）；ViewPager2 关手势，选中态 lottie（tab_*.json 出库自 apktool 资产）。
+缺失视图全部真重建：SlideRecyclerView（318 行逐规则移植：600dp/s 阈值、单行打开、半宽回弹）、
+MenuLayout/ItemFriends/ItemVip（入场缩放动画是视觉层，简化记录）、UserInfoView/AvatarsView 实体
+（MatchCode 四位分组 + 复制裸 id，原版规则）、VipCard（显隐语义）。
+守护 Tab：`:map` 地图槽（无 AAR 保持"尚未接入"）、好友切换弹窗（createAt 倒序 + 当前守护对象置顶 +
+"切换成功"toast，`GuardTarget` 键对应原版 `CacheUtils.U()/H()`）、添加好友 banner、拖动面板用
+BottomSheetBehavior 承载（fastkit SheetLayout 未还原，同轨迹页先例）；面板内容原版由服务端
+HomeData 驱动（该路由未建）——放真实可用入口行并如实标注。我的 Tab 四宫格与静态行的二级屏
+（权限列表/通知/地图/隐私/数据安全/应用密码/联系/关于）是未重建卡：入口可见、行为记录不跳。
+launcher 从探针页切到 Splash；`LoginNavigation.openMain()` 落地。
+
+## 五点三十四、锁机与媒体（#31/#32/#33，2026-11-07）
+
+**锁机域**：服务端 `api/relation/lock*` 六条路由（store 的 Locks 台账 + 重建题库——题库内容是
+产品选择非协议）+ 锁非好友 403（本工程定义，待验里 relation 域同规则）。命令下发不走网关：
+发起端 **OpenIM custom message**（extension = 原版 `CmdType` 的 action 字符串 `lockMachine`，
+data = `LockScreen` JSON，与原版环信 CMD 语义逐字对齐）+ 台账 POST 同时发；收端 `LockedActivity`
+应用内锁屏（问题解锁 → `api/relation/unlock`）。与原版 `WindowHelper` 的 WindowManager
+TYPE_APPLICATION_OVERLAY 悬浮窗的偏离记录在案：SYSTEM_ALERT_WINDOW 需单独授权，授权卡落地前
+是应用内锁。`FixWheelView` 依赖的三方 WheelView 在 jitpack 构建全挂，时间锁的滚轮发起流未落
+（发起收敛为对话框时长档位），`fragment_unlock_time` 未复制。
+
+**媒体**：图片走 SDK `createImageMessageFromFullPath` + `sendMessage`——上传由 OpenIMServer 的
+MinIO 完成（火山 TOS 账号丢失后的诚实替代，待验 73 更新）；`ImMessage.mediaUrl` 映射
+`contentType==PICTURE → sourcePicture.url`（测试钉死）。聊天页相册选图（PickVisualMedia→cache
+落盘→SDK 真路径）+ 图片气泡。语音（MediaRecorder .m4a → 同一上传链）与视频后续。
+
+**widget 域（待验 59 落地）**：服务端 `api/phone/state/report`（per-device 设备台账 DeviceState）
++ `api/widget/location`、`api/widget/track`——pairing = 确认关系（任一方向），track 读数走
+location.Summarise 同一旗标（一个真源）。客户端 `TrackWidgetProvider` 按原版 bean 只显示
+stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造），好友电量走 widgetLocation。
+
+**远程配置拉取（待验 41 拍板执行）**：`refreshRemoteConfig` 挂到**隐私同意的时刻**
+（EmptyLoginActivity 的"同意并进入"），不在 onCreate——未同意前不打 configsys 域名，也避免
+测试 app 实例为 MMKV/native 买单。
+
+**待验更新**：
+| # | 事项 | 说明 |
+| 71 | 两个地图 AAR + 真机像素 | 不变 |
+| 72 | OpenIM SDK 真机收发 + 模拟器↔WSL 连通 | 不变 |
+| 73 | 语音/视频媒体（MediaRecorder→OpenIM 上传链同路） | 图片已通，录音与 TOS 备选记录 |
+| 74 | 锁机悬浮窗（SYSTEM_ALERT_WINDOW 授权 + WindowManager 版）、时间锁滚轮发起流、截屏采集端（无障碍服务 + screenShot 命令 step0→3）、相机水印合成（CameraX 双摄） | 各自独立权限/媒体卡 |
+| 75 | locationProviderId 调试入口 | 不变 |
+| 76 | 高德 vendor key | 不变 |
+| 77 | 设备上报的 av/client 回填（lock_list 的 av/client 现为空）+ TOS 封面库 | phone/state 卡后续字段 |
+| 78 | 守护 Tab 面板的功能卡（通话记录/应用使用） | 服务端 HomeData 路由未建 |
+| 79 | 我的 Tab 二级屏（权限列表/通知/地图/隐私/数据安全/应用密码/联系/关于） | 入口可见不跳 |
+| 80 | 待办 Tab（TodoFragment） | 入口保留不跳 |
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。

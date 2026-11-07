@@ -24,6 +24,9 @@ sh tools/gradle.sh :app:assembleDebug
 # 地图与 IM 模块回归
 sh tools/gradle.sh :map:testDebugUnitTest :im:testDebugUnitTest
 
+# 更多模块回归
+sh tools/gradle.sh :app:testDebugUnitTest
+
 # 服务端回归：全离线（不需要 Docker）
 cd server && go test ./...
 
@@ -59,6 +62,12 @@ SDK 登录收发、地图像素、模拟器↔WSL 连通）见 DESIGN 待验 71�
 已验证：带签名的 GET 被真实服务端接受（`status=200`）；`location`/`net`/`app` 累计418个测试通过（本轮全量重跑 app 294，定位93/网络31未改动且 UP-TO-DATE）；`server` 49 个 Go 测试
 + 28 条真 socket 用例全绿；同一条签名契约在 **JVM 客户端、Go、OpenSSL** 三个实现下产出同一段密文
 （JVM 样本向量钉在 `server/internal/contract`，POST 体的 md5 规则由 MockWebServer 离线锁定）。
+**守护线主体已落地（#27–#33）**：采集（前台服务+停留/离开状态机）、地图（:map 抽象+两家反射适配器，
+AAR 到位即亮）、IM（OpenIM SDK 直连+好友缓存写入方+图片媒体+锁机命令）、**主界面与启动**
+（Splash 隐私门分流→引导→登录→四 Tab 主框架：守护/消息中心/更多/我的）、**锁机**（服务端台账+
+IM 命令+应用内锁屏）、**widget 域**（设备状态台账+桌面卡读数）。真机项与剩余卡见 DESIGN
+五点三十～三十四与待验 71–80。
+
 **重建网关 ↔ 真 OpenIMServer 已跑通**：20 条端到端用例 + 3 个在线集成测试全绿；
 **重建客户端 ↔ 重建网关已会师**：`gatewayVerify` 46 条全绿——真 Retrofit + 真签名 + 真 Gson 模型打自家服务端，含定位域整条链
 （上报 → 天 → 当天轨迹 → 权限）。OpenIM 的原始应答
