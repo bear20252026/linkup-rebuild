@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.youloft.linkup.map.TrackMap
 import com.youloft.watcher.R
 import com.youloft.watcher.data.appGraph
 import com.youloft.watcher.databinding.ActivityTrackRecordListBinding
@@ -29,6 +30,12 @@ class TrackRecordActivity : AppCompatActivity() {
     private var userId = 0L
     private val dateTabs = linkedMapOf<String, ItemTrackRecordDateTabBinding>()
 
+    /**
+     * The embedded map, when a vendor is installed; null keeps the recovered "尚未接入" mask untouched —
+     * no fake basemap is drawn, which is the rule the track page has been built under since #24.
+     */
+    private var trackMap: TrackMap? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityTrackRecordListBinding.inflate(layoutInflater)
@@ -40,6 +47,7 @@ class TrackRecordActivity : AppCompatActivity() {
             this,
             TrackRecordViewModel.factory(graph.trackRepository, TrackRowBuilder(TrackFormatter(applicationContext))),
         )[TrackRecordViewModel::class.java]
+        attachMapIfAvailable(graph, savedInstanceState?.getBundle(STATE_MAP))
         binding.trackBack.setOnClickListener { finish() }
         binding.trackRefresh.setOnClickListener {
             viewModel.loadDays(userId)
@@ -68,9 +76,30 @@ class TrackRecordActivity : AppCompatActivity() {
                     val message = listOfNotNull(state.message, state.daysMessage).joinToString("\n")
                     binding.trackMessage.text = message
                     binding.trackMessage.visibility = if (message.isEmpty()) View.GONE else View.VISIBLE
+                    trackMap?.let { map -> map.showTrack(TrackOverlayMapper.from(state.record)) }
                 }
             }
         }
+    }
+
+    /**
+     * Embeds the vendor map when the catalog has one, and hides the placeholder art that was drawn for
+     * the no-SDK state. With none installed nothing happens here: the art, the dimming mask and the
+     * "地图尚未接入" hint keep their recovered behaviour exactly as the no-map rounds shipped them.
+     */
+    private fun attachMapIfAvailable(graph: com.youloft.watcher.data.LinkUpApplication, savedState: Bundle?) {
+        val provider = graph.trackMaps.preferred() ?: return
+        val map = provider.create(this)
+        binding.trackMapContainer.addView(
+            map.view,
+            android.widget.FrameLayout.LayoutParams(
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            ),
+        )
+        map.onCreate(savedState)
+        trackMap = map
+        binding.trackMapArt.visibility = View.GONE
     }
 
     private fun configureSheet() {
@@ -182,14 +211,32 @@ class TrackRecordActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        trackMap?.onResume()
+        super.onResume()
+    }
+
+    override fun onPause() {
+        trackMap?.onPause()
+        super.onPause()
+    }
+
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putString(STATE_DATE, viewModel.state.value.selectedDate)
+        trackMap?.onSaveState()?.let { outState.putBundle(STATE_MAP, it) }
         super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        trackMap?.onDestroy()
+        trackMap = null
+        super.onDestroy()
     }
 
     companion object {
         const val EXTRA_QUERY_ID = "queryId"
         private const val STATE_DATE = "track.selectedDate"
+        private const val STATE_MAP = "track.mapState"
 
         fun start(context: Context, userId: Long) {
             context.startActivity(Intent(context, TrackRecordActivity::class.java).putExtra(EXTRA_QUERY_ID, userId))

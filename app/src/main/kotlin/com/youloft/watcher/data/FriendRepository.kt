@@ -18,6 +18,9 @@ import com.youloft.linkup.net.LinkUpClient
 import com.youloft.linkup.location.LocationProviders
 import com.youloft.linkup.location.canLocate
 import com.youloft.linkup.location.provider.system.LocationPermissions
+import com.youloft.linkup.map.TrackMapProviders
+import com.youloft.linkup.map.provider.amap.AmapTrackMapProvider
+import com.youloft.linkup.map.provider.baidu.BaiduTrackMapProvider
 import com.youloft.watcher.AndroidDeviceContext
 import com.youloft.watcher.data.local.FriendCache
 import com.youloft.watcher.data.local.InstallChannel
@@ -249,6 +252,20 @@ open class LinkUpApplication : Application() {
     /** The `locationProviderId` override, read from the shared store so a debug screen can flip vendors. */
     open val locationProviderSettings: LocationProviderSettings
         get() = LocationProviderSettings(keyValueStores.shared)
+
+    /**
+     * The map catalog for the track page: Baidu first (the vendor that shipped), AMap second (proof the
+     * seam takes a second vendor; no AAR today), and no framework fallback — the platform has no basemap,
+     * so with no vendor installed the screen keeps its own "尚未接入" state instead of constructing one.
+     */
+    open val trackMaps: TrackMapProviders by lazy {
+        TrackMapProviders(
+            listOf(
+                BaiduTrackMapProvider(privacyAgreed = { privacyGate.agreed() }),
+                AmapTrackMapProvider(),
+            ),
+        )
+    }
 
     /**
      * The guard collection switch: consent + permission + account, re-evaluated at every lifecycle

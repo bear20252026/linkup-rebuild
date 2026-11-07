@@ -28,6 +28,11 @@ data class TrackUiState(
     val selectedDate: String? = null,
     val recordedDates: Set<String> = emptySet(),
     val daysMessage: String? = null,
+    /**
+     * The raw record behind [rows] — the map slot's feed. Rows are what the list renders; the map needs
+     * the geometry itself, and keeping the raw bean here means the mapper stays a pure function.
+     */
+    val record: TrackRecordBean? = null,
 )
 
 class TrackRecordViewModel(
@@ -88,6 +93,7 @@ class TrackRecordViewModel(
                             emptyVisible = record.tracks.orEmpty().none { track -> track != null },
                             permission = record.permission,
                             friendLocation = record.friendLocation,
+                            record = record,
                         )
                     }
                 }

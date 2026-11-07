@@ -18,6 +18,7 @@ dependencyResolutionManagement {
 rootProject.name = "linkup-rebuild"
 include(":net")
 include(":location")
+include(":map")
 include(":res166")
 include(":fastkit")
 include(":app")
