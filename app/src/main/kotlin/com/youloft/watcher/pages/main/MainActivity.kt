@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.youloft.watcher.R
+import androidx.lifecycle.lifecycleScope
+import com.youloft.watcher.data.appGraph
 import com.youloft.watcher.databinding.ActivityMainBinding
 import com.youloft.watcher.pages.home.MapFragment
 import com.youloft.watcher.pages.mine.MineFragment
@@ -41,6 +43,26 @@ class MainActivity : AppCompatActivity() {
         binding.rlMore.setOnClickListener { switchTo(TAB_MORE) }
         binding.layoutMine.setOnClickListener { switchTo(TAB_MINE) }
         switchTo(intent.getStringExtra(EXTRA_TAG) ?: TAB_GUARD)
+        receiveLockCommands()
+    }
+
+    /**
+     * 锁机命令收端（原版 WindowHelper 的应用内等价物）：IM `lockMachine` 到达 → 全屏 LockedActivity。
+     * WindowManager 悬浮窗（盖在别的 app 上）需要 SYSTEM_ALERT_WINDOW 授权，授权卡落地前这里是
+     * 应用内锁——DESIGN 已记录偏离。
+     */
+    private fun receiveLockCommands() {
+        val graph = appGraph(this)
+        com.youloft.watcher.data.im.LockCommandBridge(
+            imClient = graph.imClient,
+            api = graph.imApi,
+            scope = lifecycleScope,
+            onLock = { screen ->
+                if (screen.userid > 0) {
+                    com.youloft.watcher.pages.lock.LockedActivity.start(this, screen)
+                }
+            },
+        ).start()
     }
 
     /** `G0(String)` — lottie plays over the selected tab's icon; the pager moves without smooth scroll. */

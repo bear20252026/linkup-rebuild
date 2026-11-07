@@ -17,7 +17,7 @@ data class LockScreen(
     val question: com.youloft.linkup.api.dto.QuestionBean? = null,
     val tinyimg: String? = null,
     val lockDuration: Long = 0L,
-) {
+) : java.io.Serializable {
     fun toJson(): String = Gson().toJson(this)
 
     companion object {

@@ -71,4 +71,7 @@
     <string name="lock_state_free">未锁机</string>
     <string name="lock_action_unlock">解锁</string>
     <string name="voice_quota_format">今日还可发送 %1$d 条（共 %2$d 条）</string>
+<string name="locked_default_title">设备已被锁机</string>
+    <string name="lock_answer_hint">输入答案字母</string>
+    <string name="lock_answer_wrong">答案不对，再想想</string>
 </resources>
