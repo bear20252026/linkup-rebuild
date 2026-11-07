@@ -11,3 +11,4 @@ __pycache__/
 *.key
 linkup-store.json
 server/linkup-store.json
+tools/jadx/
