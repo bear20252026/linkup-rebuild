@@ -236,6 +236,7 @@ type LockInfoRow struct {
 	Avatar            *string        `json:"avatar"`
 	Av                *string        `json:"av"`
 	Client            *string        `json:"client"`
+	OsVersion         *string        `json:"osVersion"`
 	Relation          int            `json:"relation"`
 	CreateAt          int64          `json:"createAt"`
 	ServerTime        int64          `json:"serverTime"`
@@ -248,6 +249,26 @@ type LockInfoRow struct {
 
 type LockInfoList struct {
 	List []*LockInfoRow `json:"list"`
+}
+
+// ScreenshotRow is the client's bean/ScreenshotData (166): one guarded friend's device row on the
+// real-time screenshot screen, fed by the same phone-state ledger as the lock rows.
+type ScreenshotRow struct {
+	Av               *string `json:"av"`
+	Avatar           *string `json:"avatar"`
+	Client           *string `json:"client"`
+	Nickname         *string `json:"nickname"`
+	OsVersion        *string `json:"osVersion"`
+	CreateAt         int64   `json:"createAt"`
+	LastOfflineTime  int64   `json:"lastOfflineTime"`
+	LastRecoverTime  int64   `json:"lastRecoverTime"`
+	LockTime         int64   `json:"lockTime"`
+	OfflineTipTimeConf int64 `json:"offlineTipTimeConf"`
+	UserID           int64   `json:"userId"`
+}
+
+type ScreenshotList struct {
+	List []*ScreenshotRow `json:"list"`
 }
 
 // QuestionRow is the client's bean/lock/QuestionBean; the bank content is a rebuild choice.

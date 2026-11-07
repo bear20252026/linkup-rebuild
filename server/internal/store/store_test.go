@@ -1,7 +1,9 @@
 package store
 
 import (
+	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -209,6 +211,11 @@ func TestStoreReloadsFromDisk(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Batching writes means a second process only sees the file after a Flush/Close — the same
+	// contract the server honours on shutdown.
+	if err := first.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	second := mustOpen(t, path)
 	reloaded, err := second.ByPhone("13800000400")
@@ -281,6 +288,45 @@ func TestThirdPartyAccountsBindWithoutDoublingUp(t *testing.T) {
 	}
 	if other.ID == anon.ID || other.Platform != 5 {
 		t.Fatalf("a different vendor identity reused the WeChat account: %+v", other)
+	}
+}
+
+func TestBurstWritesCoalesceIntoOneFlush(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "linkup.json")
+	s := mustOpen(t, path)
+
+	// A settings screen's worth of writes inside one flush window is one file, not five.
+	for i := 0; i < 5; i++ {
+		s.SetSetting(int64(10000001+i), "im", `{"a":1}`)
+	}
+	if _, err := os.Stat(path + ".tmp"); err == nil {
+		t.Fatal("a write leaked through before the flush window closed")
+	}
+	if _, err := os.Stat(path); err == nil {
+		t.Fatal("five writes each rewrote the file: debouncing did not happen")
+	}
+	if err := s.Flush(); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := strings.Count(string(raw), `"settings"`); n != 1 {
+		t.Fatalf("settings appeared %d times in one file", n)
+	}
+
+	// Close is idempotent and a second Close after more writes still flushes them.
+	s.SetSetting(int64(10000009), "im", `{"b":2}`)
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatalf("Close is not idempotent: %v", err)
+	}
+	raw, err = os.ReadFile(path)
+	if err != nil || !strings.Contains(string(raw), "10000009") {
+		t.Fatalf("the post-Flush write was lost on Close: %v", err)
 	}
 }
 

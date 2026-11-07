@@ -823,3 +823,64 @@ func TestLockDomainRecordsAndAnswersLockState(t *testing.T) {
 		t.Fatalf("locking a stranger must be forbidden, got %+v", denied)
 	}
 }
+
+func TestPhoneStateReportFeedsLockAndScreenshotRows(t *testing.T) {
+	h := newTest(t)
+	tokenA, a := h.login(t, "13800000016")
+	tokenB, b := h.login(t, "13800000017")
+
+	// The bean types isCharging as Boolean, so the report carries a JSON bool — the numeric read of
+	// the first widget round would have read it as 0.
+	if answered := h.request(t, http.MethodPost, "/api/phone/state/report", "", map[string]any{
+		"currentBattery": 66, "isCharging": true, "networkType": 1, "wifi": "HomeWiFi",
+		"osVersion": "14", "model": "Pixel 8", "brand": "google", "av": "1.6.6", "client": "android",
+	}, tokenB); answered.Status != 200 {
+		t.Fatalf("state/report: %+v", answered)
+	}
+	state := h.store.DeviceStateFor(b.ID)
+	if state.Battery != 66 || !state.IsCharging || state.Wifi != "HomeWiFi" ||
+		state.Av != "1.6.6" || state.Client != "android" || state.OsVersion != "14" || state.Model != "Pixel 8" {
+		t.Fatalf("the report's fields did not land: %+v", state)
+	}
+
+	// The stub's friend list always answers userId 2, so the guarded peer is 2: report its device
+	// directly through the ledger, then both screens must carry the version row (待验 77 闭环).
+	h.store.SetDeviceState(2, store.DeviceState{
+		Battery: 40, RecordedAt: time.Now().Unix(),
+		Av: "1.6.6", Client: "android", OsVersion: "15",
+	})
+	if list := h.request(t, http.MethodGet, "/api/relation/lock_list", "", nil, tokenA); list.Status != 200 {
+		t.Fatalf("lock_list: %+v", list)
+	} else {
+		got := string(list.Data)
+		for _, want := range []string{`"av":"1.6.6"`, `"client":"android"`, `"osVersion":"15"`} {
+			if !strings.Contains(got, want) {
+				t.Errorf("lock_list lost the guarded device's version row (%s): %s", want, got)
+			}
+		}
+	}
+	if list := h.request(t, http.MethodGet, "/api/screenshot/list", "", nil, tokenA); list.Status != 200 {
+		t.Fatalf("screenshot/list: %+v", list)
+	} else {
+		got := string(list.Data)
+		for _, want := range []string{`"userId":2`, `"av":"1.6.6"`, `"nickname":"女儿"`} {
+			if !strings.Contains(got, want) {
+				t.Errorf("screenshot/list lost %s: %s", want, got)
+			}
+		}
+	}
+
+	// done receipts the served URL; a missing pic is a 参数异常, not a silent true.
+	if done := h.request(t, http.MethodGet, "/api/screenshot/done",
+		"friendId=2&pic=http%3A%2F%2Fminio%2Flocal%2Fshot.png", nil, tokenA); done.Status != 200 {
+		t.Fatalf("screenshot/done: %+v", done)
+	} else if !strings.Contains(string(done.Data), "true") {
+		t.Errorf("done must answer true, got %s", done.Data)
+	}
+	if recorded := h.store.ScreenshotFor(a.ID, 2); recorded.Pic != "http://minio/local/shot.png" || recorded.At == 0 {
+		t.Fatalf("the done receipt was not ledgered: %+v", recorded)
+	}
+	if bad := h.request(t, http.MethodGet, "/api/screenshot/done", "friendId=2", nil, tokenA); bad.Status != contract.StatusParamErr {
+		t.Errorf("done without a pic must be 参数异常, got %+v", bad)
+	}
+}

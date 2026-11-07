@@ -19,8 +19,10 @@ import (
 func (g *Gateway) phoneStateReport(c *gin.Context) {
 	form := body(c)
 	g.opts.Store.SetDeviceState(g.claims(c).UserID, store.DeviceState{
-		Battery:         int(num(form, "currentBattery")),
-		IsCharging:      num(form, "isCharging") == 1,
+		Battery: int(num(form, "currentBattery")),
+		// The client bean types isCharging as Boolean, so the wire form is a JSON bool; the
+		// numeric read stays for older callers that sent 0/1.
+		IsCharging:      truthy(form, "isCharging"),
 		NetworkType:     int(num(form, "networkType")),
 		ScreenTime:      num(form, "screenTime"),
 		ScreenType:      int(num(form, "screenType")),
@@ -29,8 +31,24 @@ func (g *Gateway) phoneStateReport(c *gin.Context) {
 		OfflineTipConf:  num(form, "offlineTipTimeConf"),
 		Wifi:            str(form, "wifi"),
 		RecordedAt:      time.Now().Unix(),
+		Av:              str(form, "av"),
+		Client:          str(form, "client"),
+		OsVersion:       str(form, "osVersion"),
+		Model:           str(form, "model"),
+		Brand:           str(form, "brand"),
 	})
 	c.JSON(http.StatusOK, contract.OK(nil))
+}
+
+// truthy reads one form key as a flag across the bool and 0/1 spellings.
+func truthy(m map[string]any, key string) bool {
+	switch v := m[key].(type) {
+	case bool:
+		return v
+	case float64:
+		return v == 1
+	}
+	return false
 }
 
 // friendStateRow assembles the client's FriendState for one user from the device-state ledger.
@@ -126,5 +144,54 @@ func (g *Gateway) widgetTrack(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusOK, contract.OK(widget))
+}
+
+// screenshotList is the 实时截屏 screen's friend rows: one per confirmed relation, fed by the same
+// device-state ledger as the lock rows (av/client/osVersion 待验 77). 166's own screen reads this.
+func (g *Gateway) screenshotList(c *gin.Context) {
+	me := g.claims(c).UserID
+	friends, _, err := g.opts.IM.Friends(c.Request.Context(), store.IMID(me), 1, 100)
+	if !g.handleStatus(c, err, "好友列表") {
+		return
+	}
+	list := make([]*dto.ScreenshotRow, 0, len(friends))
+	for _, f := range friends {
+		id := store.ParseID(f.FriendUser.UserID)
+		device := g.opts.Store.DeviceStateFor(id)
+		lock := g.opts.Store.LockFor(me, id)
+		list = append(list, &dto.ScreenshotRow{
+			Av:                 dto.Text(device.Av),
+			Avatar:             dto.Text(f.FriendUser.FaceURL),
+			Client:             dto.Text(device.Client),
+			Nickname:           dto.Text(f.FriendUser.Nickname),
+			OsVersion:          dto.Text(device.OsVersion),
+			CreateAt:           device.RecordedAt,
+			LastOfflineTime:    device.LastOfflineTime,
+			LastRecoverTime:    device.LastRecoverTime,
+			LockTime:           lock.LockTime,
+			OfflineTipTimeConf: device.OfflineTipConf,
+			UserID:             id,
+		})
+	}
+	c.JSON(http.StatusOK, contract.OK(dto.ScreenshotList{List: list}))
+}
+
+// screenshotDone is the puller's receipt after a capture round: the served picture URL is ledgered
+// so the screen can show what was last taken. The capture itself rides the IM `screenShot` command
+// (step 0→3); the gateway never touches pixels.
+func (g *Gateway) screenshotDone(c *gin.Context) {
+	me := g.claims(c).UserID
+	friendID := num(map[string]any{"friendId": c.Query("friendId")}, "friendId")
+	if friendID <= 0 {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
+		return
+	}
+	pic := c.Query("pic")
+	if pic == "" {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
+		return
+	}
+	g.opts.Store.RecordScreenshot(me, friendID, pic)
+	c.JSON(http.StatusOK, contract.OK(true))
 }
 

@@ -63,15 +63,17 @@ func (g *Gateway) lockList(c *gin.Context) {
 		id := store.ParseID(f.FriendUser.UserID)
 		extra := g.opts.Store.ExtraFor(me, id)
 		lock := g.opts.Store.LockFor(me, id)
+		// The guarded device's version row is its own last phone-state report (待验 77): av/client
+		// ride the report form, so an unreported device honestly shows empty strings.
+		device := g.opts.Store.DeviceStateFor(id)
 		row := &dto.LockInfoRow{
 			UserID:           id,
 			Remark:           dto.Text(extra.Remark),
 			Nickname:         dto.Text(f.FriendUser.Nickname),
 			Avatar:           dto.Text(f.FriendUser.FaceURL),
-			// The guarded device's own av/client ride the phone-state report card, not the store;
-			// empty until that card lands (待验 77 covers the lock fields it will refresh).
-			Av:               dto.Text(""),
-			Client:           dto.Text(""),
+			Av:               dto.Text(device.Av),
+			Client:           dto.Text(device.Client),
+			OsVersion:        dto.Text(device.OsVersion),
 			Relation:         extra.Relation,
 			CreateAt:         extra.Since,
 			ServerTime:       now,

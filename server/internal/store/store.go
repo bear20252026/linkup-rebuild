@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"linkup.local/server/internal/location"
 	"math/rand"
 	"os"
@@ -112,6 +113,14 @@ type Data struct {
 	Locks     map[string]LockState     `json:"locks,omitempty"`
 	Devices   map[int64]DeviceState    `json:"devices,omitempty"`
 	Settings  map[int64]map[string]string `json:"settings,omitempty"`
+	Screens   map[string]ScreenshotState `json:"screenshots,omitempty"`
+}
+
+// ScreenshotState is the last capture one account pulled off one guarded friend (api/screenshot/done).
+// The picture bytes live in the object store; only the served URL is ledgered.
+type ScreenshotState struct {
+	Pic string `json:"pic"`
+	At  int64  `json:"at"`
 }
 
 // DeviceState is what `api/phone/state/report` last recorded for one device — the fields the
@@ -128,6 +137,15 @@ type DeviceState struct {
 	OfflineTipConf  int64  `json:"offlineTipTimeConf"`
 	Wifi            string `json:"wifi"`
 	RecordedAt      int64  `json:"recordedAt"`
+	// Av/Client/OsVersion/Model/Brand are what lock_list and screenshot/list render as the
+	// guarded device's version row. The original bean (bean/PhoneStateInfo) carries model/brand/
+	// osVersion; av/client are this rebuild's carrier choice — where the original server learned
+	// them is not in the APK (DESIGN 待验 77).
+	Av        string `json:"av,omitempty"`
+	Client    string `json:"client,omitempty"`
+	OsVersion string `json:"osVersion,omitempty"`
+	Model     string `json:"model,omitempty"`
+	Brand     string `json:"brand,omitempty"`
 }
 
 // LockState is what `api/relation/lock` records for one guarded direction. The command itself
@@ -141,11 +159,24 @@ type LockState struct {
 	Question    string `json:"question"`
 }
 
-// Store guards Data and persists it on every write.
+// Store guards Data and persists it in batches. Mutations mark the file dirty and schedule one
+// deferred write instead of rewriting the whole JSON on every call — a settings screen that flips
+// five switches is one disk write, not five. The trade-off is stated in DESIGN: a crash can lose
+// at most one flush window of writes; the real fix is a database, and this package is the seam
+// that gets replaced when one arrives. Flush/Close are the two synchronous exits.
 type Store struct {
 	path string
 	mu   sync.Mutex
 	data Data
+
+	// flushDelay is how long a dirty file may wait. The timer's first deadline is kept: a steady
+	// stream of writes must not postpone the flush forever (bounded staleness, not a trailing edge).
+	flushDelay time.Duration
+	timer      *time.Timer
+	dirty      bool
+
+	// OnFlushError sees every background write failure; nil logs to the standard logger.
+	OnFlushError func(error)
 }
 
 // firstUserID is 8 digits because that is the length the add-friend screen insists a match code has
@@ -159,7 +190,7 @@ var ErrNotFound = errors.New("linkup/store: not found")
 // Open loads (or creates) the file. An empty path keeps everything in memory, which is what the
 // tests do.
 func Open(path string) (*Store, error) {
-	s := &Store{path: path, data: Data{NextID: firstUserID, NextFix: 1, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
+	s := &Store{path: path, flushDelay: defaultFlushDelay, data: Data{NextID: firstUserID, NextFix: 1, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
 	if path == "" {
 		return s, nil
 	}
@@ -193,6 +224,11 @@ func Open(path string) (*Store, error) {
 	return s, nil
 }
 
+// defaultFlushDelay is the batching window. 200ms keeps a UI burst to one write while the
+// reload-without-Close window (a crash) stays short enough to debug from logs.
+const defaultFlushDelay = 200 * time.Millisecond
+
+// save writes the file; the caller holds mu.
 func (s *Store) save() error {
 	if s.path == "" {
 		return nil
@@ -211,6 +247,60 @@ func (s *Store) save() error {
 	return os.Rename(tmp, s.path)
 }
 
+// markDirtyLocked schedules the deferred write. The caller holds mu. An already-pending timer keeps
+// its deadline, so bursts coalesce but never starve the flush.
+func (s *Store) markDirtyLocked() {
+	if s.path == "" {
+		return
+	}
+	s.dirty = true
+	if s.timer == nil {
+		s.timer = time.AfterFunc(s.flushDelay, s.flush)
+	}
+}
+
+// flush is the timer's entry point; it re-enters the lock without holding it across the write.
+func (s *Store) flush() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.dirty {
+		return
+	}
+	if err := s.save(); err != nil {
+		if s.OnFlushError != nil {
+			s.OnFlushError(err)
+		} else {
+			log.Printf("linkup/store: deferred write failed: %v", err)
+		}
+		return // dirty stays set; the next mark or Flush retries
+	}
+	s.dirty = false
+}
+
+// Flush writes the file now if anything is pending. Callers that must survive a restart call it
+// before handing the path to another process.
+func (s *Store) Flush() error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.timer != nil {
+		s.timer.Stop()
+		s.timer = nil
+	}
+	if !s.dirty || s.path == "" {
+		return nil
+	}
+	if err := s.save(); err != nil {
+		return err
+	}
+	s.dirty = false
+	return nil
+}
+
+// Close flushes and stops the background timer. Safe to call twice.
+func (s *Store) Close() error {
+	return s.Flush()
+}
+
 // CreateAccount assigns the next 8-digit id. That id doubles as the account's match code, which is
 // why the sequence starts at 10000001 rather than at 1.
 func (s *Store) CreateAccount(phone string) (*User, error) {
@@ -224,9 +314,7 @@ func (s *Store) CreateAccount(phone string) (*User, error) {
 		}
 	}
 	u := s.createLocked(phone, "", 0)
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirtyLocked()
 	copied := *u
 	return &copied, nil
 }
@@ -263,9 +351,7 @@ func (s *Store) ThirdAccount(platform int, unionID, phone string) (*User, error)
 	default:
 		byUnion = s.createLocked(phone, unionID, platform)
 	}
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirtyLocked()
 	copied := *byUnion
 	return &copied, nil
 }
@@ -343,7 +429,8 @@ func (s *Store) UpdateProfile(id int64, p Profile) (User, error) {
 			s.data.Users[i].Stage = *v
 		}
 		updated := s.data.Users[i]
-		return updated, s.save()
+		s.markDirtyLocked()
+		return updated, nil
 	}
 	return User{}, ErrNotFound
 }
@@ -363,7 +450,8 @@ func (s *Store) RecordDevice(id int64, getuiCid, pushToken string) error {
 		if pushToken != "" {
 			s.data.Users[i].PushToken = pushToken
 		}
-		return s.save()
+		s.markDirtyLocked()
+		return nil
 	}
 	return ErrNotFound
 }
@@ -376,7 +464,8 @@ func (s *Store) PutExtra(e Extra) error {
 	// (FriendInfoActivity.kt:103, FriendListVAdapter.kt:80) and OpenIM's own createTime is seconds too.
 	e.Since = time.Now().Unix()
 	s.data.Extras[extraKey(e.OwnerID, e.FriendID)] = e
-	return s.save()
+	s.markDirtyLocked()
+	return nil
 }
 
 // ExtraFor reads one direction, or a zero-value Extra when nothing was recorded (the client's own
@@ -396,14 +485,14 @@ func (s *Store) SetLock(owner, friend int64, state LockState) {
 		s.data.Locks = map[string]LockState{}
 	}
 	s.data.Locks[lockKey(owner, friend)] = state
-	s.save()
+	s.markDirtyLocked()
 }
 
 func (s *Store) ClearLock(owner, friend int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.data.Locks, lockKey(owner, friend))
-	s.save()
+	s.markDirtyLocked()
 }
 
 func lockKey(owner, friend int64) string { return extraKey(owner, friend) }
@@ -422,7 +511,8 @@ func (s *Store) ForgetPair(a, b int64) error {
 	delete(s.data.Extras, extraKey(b, a))
 	delete(s.data.Applies, extraKey(a, b))
 	delete(s.data.Applies, extraKey(b, a))
-	return s.save()
+	s.markDirtyLocked()
+	return nil
 }
 
 // RememberApply keeps the sender's relation choice until the answer arrives.
@@ -431,7 +521,8 @@ func (s *Store) RememberApply(a Apply) error {
 	defer s.mu.Unlock()
 	a.At = time.Now().UnixMilli()
 	s.data.Applies[extraKey(a.FromID, a.ToID)] = a
-	return s.save()
+	s.markDirtyLocked()
+	return nil
 }
 
 // ApplyFor returns what the sender recorded for a pending request.
@@ -446,7 +537,8 @@ func (s *Store) ForgetApply(from, to int64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.data.Applies, extraKey(from, to))
-	return s.save()
+	s.markDirtyLocked()
+	return nil
 }
 
 // IssueCode replaces any earlier code for the phone and honours the ttl. The value is four digits
@@ -465,7 +557,8 @@ func (s *Store) IssueCode(phone string, ttl time.Duration) (Code, error) {
 		ExpiresAt: now.Add(ttl),
 	}
 	s.data.Codes[phone] = c
-	return c, s.save()
+	s.markDirtyLocked()
+	return c, nil
 }
 
 // CheckCode consumes a code on success, mirroring the "one code, one login" rule. An expired code is
@@ -479,6 +572,7 @@ func (s *Store) CheckCode(phone, value string) bool {
 	}
 	if time.Now().After(c.ExpiresAt) {
 		delete(s.data.Codes, phone)
+		s.markDirtyLocked()
 		return false
 	}
 	if c.Attempts >= maxCodeAttempts {
@@ -487,9 +581,11 @@ func (s *Store) CheckCode(phone, value string) bool {
 	if !strings.EqualFold(strings.TrimSpace(c.Value), strings.TrimSpace(value)) {
 		c.Attempts++
 		s.data.Codes[phone] = c
+		s.markDirtyLocked()
 		return false
 	}
 	delete(s.data.Codes, phone)
+	s.markDirtyLocked()
 	return true
 }
 
@@ -540,9 +636,7 @@ func (s *Store) AddFix(userID int64, p location.Point) (location.Point, error) {
 	p.ID = s.data.NextFix
 	s.data.NextFix++
 	s.data.Locations = append(s.data.Locations, fix{UserID: userID, Point: p})
-	if err := s.save(); err != nil {
-		return location.Point{}, err
-	}
+	s.markDirtyLocked()
 	return p, nil
 }
 
@@ -581,7 +675,7 @@ func (s *Store) SetSetting(userID int64, slot, value string) {
 		s.data.Settings[userID] = map[string]string{}
 	}
 	s.data.Settings[userID][slot] = value
-	s.save()
+	s.markDirtyLocked()
 }
 
 // SetDeviceState records (or refreshes) one device's self-report.
@@ -592,7 +686,25 @@ func (s *Store) SetDeviceState(userID int64, state DeviceState) {
 		s.data.Devices = map[int64]DeviceState{}
 	}
 	s.data.Devices[userID] = state
-	s.save()
+	s.markDirtyLocked()
+}
+
+// RecordScreenshot stores the latest capture one account recorded against a friend.
+func (s *Store) RecordScreenshot(me, friend int64, pic string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.data.Screens == nil {
+		s.data.Screens = map[string]ScreenshotState{}
+	}
+	s.data.Screens[extraKey(me, friend)] = ScreenshotState{Pic: pic, At: time.Now().Unix()}
+	s.markDirtyLocked()
+}
+
+// ScreenshotFor answers that latest capture; empty when none was recorded.
+func (s *Store) ScreenshotFor(me, friend int64) ScreenshotState {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.data.Screens[extraKey(me, friend)]
 }
 
 // DeviceStateFor answers the last self-report; zero value when the device never reported.

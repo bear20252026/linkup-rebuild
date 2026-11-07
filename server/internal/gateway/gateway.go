@@ -159,6 +159,11 @@ func New(opts Options) (*gin.Engine, error) {
 		api.GET("/widget/location", g.widgetLocation)
 		api.GET("/widget/track", g.widgetTrack)
 
+		// Realtime-screenshot domain (166): friend rows + the puller's done receipt. The capture
+		// round itself is the IM `screenShot` command; these routes are the ledger the screen reads.
+		api.GET("/screenshot/list", g.screenshotList)
+		api.GET("/screenshot/done", g.screenshotDone)
+
 		// Settings + aggregation domain.
 		api.GET("/setting/im", g.settingIMGet)
 		api.POST("/setting/im", g.settingIMUpdate)

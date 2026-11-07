@@ -77,6 +77,8 @@ func main() {
 		log.Error("open store", "err", err)
 		os.Exit(1)
 	}
+	// The store batches writes; shutdown is the one moment the file must be whole on disk.
+	defer db.Close()
 	key, err := loadOrCreateKey(*keyPath)
 	if err != nil {
 		log.Error("rsa key", "err", err)
