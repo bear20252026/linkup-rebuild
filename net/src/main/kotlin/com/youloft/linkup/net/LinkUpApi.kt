@@ -24,7 +24,7 @@ interface LinkUpApi {
     suspend fun userUpdatePushToken(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @POST("api/phone/state/report")
-    suspend fun phoneStateReport(@Body payload: PhoneStateInfo): ApiResponse<Unit>
+    suspend fun phoneStateReport(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/version/check")
     suspend fun versionCheck(@Query("queryId") queryId: String): ApiResponse<Map<String, JsonElement>>
@@ -217,13 +217,13 @@ interface LinkUpApi {
     suspend fun settingImGet(): ApiResponse<Map<String, Any?>>
 
     @POST("api/setting/im")
-    suspend fun settingImUpdate(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun settingImUpdate(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/setting/user_list")
     suspend fun privacyUserList(): ApiResponse<Map<String, Any?>>
 
     @POST("api/setting/update")
-    suspend fun privacyUpdate(@Body payload: Map<String, Any?>): ApiResponse<Unit>
+    suspend fun privacyUpdate(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
     @GET("api/user/im_token")
     suspend fun imToken(): ApiResponse<ImToken>

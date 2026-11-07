@@ -25,6 +25,8 @@ android {
 
     buildFeatures {
         viewBinding = true
+        // 设备自报（PhoneStateReporter）读 versionName 当 av；原版 BuildConfig 同源。
+        buildConfig = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -53,6 +55,7 @@ dependencies {
     implementation(project(":fastkit"))
 
     implementation("androidx.core:core-ktx:1.13.0")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("androidx.activity:activity-ktx:1.8.0")
     implementation("androidx.fragment:fragment-ktx:1.6.1")

@@ -61,9 +61,11 @@ interface ImClient {
 
     /**
      * Sends one image from a local file path. The transport uploads the file (OpenIMServer's own
-     * object store) as part of the send, then the ordinary message flow delivers it.
+     * object store) as part of the send, then the ordinary message flow delivers it. The answer is
+     * the served URL once the SDK filled it in — the screenshot card's step-3 receipt carries it
+     * (null when the transport could not produce one).
      */
-    suspend fun sendImage(peerUserId: Long, localPath: String)
+    suspend fun sendImage(peerUserId: Long, localPath: String): String?
 
     /**
      * Sends one device command as an OpenIM custom message — the port of the original's

@@ -204,6 +204,13 @@ open class LinkUpApplication : Application() {
     /** IM 域之外的第二个 api 入口（锁机等新卡共用同一签名客户端）。 */
     open val imApi by lazy { LinkUpClient(context = deviceContext()).api }
 
+    /** `manager/f1` 的设备自报（待验 77 的写入方）：电池/网络/版本一次打包进 DeviceState 台账。 */
+    open val phoneStateReporter: PhoneStateReporter by lazy {
+        PhoneStateReporter(imScope) { payload ->
+            runCatching { imApi.phoneStateReport(payload) }.getOrNull()?.isSuccess == true
+        }
+    }
+
     private val imScope: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     /**
@@ -332,6 +339,8 @@ open class LinkUpApplication : Application() {
             override fun onSignedIn(user: User) {
                 controller.refresh()
                 imRepository.connectAsync(user.userId)
+                // 本机自报跟登录同刻：lock_list / 实时截屏屏的版本行由此而来。
+                phoneStateReporter.reportOnce { AndroidPhoneFacts.read(this@LinkUpApplication) }
             }
 
             override fun onSignedOut() {

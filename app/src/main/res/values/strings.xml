@@ -80,4 +80,57 @@
     <string name="widget_friend_time">对方更新于 %1$d</string>
     <string name="widget_friend_battery">对方电量 %1$d%%</string>
 <string name="data_leak_concern">必要权限设置</string>
+
+    <!-- 守护 Tab 功能卡（HomeData 驱动） -->
+    <string name="home_card_phone_status">对方手机状态</string>
+    <string name="home_card_battery">电量 %1$d%%</string>
+    <string name="home_card_charging">充电中</string>
+    <string name="home_card_network_wifi">WiFi 在线</string>
+    <string name="home_card_network_cellular">移动网络在线</string>
+    <string name="home_card_network_none">无网络</string>
+    <string name="home_card_screen_time">亮屏 %1$s</string>
+    <string name="home_card_location">对方位置</string>
+    <string name="home_card_no_address">暂无定位</string>
+    <string name="home_card_arrived_at">到达于 %1$s</string>
+    <string name="home_card_lock">锁机</string>
+    <string name="home_card_lock_remaining">剩余 %1$s</string>
+    <string name="home_card_lock_off">未锁机</string>
+    <string name="home_card_own_device">我的设备</string>
+    <string name="home_card_offline">离线</string>
+    <string name="home_card_online">在线</string>
+    <string name="home_card_failed">数据加载失败</string>
+
+    <!-- 时间锁滚轮（fragment_unlock_time 原文案） -->
+    <string name="setup_locked_duration">设置锁定时长</string>
+    <string name="setup_locked_duration_desc">*记得合理设置锁定时长哦，到达时间后自动解锁</string>
+    <string name="hour">小时</string>
+    <string name="minute">分钟</string>
+    <string name="unlock_duration_1">1分钟</string>
+    <string name="unlock_duration_2">10分钟</string>
+    <string name="unlock_duration_3">30分钟</string>
+    <string name="unlock_duration_4">1小时</string>
+    <string name="desc_unlock_time_type1">游戏中小惩罚</string>
+    <string name="desc_unlock_time_type2">不回消息时</string>
+    <string name="desc_unlock_time_type3">需要专心时</string>
+    <string name="desc_unlock_time_type4">早睡别熬夜</string>
+    <string name="move_confirm_locked">滑动确认锁定</string>
+    <string name="select_time_can_locked">选择时间后即可锁定</string>
+    <string name="unknown_address">未获取到位置信息</string>
+    <string name="camera_watermark_failed">照片已保存，水印生成失败</string>
+    <string name="accessibility_service_description">用于辅助实现截屏及相关功能</string>
+
+    <!-- 实时截屏（发起端弹窗；文案取原版 strings） -->
+    <string name="screenshot_sending">正在发送截屏指令</string>
+    <string name="screenshot_capturing">正在截屏，请稍等</string>
+    <string name="screenshot_loading_image">截屏成功，加载图片中</string>
+    <string name="shot_failed">截屏失败</string>
+    <string name="shot_retry">重试</string>
+    <string name="shot_fetching">获取中…</string>
+    <string name="screenshot_peer_no_permission">Ta未开启无障碍权限，无法截屏</string>
+    <string name="screenshot_timeout">截屏超时，请重试</string>
+    <string name="screenshot_action">截图</string>
+
+    <string name="send_failed">发送失败</string>
+    <string name="send_success">发送成功</string>
+    <string name="invite_join_qq_group">请加入我们的QQ交流群，反馈你的问题和想法：%s</string>
 </resources>

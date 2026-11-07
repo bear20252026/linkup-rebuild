@@ -125,13 +125,16 @@ class AutoReportSettingsActivity : SubScreenActivity(R.string.notify_settings) {
         )
         lifecycleScope.launch {
             val response = runCatching { graph.imApi.settingImGet() }.getOrNull()
-            val settings = response?.data
-            val obj = settings as? Map<*, *>
+            val obj = response?.data as? Map<*, *>
+            // 服务端按账号存整份 bean JSON：写回必须带全量键（只发一个键会把其余开关清零）。
+            val bean = obj?.entries?.associate { it.key.toString() to it.value }?.toMutableMap()
+                ?: mutableMapOf()
             keys.forEach { (key, label) ->
                 val on = (obj?.get(key) as? Number)?.toInt() ?: 0
                 switchRow(column, label, on > 0) { v ->
+                    bean[key] = if (v) 1 else 0
                     lifecycleScope.launch {
-                        runCatching { graph.imApi.settingImUpdate(mapOf(key to if (v) 1 else 0)) }
+                        runCatching { graph.imApi.settingImUpdate(HashMap(bean)) }
                     }
                 }
             }
@@ -172,13 +175,13 @@ class PrivacySettingsActivity : SubScreenActivity(R.string.privacy_settings) {
                 val userId = (row["userId"] as? Number)?.toLong() ?: 0L
                 val name = (row["remark"] as? String) ?: (row["nickname"] as? String) ?: userId.toString()
                 switchRow(column, "$name · 位置共享", row["sensLocation"] == true) { v ->
-                    lifecycleScope.launch { runCatching { graph.imApi.privacyUpdate(mapOf("friendId" to userId, "sensLocation" to v)) } }
+                    lifecycleScope.launch { runCatching { graph.imApi.privacyUpdate(mutableMapOf("friendId" to userId, "sensLocation" to v)) } }
                 }
                 switchRow(column, "$name · 通话共享", row["sensCall"] == true) { v ->
-                    lifecycleScope.launch { runCatching { graph.imApi.privacyUpdate(mapOf("friendId" to userId, "sensCall" to v)) } }
+                    lifecycleScope.launch { runCatching { graph.imApi.privacyUpdate(mutableMapOf("friendId" to userId, "sensCall" to v)) } }
                 }
                 switchRow(column, "$name · 应用使用", row["sensAppUse"] == true) { v ->
-                    lifecycleScope.launch { runCatching { graph.imApi.privacyUpdate(mapOf("friendId" to userId, "sensAppUse" to v)) } }
+                    lifecycleScope.launch { runCatching { graph.imApi.privacyUpdate(mutableMapOf("friendId" to userId, "sensAppUse" to v)) } }
                 }
             }
         }

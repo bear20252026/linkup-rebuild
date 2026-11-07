@@ -10,6 +10,7 @@ import com.youloft.watcher.R
 import androidx.lifecycle.lifecycleScope
 import com.youloft.watcher.data.appGraph
 import com.youloft.watcher.databinding.ActivityMainBinding
+import kotlinx.coroutines.launch
 import com.youloft.watcher.pages.home.MapFragment
 import com.youloft.watcher.pages.mine.MineFragment
 import com.youloft.watcher.pages.more.MoreFragment
@@ -44,12 +45,18 @@ class MainActivity : AppCompatActivity() {
         binding.layoutMine.setOnClickListener { switchTo(TAB_MINE) }
         switchTo(intent.getStringExtra(EXTRA_TAG) ?: TAB_GUARD)
         receiveLockCommands()
+        // 已登录的 token 路径不经过 onSignedIn：进主界面时补一次设备自报（待验 77 的写入方）。
+        if (appGraph(this).users.current().userId > 0L) {
+            appGraph(this).phoneStateReporter.reportOnce {
+                com.youloft.watcher.data.AndroidPhoneFacts.read(this)
+            }
+        }
     }
 
     /**
-     * 锁机命令收端（原版 WindowHelper 的应用内等价物）：IM `lockMachine` 到达 → 全屏 LockedActivity。
-     * WindowManager 悬浮窗（盖在别的 app 上）需要 SYSTEM_ALERT_WINDOW 授权，授权卡落地前这里是
-     * 应用内锁——DESIGN 已记录偏离。
+     * 锁机命令收端（`utils/WindowHelper` 重建位的宿主）：有 SYSTEM_ALERT_WINDOW 授权 →
+     * TYPE_APPLICATION_OVERLAY 全屏盖板（盖在任意应用上）；没有 → 降级应用内 LockedActivity
+     * （原版同刻日志"[锁机]：无悬浮窗权限"）。授权入口在锁机列表页的原版 permTips 横幅。
      */
     private fun receiveLockCommands() {
         val graph = appGraph(this)
@@ -58,7 +65,15 @@ class MainActivity : AppCompatActivity() {
             api = graph.imApi,
             scope = lifecycleScope,
             onLock = { screen ->
-                if (screen.userid > 0) {
+                if (screen.userid <= 0) return@LockCommandBridge
+                if (com.youloft.watcher.utils.LockOverlayWindow.canShow(this)) {
+                    com.youloft.watcher.utils.LockOverlayWindow.show(this, screen) { unlocked ->
+                        // 被锁端答对：解锁台账 + `lockType=3` 回执（原版 WindowHelper.A/reportUnlock）。
+                        lifecycleScope.launch {
+                            runCatching { graph.imApi.relationUnlock(payload = mutableMapOf("friendId" to unlocked.userid)) }
+                        }
+                    }
+                } else {
                     com.youloft.watcher.pages.lock.LockedActivity.start(this, screen)
                 }
             },

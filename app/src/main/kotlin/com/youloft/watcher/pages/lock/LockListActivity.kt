@@ -7,32 +7,32 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.youloft.linkup.api.dto.LockInfo
-import com.youloft.linkup.net.ApiResponse
 import com.youloft.watcher.R
 import com.youloft.watcher.bean.lock.LockScreen
 import com.youloft.watcher.data.appGraph
 import com.youloft.watcher.data.im.LockCommandBridge
 import com.youloft.watcher.databinding.ActivityLockListBinding
 import com.youloft.watcher.databinding.ItemLockListBinding
+import com.youloft.watcher.utils.LockOverlayWindow
 import kotlinx.coroutines.launch
 
 /**
  * 锁机管理，`pages/lock/LockListActivity.java` 的本轮重建：`relation/lock_list` 的行（对方锁状态 +
- * 剩余时长），行内"锁机/解锁"操作。发起走 [LockCommandBridge]（台账 + IM 命令同时发）。
+ * 剩余时长 + 版本行 av/client/osVersion——待验 77），行内"锁机/解锁"操作。发起走
+ * [LockCommandBridge]（台账 + IM 命令同时发）；时间锁发起流是 [UnLockTimeSheet]（滚轮 + 档位）。
  *
- * 原版的两页发起流（UnlockSettingsActivity：时间锁 FixWheelView / 问题锁题库）收进一个对话框：
- * 时长档位 + 锁屏标题；问题锁的题库展示留到锁机卡收尾（question 通道已在桥里）。
+ * 原版 permTips 横幅接活：本机没开 SYSTEM_ALERT_WINDOW 时显示"我的锁机权限未开启"，去设置跳
+ * 系统授权页（原版同款文案与入口）。
  */
 class LockListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLockListBinding
     private lateinit var bridge: LockCommandBridge
-    private val rows = mutableListOf<LockInfo>()
+    private val adapter = LockListAdapter(onLock = { row -> UnLockTimeSheet(this, row) { screen, title -> sendLock(row, screen, title) } }, onUnlock = ::unlock)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,55 +43,60 @@ class LockListActivity : AppCompatActivity() {
             imClient = graph.imClient,
             api = graph.imApi,
             scope = lifecycleScope,
-            onLock = { /* 收端在本设备：锁机悬浮窗宿主（收端卡）接管；此处记录 */ },
+            onLock = { /* 收端在本设备：锁机盖板/降级 Activity 由 MainActivity 的命令桥接管 */ },
         )
         bridge.start()
         binding.rvLockList.layoutManager = LinearLayoutManager(this)
-        binding.rvLockList.adapter = LockListAdapter(::showLockDialog, ::unlock)
+        binding.rvLockList.adapter = adapter
         binding.ivBack.setOnClickListener { finish() }
+        wirePermTips()
+        load()
+    }
+
+    /** 原版 permTips：无 overlay 权限 → 横幅可见，"去设置"进系统授权页。 */
+    private fun wirePermTips() {
+        val hasPermission = LockOverlayWindow.canShow(this)
+        binding.permTipsLayout.visibility = if (hasPermission) View.GONE else View.VISIBLE
+        binding.tvSetup.setOnClickListener { LockOverlayWindow.openSettings(this) }
+        binding.ivClosePermTips.setOnClickListener { binding.permTipsLayout.visibility = View.GONE }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // 授权页返回后横幅要重估（原版同刻刷新）。
+        wirePermTips()
         load()
     }
 
     private fun load() {
         lifecycleScope.launch {
-            val response = appGraph(this@LockListActivity).imApi.relationLockList()
-            val list = response.data?.list.orEmpty().filterNotNull()
-            rows.clear()
-            rows += list
-            binding.rvLockList.adapter?.notifyDataSetChanged()
+            val response = runCatching { appGraph(this@LockListActivity).imApi.relationLockList() }.getOrNull()
+            val list = if (response?.isSuccess == true) {
+                response.data?.list.orEmpty().filterNotNull()
+            } else {
+                emptyList()
+            }
+            adapter.submit(list)
         }
     }
 
-    private fun showLockDialog(row: LockInfo) {
-        val input = EditText(this).apply {
-            hint = getString(R.string.lock_title_hint)
-            setSingleLine(true)
-        }
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.one_btn_lock) + " · " + (row.nickname ?: row.remark ?: ""))
-            .setMessage(getString(R.string.lock_dialog_message))
-            .setView(input)
-            .setPositiveButton(R.string.confirm) { _, _ ->
-                val title = input.text?.toString().orEmpty()
-                lifecycleScope.launch {
-                    runCatching {
-                        bridge.sendLock(
-                            row.userId,
-                            LockScreen(
-                                userid = row.userId,
-                                nickName = row.nickname,
-                                avatar = row.avatar,
-                                lockType = LockCommandBridge.LOCK_TYPE_REMOTE_LOCK,
-                                lockTitle = title.ifBlank { null },
-                                lockDuration = 0L,
-                            ),
-                        )
-                    }
-                    load()
-                }
+    private fun sendLock(row: LockInfo, screen: LockScreen, title: String) {
+        lifecycleScope.launch {
+            runCatching {
+                bridge.sendLock(
+                    row.userId,
+                    LockScreen(
+                        userid = row.userId,
+                        nickName = row.nickname,
+                        avatar = row.avatar,
+                        lockType = LockCommandBridge.LOCK_TYPE_REMOTE_LOCK,
+                        lockTitle = title.ifBlank { null },
+                        lockDuration = screen.lockDuration,
+                    ),
+                )
             }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
+            load()
+        }
     }
 
     private fun unlock(row: LockInfo) {
@@ -132,11 +137,16 @@ private class LockListAdapter(
         val row = rows[position]
         val locked = row.lockTime > 0
         holder.binding.tvName.text = row.nickname ?: row.remark ?: row.userId.toString()
+        // 版本行（待验 77）：对方设备上报什么显示什么，未上报就整行收起。
+        val version = listOfNotNull(
+            row.client.takeIf { it.isNotBlank() },
+            row.av.takeIf { it.isNotBlank() },
+            row.osVersion?.takeIf { it.isNotBlank() },
+        ).joinToString(" · ")
+        holder.binding.tvVersion.visibility = if (version.isBlank()) View.GONE else View.VISIBLE
+        holder.binding.tvVersion.text = version
         holder.binding.tvState.setText(
             if (locked) R.string.lock_state_locked else R.string.lock_state_free,
-        )
-        holder.binding.tvLock.titleView.text = holder.binding.root.context.getString(
-            if (locked) R.string.lock_action_unlock else R.string.one_btn_lock,
         )
         holder.binding.tvLock.setOnClickListener {
             if (locked) onUnlock(row) else onLock(row)

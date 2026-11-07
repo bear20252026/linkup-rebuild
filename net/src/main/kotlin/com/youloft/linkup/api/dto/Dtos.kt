@@ -350,6 +350,11 @@ data class HomeData(
     val sensitiveCard: List<SensBean?>? = null,
     val trackCard: TrackCard? = null,
     val trackCardForStay: TrackCardForStay? = null,
+    /**
+     * 锁机卡：原版 HomeData bean 没有这个字段（1.6.6 的锁卡不走 api/index），本重建的聚合路由
+     * 额外下发 lockInfo（DESIGN 记录在案）。键名与 bean/lock/LockInfo 一致，null = 未锁。
+     */
+    val lockInfo: LockInfo? = null,
 )
 
 /** recovered from com/youloft/watcher/bean/friend/LastApplyUser.java */

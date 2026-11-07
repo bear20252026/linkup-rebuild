@@ -120,10 +120,10 @@ class OpenImImClient(
         }
     }
 
-    override suspend fun sendImage(peerUserId: Long, localPath: String) {
+    override suspend fun sendImage(peerUserId: Long, localPath: String): String? {
         val message: Message =
             OpenIMClient.getInstance().messageManager.createImageMessageFromFullPath(localPath)
-        suspendCancellableCoroutine { continuation ->
+        val sent = suspendCancellableCoroutine { continuation ->
             // sendMessage performs the object-store upload itself (OpenIMServer → MinIO).
             OpenIMClient.getInstance().messageManager.sendMessage(
                 object : io.openim.android.sdk.listener.OnMsgSendCallback {
@@ -143,6 +143,9 @@ class OpenImImClient(
                 OfflinePushInfo(),
             )
         }
+        // The served URL is filled in by the time the send callback fires; ImMappings reads the
+        // same element for the chat rows, so this stays one truth.
+        return sent.pictureElem?.sourcePicture?.url
     }
 
     override suspend fun sendCommand(peerUserId: Long, action: String, data: String) {

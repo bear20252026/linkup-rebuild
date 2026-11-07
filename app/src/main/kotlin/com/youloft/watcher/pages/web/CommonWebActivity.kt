@@ -9,16 +9,23 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import com.youloft.watcher.R
+import com.youloft.watcher.data.appGraph
 import com.youloft.watcher.databinding.ActivityCommonWebBinding
+import com.youloft.watcher.web.AndroidJsInterface
+import com.youloft.watcher.web.CommonInterceptor
+import com.youloft.watcher.web.PicturePickingHost
+import com.youloft.webview.BridgeContracts
 
 /**
- * The in-app browser every agreement link opens. The recovered `CommonWebActivity` is a large H5 host
- * (JS bridge, auth hand-off, protocol dispatcher); those are the H5 container's own card. What the login
- * and privacy gates provably need is the plain document path: load a URL, show a title, a loading and an
- * error state, and a back arrow. The privacy gate opens it with `fullscreen=true` and no auth parameters.
+ * The in-app H5 host（原版 `CommonWebActivity` 的重建位）。本轮把拦截器链接上：协议分发
+ * （`protocol://` 三入口）+ `androidJS` 同步对象 + [CommonInterceptor] 的 13 个 action（待验
+ * 卡合龙）；隐私/协议页仍走纯文档路径（fullscreen、无鉴权参数）。
  */
-class CommonWebActivity : AppCompatActivity() {
+class CommonWebActivity : AppCompatActivity(), PicturePickingHost {
 
     private lateinit var binding: ActivityCommonWebBinding
 
@@ -37,32 +44,50 @@ class CommonWebActivity : AppCompatActivity() {
         binding.ivBack.setOnClickListener { finish() }
         binding.tvText.setOnClickListener { binding.webView.loadUrl(url) }
 
-        binding.webView.webView.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            allowFileAccess = false
-            allowContentAccess = false
-            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-        }
-        binding.webView.webView.webViewClient = object : WebViewClient() {
-            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
-                binding.stateLoading.visibility = View.VISIBLE
-                binding.stateError.visibility = View.GONE
-            }
-
-            override fun onPageFinished(view: WebView?, url: String?) {
-                binding.stateLoading.visibility = View.GONE
-                if (binding.tvTitle.text.isEmpty()) binding.tvTitle.text = view?.title.orEmpty()
-            }
-
-            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
-                if (request?.isForMainFrame == true) {
-                    binding.stateLoading.visibility = View.GONE
-                    binding.stateError.visibility = View.VISIBLE
-                }
-            }
-        }
+        val graph = appGraph(this)
+        // 拦截器链（原版 setWebInterceptor(new d(...)) + addJavascriptInterface(m, "androidJS")）。
+        binding.webView.webView.setWebInterceptor(
+            CommonInterceptor(
+                hostActivity = this,
+                scope = lifecycleScope,
+                webBinding = object : CommonInterceptor.CommonWebBinding {
+                    override val backButton: View? get() = binding.ivBack
+                    override val stateLoading: View? get() = binding.stateLoading
+                    override val stateError: View? get() = binding.stateError
+                    override val retryButton: View? get() = binding.tvText
+                },
+                graphProvider = { graph },
+            ),
+        )
+        binding.webView.webView.addJavascriptInterface(
+            AndroidJsInterface(this) { graph },
+            BridgeContracts.JS_OBJECT_NAME,
+        )
+        binding.tvText.setOnClickListener { binding.webView.webView.reload() }
         binding.webView.loadUrl(url)
+    }
+
+    /** selectPictures 的相册选择器（PickVisualMedia，免读权限）；maxImages 夹在系统上限 9 内。 */
+    private val pickMedia =
+        registerForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(9)) { uris ->
+            pendingPick?.invoke(uris)
+            pendingPick = null
+        }
+
+    private val pickSingle =
+        registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+            pendingPick?.invoke(listOfNotNull(uri))
+            pendingPick = null
+        }
+
+    private var pendingPick: ((List<Uri>) -> Unit)? = null
+
+    override fun pickImages(maxImages: Int, onResult: (List<Uri>) -> Unit) {
+        pendingPick = onResult
+        val request = androidx.activity.result.PickVisualMediaRequest(
+            ActivityResultContracts.PickVisualMedia.ImageOnly,
+        )
+        if (maxImages <= 1) pickSingle.launch(request) else pickMedia.launch(request)
     }
 
     override fun onDestroy() {

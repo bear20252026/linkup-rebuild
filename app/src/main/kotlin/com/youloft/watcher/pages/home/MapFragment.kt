@@ -8,9 +8,12 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.youloft.linkup.api.dto.HomeData
 import com.youloft.watcher.R
 import com.youloft.watcher.data.appGraph
 import com.youloft.watcher.data.local.GuardTarget
@@ -19,6 +22,7 @@ import com.youloft.watcher.pages.friend.AddFriendActivity
 import com.youloft.watcher.pages.friend.FriendRequestListActivity
 import com.youloft.watcher.pages.friend.MyFriendActivity
 import com.youloft.watcher.pages.home.dialog.SwitchFriendDialog
+import com.youloft.watcher.pages.lock.LockListActivity
 import com.youloft.watcher.pages.track.TrackRecordActivity
 import kotlinx.coroutines.launch
 
@@ -32,8 +36,9 @@ import kotlinx.coroutines.launch
  * - **添加好友 banner** 与离线提醒行照原样摆放；banner 点击 → 添加好友页。
  * - **拖动面板**：原版的 fastkit `SheetLayout` 未还原，用 BottomSheetBehavior 承载（轨迹页 #25 的
  *   同款先例），peek 123dp、拖过 0.8 折叠菜单（原版 0.8f 阈值）。
- * - **面板内容**：原版是服务端 HomeData 驱动的功能卡（通话记录/应用使用），该路由服务端未建——
- *   这里放真实可用的入口行（轨迹/好友/申请），如实标注。
+ * - **面板内容**：服务端 `api/index` 聚合（friendState/friendLocation/lockInfo/phoneInfoCard）
+ *   驱动的功能卡（待验 78 闭环）——四张已接线的卡在上，真实可用的入口行（轨迹/好友/申请）在
+ *   下；通话记录/应用使用卡等报表路由供数前缺席（原卡空数据时也收起）。
  */
 class MapFragment : Fragment() {
     private var _binding: FragmentMapBinding? = null
@@ -73,30 +78,73 @@ class MapFragment : Fragment() {
         })
 
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerView.adapter = HomeEntryAdapter(
-            listOf(
-                HomeEntry(R.drawable.ic_home_location, R.string.real_time_location) {
-                    TrackRecordActivity.start(requireContext(), guardTarget.current())
-                },
-                HomeEntry(R.drawable.ic_menu_permission_setup, R.string.switch_friends) {
-                    openSwitchDialog()
-                },
-                HomeEntry(R.drawable.ic_main_tab_guard_unchecked, R.string.my_friends) {
-                    MyFriendActivity.start(requireContext())
-                },
-                HomeEntry(R.drawable.ic_main_tab_more_unchecked, R.string.friend_request) {
-                    startActivity(
-                        android.content.Intent(requireContext(), FriendRequestListActivity::class.java),
-                    )
-                },
-            ),
-        )
+        binding.recyclerView.adapter = HomePanelAdapter(entryRows(), ::onCardClick)
         refreshGuardState()
+        loadHomeCards()
     }
 
     override fun onResume() {
         super.onResume()
         refreshGuardState()
+        loadHomeCards()
+    }
+
+    private fun entryRows() = listOf(
+        HomeEntry(R.drawable.ic_home_location, R.string.real_time_location) {
+            TrackRecordActivity.start(requireContext(), guardTarget.current())
+        },
+        HomeEntry(R.drawable.ic_menu_permission_setup, R.string.switch_friends) {
+            openSwitchDialog()
+        },
+        HomeEntry(R.drawable.ic_main_tab_guard_unchecked, R.string.my_friends) {
+            MyFriendActivity.start(requireContext())
+        },
+        HomeEntry(R.drawable.ic_main_tab_more_unchecked, R.string.friend_request) {
+            startActivity(
+                android.content.Intent(requireContext(), FriendRequestListActivity::class.java),
+            )
+        },
+    )
+
+    /** 卡片路由：位置卡进轨迹页、锁卡进锁机列表；状态卡无已建二级屏（原版跳 H5 报表）。 */
+    private fun onCardClick(kind: HomeCards.Kind) {
+        when (kind) {
+            HomeCards.Kind.LOCATION ->
+                TrackRecordActivity.start(requireContext(), guardTarget.current())
+            HomeCards.Kind.LOCK -> LockListActivity.start(requireContext())
+            else -> Unit
+        }
+    }
+
+    /** `api/index`（HomeManager 重建）：失败静默保留上一批卡。 */
+    private fun loadHomeCards() {
+        val adapter = binding.recyclerView.adapter as? HomePanelAdapter ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val response = runCatching { appGraph(requireContext()).imApi.index() }.getOrNull()
+            val data: HomeData? = if (response?.isSuccess == true) response.data else null
+            adapter.submitCards(
+                HomeCards.fromData(data, cardTexts()) { durationSeconds, endEpochMillis ->
+                    HomeCards.Remaining.format(durationSeconds, endEpochMillis)
+                },
+            )
+        }
+    }
+
+    private fun cardTexts() = object : HomeCards.Texts {
+        override val phoneStatus = getString(R.string.home_card_phone_status)
+        override val charging = getString(R.string.home_card_charging)
+        override val networkWifi = getString(R.string.home_card_network_wifi)
+        override val networkCellular = getString(R.string.home_card_network_cellular)
+        override val networkNone = getString(R.string.home_card_network_none)
+        override val screenTime: (String) -> String = { getString(R.string.home_card_screen_time, it) }
+        override val offline = getString(R.string.home_card_offline)
+        override val location = getString(R.string.home_card_location)
+        override val noAddress = getString(R.string.home_card_no_address)
+        override val arrivedAt: (String) -> String = { getString(R.string.home_card_arrived_at, it) }
+        override val lock = getString(R.string.home_card_lock)
+        override val lockOff = getString(R.string.home_card_lock_off)
+        override val lockRemaining: (String) -> String = { getString(R.string.home_card_lock_remaining, it) }
+        override val ownDevice = getString(R.string.home_card_own_device)
     }
 
     private fun refreshGuardState() {
@@ -134,23 +182,58 @@ class MapFragment : Fragment() {
 /** Sheet entry rows: the ones that route to rebuilt screens, with the icon the original card family used. */
 data class HomeEntry(val iconRes: Int, val titleRes: Int, val onClick: () -> Unit)
 
-class HomeEntryAdapter(private val entries: List<HomeEntry>) : RecyclerView.Adapter<HomeEntryAdapter.Holder>() {
-    class Holder(val view: View) : RecyclerView.ViewHolder(view)
+/**
+ * 面板两段式：功能卡（HomeData 驱动）在前，入口行在后。两段各自持有点击路由。
+ */
+class HomePanelAdapter(
+    private val entries: List<HomeEntry>,
+    private val onCardClick: (HomeCards.Kind) -> Unit,
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+    private var cards: List<HomeCards.Card> = emptyList()
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_home_entry, parent, false)
-        return Holder(view)
+    fun submitCards(cards: List<HomeCards.Card>) {
+        this.cards = cards
+        notifyDataSetChanged()
     }
 
-    override fun getItemCount(): Int = entries.size
+    private class CardHolder(val view: View) : RecyclerView.ViewHolder(view)
+    private class EntryHolder(val view: View) : RecyclerView.ViewHolder(view)
 
-    override fun onBindViewHolder(holder: Holder, position: Int) {
-        val entry = entries[position]
-        holder.view.findViewById<android.widget.ImageView>(R.id.iv_home_entry_icon)
-            .setImageResource(entry.iconRes)
-        holder.view.findViewById<android.widget.TextView>(R.id.tv_home_entry_title)
-            .setText(entry.titleRes)
-        holder.view.setOnClickListener { entry.onClick() }
+    override fun getItemViewType(position: Int): Int =
+        if (position < cards.size) TYPE_CARD else TYPE_ENTRY
+
+    override fun getItemCount(): Int = cards.size + entries.size
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return if (viewType == TYPE_CARD) {
+            CardHolder(inflater.inflate(R.layout.item_home_card, parent, false))
+        } else {
+            EntryHolder(inflater.inflate(R.layout.item_home_entry, parent, false))
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        when (holder) {
+            is CardHolder -> {
+                val card = cards[position]
+                holder.view.findViewById<TextView>(R.id.tv_home_card_title).text = card.title
+                holder.view.findViewById<TextView>(R.id.tv_home_card_value).text = card.value
+                holder.view.findViewById<TextView>(R.id.tv_home_card_line1).text = card.line1
+                holder.view.findViewById<TextView>(R.id.tv_home_card_line2).text = card.line2
+                holder.view.setOnClickListener { onCardClick(card.kind) }
+            }
+            is EntryHolder -> {
+                val entry = entries[position - cards.size]
+                holder.view.findViewById<ImageView>(R.id.iv_home_entry_icon).setImageResource(entry.iconRes)
+                holder.view.findViewById<TextView>(R.id.tv_home_entry_title).setText(entry.titleRes)
+                holder.view.setOnClickListener { entry.onClick() }
+            }
+        }
+    }
+
+    companion object {
+        private const val TYPE_CARD = 0
+        private const val TYPE_ENTRY = 1
     }
 }

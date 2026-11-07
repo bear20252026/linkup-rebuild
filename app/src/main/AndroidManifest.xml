@@ -152,6 +152,31 @@
             android:name=".service.TrackCollectService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- 原版声明逐字还原：LabelUp 辅助功能，BIND_ACCESSIBILITY_SERVICE，只拿截屏能力。 -->
+        <service
+            android:name=".service.AppAccessibilityService"
+            android:description="@string/accessibility_service_description"
+            android:exported="false"
+            android:label="LinkUp 辅助功能"
+            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
+            <intent-filter>
+                <action android:name="android.accessibilityservice.AccessibilityService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.accessibilityservice"
+                android:resource="@xml/accessibility_service_config" />
+        </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/camera_file_paths" />
+        </provider>
     </application>
 
     <!-- The add-friend screen asks whether WeChat/QQ are installed. On API 30+ that query is only

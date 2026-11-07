@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 守护 Tab 功能卡底：白底 16dp 圆角。原版各卡是 fastkit Shaped* 容器（白底圆角），本重建以
+     普通 shape 承载同一视觉密度（DESIGN 记录）。 -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#ffffffff" />
+    <corners android:radius="16dp" />
+</shape>
