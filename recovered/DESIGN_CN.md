@@ -1798,13 +1798,122 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 71 | 两个地图 AAR + 真机像素 | 不变 |
 | 72 | OpenIM SDK 真机收发 + 模拟器↔WSL 连通 | 不变 |
 | 73 | 语音/视频媒体（MediaRecorder→OpenIM 上传链同路） | 图片已通，录音与 TOS 备选记录 |
-| 74 | 锁机悬浮窗（SYSTEM_ALERT_WINDOW 授权 + WindowManager 版）、时间锁滚轮发起流、截屏采集端（无障碍服务 + screenShot 命令 step0→3）、相机水印合成（CameraX 双摄） | 各自独立权限/媒体卡 |
+| 74 | ~~锁机悬浮窗、时间锁滚轮、截屏采集端、相机水印合成~~ 代码四件全落地（五点三十五）；仍开：真机授权流/滚轮手感/水印像素/CameraX 双摄并发、悬浮窗 G 路径（appList 通道） | 真机 + 硬件档 |
 | 75 | locationProviderId 调试入口 | 不变 |
 | 76 | 高德 vendor key | 不变 |
-| 77 | 设备上报的 av/client 回填（lock_list 的 av/client 现为空）+ TOS 封面库 | phone/state 卡后续字段 |
-| 78 | 守护 Tab 面板的功能卡（通话记录/应用使用） | 服务端 HomeData 路由未建 |
+| 77 | ~~av/client 回填~~ 闭环（上报携带 + 两屏回填，五点三十五）；仍开：TOS 封面库（账号丢失，恒空） | 封面库属资产找回 |
+| 78 | ~~守护 Tab 功能卡~~ 四卡渲染落地（friendState/friendLocation/lockInfo/phoneInfoCard）；仍开：通话记录/应用使用两卡等报表路由供数 | 报表域独立卡 |
 | 79 | 我的 Tab 二级屏（权限列表/通知/地图/隐私/数据安全/应用密码/联系/关于） | 入口可见不跳 |
 | 80 | 待办 Tab（TodoFragment） | 入口保留不跳 |
+| 81 | 真机验收五点三十五的新面：无障碍截屏授权流+帧、悬浮窗盖板、滚轮停靠、水印成图、H5 线上页 13 action 实调 | 本机无设备 |
+| 82 | H5 bridge 的执行取舍回填：permissionTip 族载荷键、joinQQGroup 深链、selectPictures 上传语义 | 需线上 H5 配合或原版服务端源码 |
+
+## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
+
+待验 71–80 表里挂账的八项一次收口。每张都按"原版行为有据可查 → 重建到哪一步 → 与原版的偏离
+记录在案"的口径写。
+
+### 一、H5 JS bridge：协议名从 dex 字串池逐字抠出，拦截器链四件套全装上
+
+jadx 对 1.6.6 `CommonInterceptor.g0`（582 行）的 switch 恢复是失败的（754 指令单元 method dump
+skipped），但 `--show-bad-code` 重跑单类后 switch 骨架出来了：字符串 switch 14 个 case
+（`h5Activity` 重复计入 default、`downloadPercent` 原版就是空实现），即记录里的"13 个 action"：
+`h5Activity / clipboardReadText / onUserPermissionTip / permissionTip / refreshVip /
+downloadPercent / jumpPage / showOrHideBtn / toast / saveMediaFile / selectPictures /
+sendRecoverMessage / dataTrackEvent / joinQQGroup / onShowMemberPop`。参数键与各分支取值
+（type→chatAuth 9/24/12/11、sendRecoverMessage 的 userid+type→18/19、selectPictures 的
+maxNum/original/callback……）从同一份输出逐字对齐。
+
+重建分四层：`com.youloft.webview.JsBridge`（`jh.f`：`_eval` 注入 + 队列 + `_ret_` 回执 +
+`call(name,args)` 调用串拼接）、`ProtocolDispatcher`（`jh.h.g`：`protocol://cmd?{json}|k=v|#分段`
+三形态解析，金样测试钉死）、CommonWebView 自持的 ChromeClient/ViewClient（`jh.c/d` 的拦截序：
+宿主 S → 协议分发 → mailto → http(s) 重写重载 → 其余 scheme 交系统）与宿主接口
+`WebViewInterceptor`（`jh.j` 的子集）。app 侧 `CommonInterceptor`：路由抽成纯函数 `H5Commands`
+（JVM 全量测试），执行层只做 Android 副作用。`androidJS` 对象（`web/m.java`）两方法逐行
+（getStatusBarHeight/getVipStatus）。
+
+执行取舍（原版 → 本重建）：`permissionTip` 族走 OpenIM `update_permissions`（载荷只带 type，
+其余键不可恢复），toast 按发送成败；`selectPictures` 回本地 cache 路径（原版上传 TOS 回 URL）；
+`jumpPage` 只路由 http(s)；`dataTrackEvent` 落 logcat（埋点 SDK 随源码丢失）；`joinQQGroup` 用
+qm.qq.com 加群页兜底（原版 mqqapi 深链常量不可恢复）；`onShowMemberPop` 记日志空实现。
+`rewriteUrl` 注入 userid/token/av/client（原版 `ext.m.c` 公共串的子集）。
+
+### 二、截屏采集端：无障碍服务逐行重建，step 0→3 闭环
+
+`service/AppAccessibilityService` 逐行移植（静态实例 + `takeScreenshot` 包一层 +
+hardwareBuffer 用后即还），清单声明与 `accessibility_service_config.xml` 照 apktool 逐字
+（`canTakeScreenshot=true`、`canRetrieveWindowContent=false`——服务只拿帧不读屏）。命令链
+`ScreenshotCommandBridge`：请求（`step=1,callBack=0`）→ 回 step1（无障碍可用与否）→ 采帧 →
+step2 成败 → PNG 落 cache → 上传 → step3 带图 URL。发起端 `ScreenshotDialog`：三步步进 +
+22 秒统一超时（原版 j0 常量）+ Glide 预览 + `api/screenshot/done` 台账。
+
+两处记录在案的偏离：**上传链**——`ImClient.sendImage` 改为返回落位 URL（OpenIMServer/MinIO），
+代价是截屏图会以图片消息出现在双方会话里（原版 TOS 上传不可见）；**UI**——原版三枚 lottie
+步进动画换成本工程的步进条。
+
+### 三、相机水印：从"视图叠加截图"还原为 Canvas 直绘
+
+原版水印不是拍进照片的：`ImagePreviewActivity` 把 TextView 盖在照片上，分享时截整张
+RelativeLayout。本轮把那张底左水印卡（`activity_image_preview.xml`：品牌顶条 + 36sp 粗体时间 +
+日期/星期双行 + 地址行，圆角 16dp）按 411dp 宽屏比例尺（scale = 照片宽/411）直接画进像素。
+拍照升级 `TakePicturePreview` → `TakePicture`（全分辨率落 cache，文件名 `yyyyMMddHHmmssSSS.jpg`
+照原版）+ EXIF 转正。地址源：last-known 定位 → `Geocoder` 反解，拿不到落原版文案
+"未获取到位置信息"（原版读 `CacheUtils.F()` 缓存 bean，本重建无此缓存）。前摄小窗（104×136dp）
+保留参数位恒 null——系统相机单次拿不到前摄帧，**CameraX 双摄并发仍是未做项**（硬件档）。
+
+### 四、时间锁滚轮：jitpack 挂了就自绘
+
+`com.contrarywind.view.WheelView`（Android-PickerView）的 jitpack 构建全挂，改为工程内自绘
+`view/lock/WheelView`：竖直滚动 + 停靠 + fling（OverScroller）、中心行高亮、alpha 渐隐，样式面
+覆盖 `UnLockTimeFragment.Y` 的全部 setter（textSize 48 / 双色 / sf_pro_rounded_heavy_subset /
+itemsVisibleCount 3 / lineSpacing 1.2 / gravity 左右）。`FixWheelView` 逐行移植（按下没收父级
+拦截）。`UnLockTimeSheet`（BottomSheet）：时 0–23 右对齐 + 分 0–59 左对齐 + 四档位（1分钟/
+10分钟/30分钟/1小时——原版 Android 列；iOS 15 分钟档依赖 `LockInfo.isIos`，重建 bean 无该字段，
+不编造）+ 0 时长禁锁（原版 V()）+ 时长记忆（MMKV `lastLockDuration`，键名是本工程选择）。
+偏离：原版 LockActionView"滑动确认锁定"是点击式按钮。
+
+### 五、锁机悬浮窗：WindowHelper 的 J 路径（整手机锁）落地
+
+`utils/LockOverlayWindow`：`TYPE_APPLICATION_OVERLAY`(2038)、format OPAQUE、flags 分解自原版
+`0x80000308`（NOT_FOCUSABLE | LAYOUT_IN_SCREEN | LAYOUT_NO_LIMITS | DRAWS_SYSTEM_BAR_
+BACKGROUNDS）、Gravity TOP|START、全屏、alpha 1——即原版 `J()`。答题要软键盘时现场摘
+NOT_FOCUSABLE（原版 E/F 换 flags 的同族操作）。锁机命令收端按权限分流：有 overlay 授权走盖板
+（盖在任意应用上），没有降级应用内 LockedActivity（原版同刻日志"[锁机]：无悬浮窗权限"）。
+授权入口接活原版 `permTips` 横幅（"我的锁机权限未开启，好友无法锁机"→ 系统授权页）。
+**未做**：G 路径（按前台应用 alpha 0/1 切换的应用锁）需要 `LockScreen.appList` 写入方 +
+UsageStats，载荷还没有 appList 通道，偏离记录在案。
+
+### 六、守护 Tab 功能卡：api/index 的四张卡真渲染
+
+`HomeCards` 纯函数装配 + `HomePanelAdapter` 两段式（卡在上、入口行在下）：对方手机状态
+（friendState：电量/充电/网络/亮屏）、对方位置（friendLocation：地址 + 到达时刻）、锁机
+（lockInfo：标题 + 剩余时长）、我的设备（phoneInfoCard：电量 + 型号/系统 + 网络）。通话记录/
+应用使用卡在报表路由供数前缺席（原卡空数据时也收起）。`lockInfo` 进 HomeData 是本重建聚合的
+额外下发（原版 bean 无此字段，注释与 DESIGN 双记录）。
+
+### 七、store 批写：200ms 防抖 + 同步出口
+
+`Store` 的写路径改 dirty + 定时器批写：首个脏标记起 200ms 内的突发合并成一次落盘，**定时器
+首deadline 不顺延**（连续写不会无限推迟）；`Flush`/`Close` 是同步出口（server main 挂了
+`defer db.Close()`），幂等。崩溃最多丢一窗——真上线的答案是 DB，本包就是替换缝。测试：五连写
+合并为一文件、Close 幂等、写后 Close 不丢；磁盘重载测试改为先 Close（原语义"直接重开"在防抖
+窗口内是不确定的）。
+
+### 八、av/client：搭同一条上报回家
+
+原版 lock_list/screenshot 的 av/client 从哪来不在 APK 里（上报 bean `PhoneStateInfo` 只有
+model/brand/osVersion）。本重建把 av（versionName）/client("android") 搭在
+`api/phone/state/report` 同一条上报里（服务端同名读取，键口径与 H5 公共查询串一致），写入方
+`PhoneStateReporter` 挂 onSignedIn 与 token 路径。lock_list / screenshot 两屏的版本行由
+DeviceState 回填（待验 77 的"等 phone/state/report 携带"闭环）。顺手修的两枚存量缺陷：
+`api/setting/im`、`api/setting/update` 用只读 `Map` 触发 Retrofit 通配符拒绝（`BodyParameterTypesTest`
+钉的就是这个）；自动报备屏单键 POST 会覆写整份 bean（服务端按账号存整份 JSON），改为读-合-写。
+
+### 本机验证到哪一步
+
+编译 + 全部单测（go test ./... 全绿；:app/:net/:im/:location/:map 全绿，新增 8 个测试文件）+
+`assembleDebug` 出包。**真机/模拟器未验**：无障碍截屏的授权流与帧、悬浮窗盖板的手感、滚轮的
+停靠手感、水印的像素成图、H5 线上页对 13 action 的真实调用——都进待验表（81 起）。
 
 ## 六、架构决定（写死，避免重写时反复）
 
