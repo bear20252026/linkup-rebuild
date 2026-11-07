@@ -27,15 +27,17 @@ import io.openim.android.sdk.models.Message
  */
 object ImMappings {
 
-    /** [Message] → [ImMessage]. Non-text content maps to an empty body with its content type preserved away — the chat card ships text-only. */
+    /** [Message] → [ImMessage]. Text keeps its body; a picture carries its served URL in [ImMessage.mediaUrl]. */
     fun toImMessage(message: Message, loginUserId: String): ImMessage {
         val incoming = message.sendID != loginUserId
+        val isPicture = message.contentType == io.openim.android.sdk.enums.MessageType.PICTURE
         return ImMessage(
             peerUserId = (if (incoming) message.sendID else message.recvID).toLongOrNull() ?: 0L,
             text = message.textElem?.content ?: "",
             incoming = incoming,
             epochSeconds = (message.sendTime.takeIf { it > 0 } ?: message.createTime) / 1000,
             clientId = message.clientMsgID,
+            mediaUrl = if (isPicture) message.pictureElem?.sourcePicture?.url else null,
         )
     }
 

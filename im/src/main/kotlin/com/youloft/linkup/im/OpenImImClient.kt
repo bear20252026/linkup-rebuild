@@ -120,6 +120,31 @@ class OpenImImClient(
         }
     }
 
+    override suspend fun sendImage(peerUserId: Long, localPath: String) {
+        val message: Message =
+            OpenIMClient.getInstance().messageManager.createImageMessageFromFullPath(localPath)
+        suspendCancellableCoroutine { continuation ->
+            // sendMessage performs the object-store upload itself (OpenIMServer → MinIO).
+            OpenIMClient.getInstance().messageManager.sendMessage(
+                object : io.openim.android.sdk.listener.OnMsgSendCallback {
+                    override fun onSuccess(data: Message) {
+                        if (continuation.isActive) continuation.resume(data)
+                    }
+
+                    override fun onError(code: Int, error: String) {
+                        if (continuation.isActive) {
+                            continuation.resumeWith(Result.failure(ImTransportException(code, error)))
+                        }
+                    }
+                },
+                message,
+                peerUserId.toString(),
+                /* groupID = */ "",
+                OfflinePushInfo(),
+            )
+        }
+    }
+
     override suspend fun sendCommand(peerUserId: Long, action: String, data: String) {
         val message: Message = OpenIMClient.getInstance().messageManager.createCustomMessage(
             /* data = */ data,

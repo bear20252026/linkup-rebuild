@@ -99,4 +99,22 @@ class ImMappingsTest {
         assertNull(ImMappings.latestText(""))
         assertNull(ImMappings.latestText("not json at all"), "garbage becomes no preview, not a crash")
     }
+
+    @Test
+    fun `a picture message carries its served url and an empty body`() {
+        val message = Message().apply {
+            sendID = "10000001"
+            recvID = "10000002"
+            sendTime = 1_700_000_000_000
+            contentType = io.openim.android.sdk.enums.MessageType.PICTURE
+            pictureElem = io.openim.android.sdk.models.PictureElem().apply {
+                sourcePicture = io.openim.android.sdk.models.PictureInfo().apply { url = "http://minio/1.jpg" }
+            }
+        }
+
+        val fix = ImMappings.toImMessage(message, loginUserId = "10000002")
+        assertTrue(fix.isImage, "content type PICTURE marks the row as media")
+        assertEquals("http://minio/1.jpg", fix.mediaUrl, "the served URL rides the neutral model")
+        assertEquals("", fix.text)
+    }
 }

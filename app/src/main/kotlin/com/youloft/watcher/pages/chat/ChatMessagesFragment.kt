@@ -12,6 +12,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.youloft.linkup.im.ImMessage
+import com.youloft.watcher.R
 import com.youloft.watcher.databinding.FragmentChatMessagesBinding
 import com.youloft.watcher.databinding.ItemChatMessageReceivedBinding
 import com.youloft.watcher.databinding.ItemChatMessageSentBinding
@@ -35,6 +36,16 @@ class ChatMessagesFragment : Fragment() {
     }
     private val rows = mutableListOf<ImMessage>()
     private lateinit var adapter: ChatMessageAdapter
+    private lateinit var imagePicker: androidx.activity.result.ActivityResultLauncher<androidx.activity.result.PickVisualMediaRequest>
+
+    /** 拍照/相册选图落 cache 再交给 transport（SDK 要真实文件路径）。 */
+    private fun copyToCache(uri: android.net.Uri): String? = runCatching {
+        val file = java.io.File(requireContext().cacheDir, "im-" + System.currentTimeMillis() + ".jpg")
+        requireContext().contentResolver.openInputStream(uri)?.use { input ->
+            file.outputStream().use { output -> input.copyTo(output) }
+        }
+        file.absolutePath
+    }.getOrNull()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentChatMessagesBinding.inflate(inflater, container, false)
@@ -49,6 +60,19 @@ class ChatMessagesFragment : Fragment() {
             stackFromEnd = true
         }
 
+        imagePicker = registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia(),
+        ) { uri ->
+            val path = uri?.let { copyToCache(it) }
+            if (path != null) viewModel.sendImage(path)
+        }
+        binding.btChatImage.setOnClickListener {
+            imagePicker.launch(
+                androidx.activity.result.PickVisualMediaRequest(
+                    androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia.ImageOnly,
+                ),
+            )
+        }
         binding.btChatSend.setOnClickListener {
             val text = binding.etChatInput.text?.toString().orEmpty()
             binding.etChatInput.setText("")
@@ -103,17 +127,32 @@ class ChatMessageAdapter : RecyclerView.Adapter<ChatMessageAdapter.Holder>() {
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
         val inflater = LayoutInflater.from(parent.context)
         return if (viewType == TYPE_SENT) {
-            Holder(ItemChatMessageSentBinding.inflate(inflater, parent, false).tvChatText)
+            val binding = ItemChatMessageSentBinding.inflate(inflater, parent, false)
+            Holder(binding.tvChatText, binding.ivChatMedia)
         } else {
-            Holder(ItemChatMessageReceivedBinding.inflate(inflater, parent, false).tvChatText)
+            val binding = ItemChatMessageReceivedBinding.inflate(inflater, parent, false)
+            Holder(binding.tvChatText, binding.ivChatMedia)
         }
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        holder.text.text = items[position].text
+        val message = items[position]
+        if (message.isImage) {
+            holder.text.visibility = android.view.View.GONE
+            holder.media.visibility = android.view.View.VISIBLE
+            com.bumptech.glide.Glide.with(holder.media)
+                .load(message.mediaUrl)
+                .placeholder(R.drawable.ic_avatar_male)
+                .into(holder.media)
+        } else {
+            holder.media.visibility = android.view.View.GONE
+            holder.text.visibility = android.view.View.VISIBLE
+            holder.text.text = message.text
+        }
     }
 
-    class Holder(val text: android.widget.TextView) : RecyclerView.ViewHolder(text)
+    class Holder(val text: android.widget.TextView, val media: android.widget.ImageView) :
+        RecyclerView.ViewHolder(text)
 
     private companion object {
         const val TYPE_SENT = 0

@@ -38,6 +38,16 @@
             android:textSize="15sp" />
 
         <TextView
+            android:id="@+id/bt_chat_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:padding="8dp"
+            android:text="图"
+            android:textColor="@color/appPrimary"
+            android:textSize="15sp" />
+
+        <TextView
             android:id="@+id/bt_chat_send"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

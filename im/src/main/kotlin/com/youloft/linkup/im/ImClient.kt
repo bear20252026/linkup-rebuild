@@ -60,6 +60,12 @@ interface ImClient {
     suspend fun sendText(peerUserId: Long, text: String)
 
     /**
+     * Sends one image from a local file path. The transport uploads the file (OpenIMServer's own
+     * object store) as part of the send, then the ordinary message flow delivers it.
+     */
+    suspend fun sendImage(peerUserId: Long, localPath: String)
+
+    /**
      * Sends one device command as an OpenIM custom message — the port of the original's
      * `EMMessage.createSendMessage(Type.CMD)` + `setAttribute("data", gson(...))`, with the cmdType
      * action carried in the custom message's extension field.
@@ -99,7 +105,16 @@ data class ImMessage(
     val epochSeconds: Long,
     /** The SDK's own message id, so the chat screen can key rows and de-duplicate sends. */
     val clientId: String? = null,
-)
+    /**
+     * The served media URL (image/voice), straight from the SDK's element — the transport uploads
+     * through OpenIMServer's own object store (MinIO in the rebuilt stack), so the URL is stable
+     * across clients. Null for text.
+     */
+    val mediaUrl: String? = null,
+) {
+    /** 文本之外的本轮媒体种类；语音/视频走各自卡时在此扩展。 */
+    val isImage: Boolean get() = mediaUrl != null
+}
 
 /** One conversation row: the peer, the last line, the badge. */
 data class ImConversation(

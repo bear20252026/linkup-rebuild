@@ -15,4 +15,12 @@
         android:paddingVertical="8dp"
         android:textColor="@color/em_toolbar_color_title"
         android:textSize="15sp" />
+    <ImageView
+        android:id="@+id/iv_chat_media"
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:layout_gravity="start"
+        android:background="@drawable/shape_chat_bubble_received"
+        android:scaleType="centerCrop"
+        android:visibility="gone" />
 </FrameLayout>

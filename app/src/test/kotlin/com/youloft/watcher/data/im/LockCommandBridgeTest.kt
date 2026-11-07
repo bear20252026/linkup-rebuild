@@ -102,6 +102,8 @@ class LockCommandBridgeTest {
         override suspend fun history(peerUserId: Long, count: Int) = emptyList<ImMessage>()
         override suspend fun sendText(peerUserId: Long, text: String) = Unit
 
+        override suspend fun sendImage(peerUserId: Long, localPath: String) = Unit
+
         override suspend fun sendCommand(peerUserId: Long, action: String, data: String) {
             commandsSent += action to mapOf("peerUserId" to peerUserId.toString(), "data" to data)
         }
