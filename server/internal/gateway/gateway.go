@@ -246,7 +246,7 @@ func (g *Gateway) deny(c *gin.Context, reason string) {
 func (g *Gateway) account() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		switch c.FullPath() {
-		case "/api/client/config", "/api/sms/login/cut", "/api/sms/send", "/api/sms/click_to_login", "/api/user/login":
+		case "/api/client/config", "/api/sms/login/cut", "/api/sms/send", "/api/sms/click_to_login", "/api/user/login", "/api/user/register", "/api/user/password_login":
 			c.Set(authSkipKey, true)
 			c.Next()
 			return
