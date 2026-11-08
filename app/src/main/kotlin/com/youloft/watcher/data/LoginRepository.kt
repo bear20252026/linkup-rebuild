@@ -12,6 +12,10 @@ import com.youloft.watcher.data.local.LoginFlags
  * to drive to prove the write path.
  */
 interface LoginRepository {
+    suspend fun register(username: String, password: String, inviteCode: String): ApiResponse<com.youloft.linkup.api.dto.User>
+
+    suspend fun passwordLogin(username: String, password: String): ApiResponse<com.youloft.linkup.api.dto.User>
+
     suspend fun loginCut(): ApiResponse<Cut>
 
     /** GET api/sms/send. `region` is the country code the original defaulted to `+86`. */
@@ -55,6 +59,11 @@ class NetworkLoginRepository(
     private val users: UserManager,
     private val flags: LoginFlags,
 ) : LoginRepository {
+    override suspend fun register(username: String, password: String, inviteCode: String) =
+        api.userRegister(payload = mutableMapOf("username" to username, "password" to password, "inviteCode" to inviteCode))
+
+    override suspend fun passwordLogin(username: String, password: String) =
+        api.userPasswordLogin(payload = mutableMapOf("username" to username, "password" to password))
 
     override suspend fun loginCut(): ApiResponse<Cut> = api.smsLoginCut()
 

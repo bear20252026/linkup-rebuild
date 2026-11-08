@@ -30,9 +30,11 @@ import (
 // exactly 8 characters (`AddFriendViewModel.MATCH_CODE_LENGTH`) before calling `pre_confirm?code=`.
 // So the id *is* the code, and ids must therefore be 8 digits — see firstUserID.
 type User struct {
-	ID         int64  `json:"id"`
-	Phone      string `json:"phone"`
-	UnionID    string `json:"unionId"`
+	ID           int64  `json:"id"`
+	Phone        string `json:"phone"`
+	Username     string `json:"username,omitempty"`
+	PasswordHash string `json:"-"`
+	UnionID      string `json:"unionId"`
 	Platform   int    `json:"platform"`
 	Nickname   string `json:"nickname"`
 	Avatar     string `json:"avatar"`
@@ -114,6 +116,7 @@ type Data struct {
 	Devices   map[int64]DeviceState    `json:"devices,omitempty"`
 	Settings  map[int64]map[string]string `json:"settings,omitempty"`
 	Screens   map[string]ScreenshotState `json:"screenshots,omitempty"`
+	UsernameIdx map[string]int64         `json:"usernameIdx,omitempty"`
 }
 
 // ScreenshotState is the last capture one account pulled off one guarded friend (api/screenshot/done).
@@ -470,6 +473,59 @@ func (s *Store) PutExtra(e Extra) error {
 
 // ExtraFor reads one direction, or a zero-value Extra when nothing was recorded (the client's own
 // default then applies).
+// ByUsername finds a user by their username; error if not found.
+func (s *Store) ByUsername(username string) (User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.data.UsernameIdx != nil {
+		if id, ok := s.data.UsernameIdx[username]; ok {
+			for _, u := range s.data.Users {
+				if u.ID == id {
+					return u, nil
+				}
+			}
+		}
+	}
+	return User{}, fmt.Errorf("user not found: %s", username)
+}
+
+// CreateUserWithUsername creates a new account with username/password auth (no phone needed).
+func (s *Store) CreateUserWithUsername(username, passwordHash string) (*User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.data.UsernameIdx == nil {
+		s.data.UsernameIdx = map[string]int64{}
+	}
+	if _, exists := s.data.UsernameIdx[username]; exists {
+		return nil, fmt.Errorf("username already exists: %s", username)
+	}
+	s.data.NextID++
+	u := User{
+		ID:           s.data.NextID,
+		Username:     username,
+		PasswordHash: passwordHash,
+		Nickname:     username,
+		IsRegister:   true,
+	}
+	s.data.Users = append(s.data.Users, u)
+	s.data.UsernameIdx[username] = u.ID
+	s.save()
+	return &u, nil
+}
+
+// SaveToken stores the current JWT for a user.
+func (s *Store) SaveToken(userID int64, token string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.data.Users {
+		if s.data.Users[i].ID == userID {
+			s.data.Users[i].Token = token
+			s.save()
+			return
+		}
+	}
+}
+
 // LockFor answers the recorded lock for one direction; the zero value means "not locked".
 func (s *Store) LockFor(owner, friend int64) LockState {
 	s.mu.Lock()

@@ -143,6 +143,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     /** `a(context, fromH5, matchCode, noAnim, logout)` — one 500ms gate for the whole process. */
+    private fun openRegister() {
+        RegisterActivity.start(this)
+    }
+
     companion object {
         const val EXTRA_FROM_H5 = "from_h5"
         const val EXTRA_MATCH_CODE = "match_code"

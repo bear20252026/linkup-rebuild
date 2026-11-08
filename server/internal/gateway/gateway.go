@@ -61,6 +61,9 @@ type Options struct {
 	// emulator reaches host loopback only through 10.0.2.2, so that is the default; the client never
 	// hardcodes the address, it reads it from this response.
 	OpenIMWs string
+	// InviteCode is the admin-set invitation code required for username/password registration.
+	// Empty means no check (open registration); set via -invite-code flag.
+	InviteCode string
 }
 
 // Gateway holds the routes' shared state.
@@ -128,6 +131,8 @@ func New(opts Options) (*gin.Engine, error) {
 		api.GET("/sms/send", g.sendCode)
 		api.POST("/sms/click_to_login", g.loginByPhone)
 		api.POST("/user/login", g.loginByThird)
+		api.POST("/user/register", g.userRegister)
+		api.POST("/user/password_login", g.userPasswordLogin)
 
 		// Authenticated.
 		api.GET("/user/info", g.userInfo)

@@ -56,6 +56,12 @@ object LoginFixtures {
         val thirdLogins = mutableListOf<ThirdLogin>()
         var cutCalls = 0
 
+        override suspend fun register(username: String, password: String, inviteCode: String) =
+            ApiResponse(500, "test stub", data = User())
+
+        override suspend fun passwordLogin(username: String, password: String) =
+            ApiResponse(500, "test stub", data = User())
+
         override suspend fun loginCut(): ApiResponse<Cut> {
             cutFailure?.let { throw it }
             cutCalls++

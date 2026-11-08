@@ -225,6 +225,12 @@ interface LinkUpApi {
     @POST("api/setting/update")
     suspend fun privacyUpdate(@Body payload: MutableMap<String, Any?>): ApiResponse<Unit>
 
+    @POST("api/user/register")
+    suspend fun userRegister(@Body payload: MutableMap<String, Any?>): ApiResponse<com.youloft.linkup.api.dto.User>
+
+    @POST("api/user/password_login")
+    suspend fun userPasswordLogin(@Body payload: MutableMap<String, Any?>): ApiResponse<com.youloft.linkup.api.dto.User>
+
     @GET("api/user/im_token")
     suspend fun imToken(): ApiResponse<ImToken>
 
