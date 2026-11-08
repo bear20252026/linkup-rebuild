@@ -6,11 +6,13 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
+import android.widget.EditText
 import android.widget.Toast
+import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.youloft.linkup.api.dto.User
 import com.youloft.watcher.R
 import com.youloft.watcher.data.appGraph
@@ -84,6 +86,7 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        addAuthLinks()
         window.statusBarColor = getColor(R.color.colorWhite)
 
         // `lf.b.i(..., "登录注册页")` — the label the original reported; its sink is a separate card.
@@ -145,6 +148,86 @@ class LoginActivity : AppCompatActivity() {
     /** `a(context, fromH5, matchCode, noAnim, logout)` — one 500ms gate for the whole process. */
     private fun openRegister() {
         RegisterActivity.start(this)
+    }
+
+    /** 密码登录对话框（用户名 + 密码 → api/user/password_login）。 */
+    private fun showPasswordLoginDialog() {
+        val dp = resources.displayMetrics.density
+        val container = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding((48 * dp).toInt(), (24 * dp).toInt(), (48 * dp).toInt(), 0)
+        }
+        val etUser = EditText(this).apply { hint = "用户名"; setSingleLine(true) }
+        container.addView(etUser)
+        val etPass = EditText(this).apply {
+            hint = "密码"
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setSingleLine(true)
+        }
+        container.addView(etPass)
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("密码登录")
+            .setView(container)
+            .setPositiveButton("登录") { _, _ ->
+                val username = etUser.text?.toString()?.trim() ?: ""
+                val password = etPass.text?.toString()?.trim() ?: ""
+                if (username.isBlank() || password.isBlank()) {
+                    Toast.makeText(this, "请填写用户名和密码", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                lifecycleScope.launch {
+                    try {
+                        val response = appGraph(this@LoginActivity).loginRepository.passwordLogin(username, password)
+                        val user = response.data
+                        if (response.isSuccess && user != null && user.userId > 0) {
+                            appGraph(this@LoginActivity).users.store(user)
+                            com.youloft.watcher.pages.main.MainActivity.start(this@LoginActivity)
+                            finish()
+                        } else {
+                            Toast.makeText(this@LoginActivity, response.msg ?: "登录失败", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(this@LoginActivity, "网络错误：${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    /** 底部入口：密码登录 + 账号注册（在 setContentView 之后调用）。 */
+    private fun addAuthLinks() {
+        val dp = resources.displayMetrics.density
+        // Find the root view and add a bottom-aligned horizontal container.
+        val root = binding.root as? android.view.ViewGroup ?: return
+        root.post {
+            val row = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER
+                setPadding(0, (16 * dp).toInt(), 0, (24 * dp).toInt())
+            }
+            row.addView(android.widget.TextView(this).apply {
+                text = "密码登录"
+                textSize = 14f
+                setTextColor(0xFF2C7BE5.toInt())
+                setPadding((24 * dp).toInt(), 0, (24 * dp).toInt(), 0)
+                setOnClickListener { showPasswordLoginDialog() }
+            })
+            row.addView(android.widget.TextView(this).apply {
+                text = "|"
+                textSize = 14f
+                setTextColor(0xFFCCCCCC.toInt())
+            })
+            row.addView(android.widget.TextView(this).apply {
+                text = "账号注册"
+                textSize = 14f
+                setTextColor(0xFF2C7BE5.toInt())
+                setPadding((24 * dp).toInt(), 0, (24 * dp).toInt(), 0)
+                setOnClickListener { RegisterActivity.start(this@LoginActivity) }
+            })
+            root.addView(row)
+        }
     }
 
     companion object {
