@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object LinkUpEndpoints {
     /** Hardcoded in 1.6.6 as ag.a.f1732c; the shipped build points here, not at production. */
     /** 重建网关（阿里云 ECS 101.133.235.110:3000，Caddy/systemd 管理，pm2 gallery 暂停腾出端口）。 */
-    const val API = "http://101.133.235.110:3000/"
+    const val API = "https://gateway.cloudbear.cloud/"
 
     /**
      * Business API answers here today (ag.a.f1733d, the host 1.6.6 treats as the H5/deep-link origin).
