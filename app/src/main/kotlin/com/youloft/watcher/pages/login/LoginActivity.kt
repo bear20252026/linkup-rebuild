@@ -178,6 +178,8 @@ class LoginActivity : AppCompatActivity() {
                 }
                 lifecycleScope.launch {
                     try {
+                        if (loggingIn) return@launch
+                        loggingIn = true
                         val response = appGraph(this@LoginActivity).loginRepository.passwordLogin(username, password)
                         val user = response.data
                         if (response.isSuccess && user != null && user.userId > 0) {
@@ -185,9 +187,11 @@ class LoginActivity : AppCompatActivity() {
                             com.youloft.watcher.pages.main.MainActivity.start(this@LoginActivity)
                             finish()
                         } else {
+                            loggingIn = false
                             Toast.makeText(this@LoginActivity, response.msg ?: "登录失败", Toast.LENGTH_SHORT).show()
                         }
                     } catch (e: Exception) {
+                        loggingIn = false
                         Toast.makeText(this@LoginActivity, "网络错误：${e.message}", Toast.LENGTH_SHORT).show()
                     }
                 }
@@ -195,6 +199,8 @@ class LoginActivity : AppCompatActivity() {
             .setNegativeButton("取消", null)
             .show()
     }
+
+    private var loggingIn = false
 
     /** 底部入口：密码登录 + 账号注册（在 setContentView 之后调用）。 */
     private fun addAuthLinks() {

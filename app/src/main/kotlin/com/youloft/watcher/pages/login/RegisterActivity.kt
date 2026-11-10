@@ -80,7 +80,11 @@ class RegisterActivity : AppCompatActivity() {
         })
     }
 
+    private var registering = false
+
     private fun register(username: String, password: String, inviteCode: String) {
+        if (registering) return
+        registering = true
         val graph = appGraph(this)
         lifecycleScope.launch {
             try {
@@ -88,13 +92,17 @@ class RegisterActivity : AppCompatActivity() {
                 val user: com.youloft.linkup.api.dto.User? = response.data
                 if (!response.isSuccess || user == null) {
                     Toast.makeText(this@RegisterActivity, response.msg ?: "注册失败", Toast.LENGTH_SHORT).show()
+                    registering = false
                     return@launch
                 }
                 runCatching { graph.users.store(user) }
                     .onFailure { Toast.makeText(this@RegisterActivity, "会话初始化异常：${it.message}", Toast.LENGTH_SHORT).show() }
                 com.youloft.watcher.pages.main.MainActivity.start(this@RegisterActivity)
                 finish()
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
             } catch (e: Exception) {
+                registering = false
                 Toast.makeText(this@RegisterActivity, "网络错误：${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
