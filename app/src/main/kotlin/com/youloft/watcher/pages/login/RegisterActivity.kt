@@ -90,7 +90,8 @@ class RegisterActivity : AppCompatActivity() {
                     Toast.makeText(this@RegisterActivity, response.msg ?: "注册失败", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
-                graph.users.store(user)
+                runCatching { graph.users.store(user) }
+                    .onFailure { Toast.makeText(this@RegisterActivity, "会话初始化异常：${it.message}", Toast.LENGTH_SHORT).show() }
                 com.youloft.watcher.pages.main.MainActivity.start(this@RegisterActivity)
                 finish()
             } catch (e: Exception) {
