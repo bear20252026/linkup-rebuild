@@ -401,3 +401,25 @@ type SensReportResult struct {
 	UseAppCount    int         `json:"useAppCount"`
 	UseTime        int64       `json:"useTime"`
 }
+
+// TodoModel and TodoRsp mirror the client's todo beans (bean/todo/TodoModel|TodoRsp): the four
+// quadrants in the TodoRsp field-name order (1 重要紧急, 2 重要不紧急, 3 紧急不重要, 4 不紧急不重要).
+// Avatar/nickname/sex echo the owner's profile.
+type TodoModel struct {
+	Avatar   *string `json:"avatar"`
+	Content  *string `json:"content"`
+	ID       int64   `json:"id"`
+	IsFinish bool    `json:"isFinish"`
+	ListType int     `json:"listType"`
+	Nickname *string `json:"nickname"`
+	Sex      int     `json:"sex"`
+	UserID   int64   `json:"userId"`
+}
+
+type TodoRsp struct {
+	ImportantAndUrgent       []*TodoModel `json:"importantAndUrgent"`
+	ImportantButNutAndUrgent []*TodoModel `json:"importantButNutAndUrgent"`
+	NotImportantButUrgent    []*TodoModel `json:"notImportantButUrgent"`
+	NotImportantNotUrgent    []*TodoModel `json:"notImportantNotUrgent"`
+	NotifyType               int          `json:"notifyType"`
+}

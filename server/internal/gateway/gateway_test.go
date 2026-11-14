@@ -1306,3 +1306,68 @@ func TestSensServerTimerIsNotBuilt(t *testing.T) {
 		t.Fatalf("an unrecoverable contract must not be faked: %s", rec.Body.String())
 	}
 }
+
+// TestTodoDomainGroupsAndGuards covers the todo domain at the route layer: the ledger groups into
+// the four quadrants with the owner's profile echoed, the edit/update cycle validates its input,
+// the delete answers on unknown ids, and an anonymous call lands nowhere.
+func TestTodoDomainGroupsAndGuards(t *testing.T) {
+	h := newTest(t)
+	token, me := h.login(t, "13800000016")
+
+	add := func(listType int, content string) envelope {
+		return h.request(t, http.MethodPost, "/api/four_quadrant_list/edit", "", map[string]any{
+			"listType": listType, "content": content,
+		}, token)
+	}
+	if answered := add(1, "交作业"); answered.Status != 200 {
+		t.Fatalf("insert into quadrant 1: %+v", answered)
+	}
+	if answered := add(3, "玩游戏"); answered.Status != 200 {
+		t.Fatalf("insert into quadrant 3: %+v", answered)
+	}
+
+	list := h.request(t, http.MethodGet, "/api/four_quadrant_list/get_list", "listType=1", nil, token)
+	rsp := decode[struct {
+		ImportantAndUrgent []struct {
+			ID       int64  `json:"id"`
+			Content  string `json:"content"`
+			Nickname string `json:"nickname"`
+			UserID   int64  `json:"userId"`
+		} `json:"importantAndUrgent"`
+		NotImportantButUrgent []struct {
+			Content string `json:"content"`
+		} `json:"notImportantButUrgent"`
+	}](t, list.Data)
+	if len(rsp.ImportantAndUrgent) != 1 || rsp.ImportantAndUrgent[0].Content != "交作业" {
+		t.Fatalf("quadrant 1 groups its row: %+v", rsp.ImportantAndUrgent)
+	}
+	if rsp.ImportantAndUrgent[0].UserID != me.ID || rsp.ImportantAndUrgent[0].Nickname == "" {
+		t.Fatalf("the owner profile echoes: %+v", rsp.ImportantAndUrgent[0])
+	}
+	if len(rsp.NotImportantButUrgent) != 1 || rsp.NotImportantButUrgent[0].Content != "玩游戏" {
+		t.Fatalf("quadrant 3 groups its row: %+v", rsp.NotImportantButUrgent)
+	}
+
+	// An update in place: the row moves quadrants and finishes.
+	row := rsp.ImportantAndUrgent[0]
+	if answered := h.request(t, http.MethodPost, "/api/four_quadrant_list/edit", "", map[string]any{
+		"id": row.ID, "listType": 2, "content": "交作业（数学）", "isFinish": true,
+	}, token); answered.Status != 200 {
+		t.Fatalf("update: %+v", answered)
+	}
+	if answered := add(1, ""); answered.Status == 200 {
+		t.Fatalf("an empty content is refused: %+v", answered)
+	}
+	if answered := h.request(t, http.MethodPost, "/api/four_quadrant_list/del", "", map[string]any{
+		"id": 99999,
+	}, token); answered.Status == 200 {
+		t.Fatalf("a delete of an unknown id is refused: %+v", answered)
+	}
+
+	// Anonymous writes land nowhere.
+	if answered := h.request(t, http.MethodPost, "/api/four_quadrant_list/edit", "", map[string]any{
+		"listType": 1, "content": "x",
+	}, ""); answered.Status == 200 {
+		t.Fatalf("an anonymous edit must not land: %+v", answered)
+	}
+}

@@ -122,7 +122,26 @@ type Data struct {
 	CallRecords map[int64][]CallRecordEntry `json:"callRecords,omitempty"`
 	AppUses     map[int64][]AppUseEntry    `json:"appUses,omitempty"`
 	SensRecords map[int64][]SensEntry      `json:"sensRecords,omitempty"`
+	Todos       map[int64][]TodoEntry      `json:"todos,omitempty"`
+	NextTodoID  int64                      `json:"nextTodoId,omitempty"`
 }
+
+// TodoEntry is one 四象限待办 (the recovered four-quadrant todo list, bean/todo/TodoModel):
+// listType 1..4 are the Eisenhower quadrants (重要紧急 / 重要不紧急 / 紧急不重要 / 不紧急不重要 —
+// the TodoRsp field names carry the same order). Ids are process-global (NextTodoID) so the
+// guardian-facing payloads can reference them unambiguously; the ledger is per account and capped.
+type TodoEntry struct {
+	ID        int64  `json:"id"`
+	ListType  int    `json:"listType"`
+	Content   string `json:"content"`
+	IsFinish  bool   `json:"isFinish"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+const (
+	TodoCap        = 200
+	TodoMaxContent = 200
+)
 
 // SensEntry is one sensitive-behavior event on the guarded phone (监控数据面第三域, DESIGN 五点四十一).
 // The original's event-type table is not recoverable from the APK, so this rebuild pins its own:
@@ -1089,6 +1108,79 @@ func (s *Store) AppUseMinutes(userID int64, days []int64) int {
 		}
 	}
 	return int(seconds / 60)
+}
+
+// TodosFor answers one account's todos, oldest first (the screen groups them, order inside a
+// quadrant is the creation order). Empty when none.
+func (s *Store) TodosFor(userID int64) []TodoEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]TodoEntry, 0, len(s.data.Todos[userID]))
+	out = append(out, s.data.Todos[userID]...)
+	return out
+}
+
+// PutTodo inserts or updates one todo for an account. An entry with id 0 (or an unknown id) is a
+// new todo: the store assigns the next process-global id, stamps createdAt and appends it. A known
+// id owned by the caller updates content/listType/isFinish in place. Content is trimmed; empty
+// content and a listType outside 1..4 are the caller's validation errors, refused here.
+func (s *Store) PutTodo(userID int64, entry TodoEntry) (TodoEntry, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	content := strings.TrimSpace(entry.Content)
+	if content == "" {
+		return TodoEntry{}, fmt.Errorf("todo content is empty")
+	}
+	if entry.ListType < 1 || entry.ListType > 4 {
+		return TodoEntry{}, fmt.Errorf("todo listType %d is outside the four quadrants", entry.ListType)
+	}
+	if len(content) > TodoMaxContent {
+		content = content[:TodoMaxContent]
+	}
+	if s.data.Todos == nil {
+		s.data.Todos = map[int64][]TodoEntry{}
+	}
+	ledger := s.data.Todos[userID]
+	if entry.ID > 0 {
+		for i, e := range ledger {
+			if e.ID == entry.ID {
+				e.Content, e.ListType, e.IsFinish = content, entry.ListType, entry.IsFinish
+				s.data.Todos[userID][i] = e
+				s.markDirtyLocked()
+				copied := e
+				return copied, nil
+			}
+		}
+		return TodoEntry{}, fmt.Errorf("todo %d not found for user %d", entry.ID, userID)
+	}
+	if len(ledger) >= TodoCap {
+		return TodoEntry{}, fmt.Errorf("todo list is full (%d)", TodoCap)
+	}
+	if s.data.NextTodoID == 0 {
+		s.data.NextTodoID = 1
+	}
+	entry.ID = s.data.NextTodoID
+	s.data.NextTodoID++
+	entry.Content = content
+	entry.CreatedAt = time.Now().Unix()
+	s.data.Todos[userID] = append(ledger, entry)
+	s.markDirtyLocked()
+	return entry, nil
+}
+
+// DeleteTodo removes one todo owned by the account; ok answers whether a row was removed.
+func (s *Store) DeleteTodo(userID, id int64) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	ledger := s.data.Todos[userID]
+	for i, e := range ledger {
+		if e.ID == id {
+			s.data.Todos[userID] = append(ledger[:i], ledger[i+1:]...)
+			s.markDirtyLocked()
+			return true
+		}
+	}
+	return false
 }
 
 // LatestAppUseDay answers the newest day the account reported usage for; 0 when none. The card's

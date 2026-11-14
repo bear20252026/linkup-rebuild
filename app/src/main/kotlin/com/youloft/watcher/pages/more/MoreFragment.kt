@@ -15,7 +15,7 @@ import com.youloft.watcher.pages.voice.RealtimeVoiceActivity
 /**
  * 更多 Tab，`pages/more/MoreFragment.java`：五个功能卡（锁机/实时语音/实时截屏/水印拍照/待办）。
  * 锁机/语音/截屏/相机由本轮各卡落地（LockListActivity / RealtimeVoiceActivity / ScreenshotActivity /
- * CameraActivity）；待办（TodoFragment）是独立卡未重建——入口保留、行为记录不跳。
+ * CameraActivity）；待办卡本轮跳四象限待办屏（DESIGN 五点四十二,待验 80 闭环）。
  * 头像区显示好友（`lock_avatars_view` 等按原版语义喂好友头像）。
  */
 class MoreFragment : Fragment() {
@@ -37,7 +37,10 @@ class MoreFragment : Fragment() {
         binding.clVoice.setOnClickListener { RealtimeVoiceActivity.start(requireContext()) }
         binding.clScreenshot.setOnClickListener { ScreenshotActivity.start(requireContext()) }
         binding.clCamera.setOnClickListener { CameraActivity.start(requireContext()) }
-        binding.clTodo.setOnClickListener { }
+        // 待办卡 → 四象限待办屏（DESIGN 五点四十二,待验 80 的入口闭环）。
+        binding.clTodo.setOnClickListener {
+            com.youloft.watcher.pages.todo.TodoActivity.start(requireContext())
+        }
     }
 
     override fun onDestroyView() {
