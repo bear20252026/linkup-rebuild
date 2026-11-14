@@ -54,6 +54,18 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**账号体系加固已落地（#37–#39，2026-11-12）**：全面审计（`AUDIT.md`，P0×4/P1×5 全部记录）
+之后的五项账号域改动——①第三方登录**开关暂停**（客户端 `ENABLE_THIRD_PARTY_LOGIN=false`
+隐藏微信/QQ 入口、服务端 `-enable-third-login=false` 时 `api/user/login` 恒 403，代码不删，
+恢复前置=厂商 OAuth 服务端校验，见待验 83）；②注册走 #31 已交付的用户名+密码页，本轮增强；
+③邀请码模型（存在/未过期/未用尽，`RegisterWithUsername` 单锁原子、注册成功才扣减、重启不回填，
+`-invite-code` 永续单码 + `-invite-codes-file` 多码，校验恒开）；④用户名实时查重
+（`api/user/username/check` 与注册同口径 + 前端 400ms debounce 内联提示，正确性兜底是
+store 唯一索引）；⑤登录不闪退（token 写入顺序本就正确，补四处异常兜底：repository 会话写
+失败转失败回答、注册页写失败不进主界面、FGS start 包 runCatching、登录副作用包 runCatching）。
+测试：server go test 全绿（含开关两态/邀请码四态/查重端点），:app 369 条全绿
+（含 RegisterActivityTest 等 4 个新测试文件）。审计细节与残留项见 `AUDIT.md`。
+
 **守护线三大块已落地（#27–#29）**：定位采集（前台服务 + 停留/离开状态机 + 三道门
 隐私/权限/登录）、地图（`:map` 抽象 + 两家反射适配器，AAR 到位即亮，无 AAR 保持占位）、IM
 （OpenIM SDK 直连 + `api/user/im_token` + friendList 缓存写入方 + 聊天页）。真机项（FGS 常驻、

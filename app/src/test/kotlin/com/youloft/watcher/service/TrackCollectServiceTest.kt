@@ -133,6 +133,19 @@ class TrackCollectServiceTest {
             .filter { it != Long.MAX_VALUE }
     }
 
+    @Test
+    fun `the production start never lets a refused FGS launch escape`() {
+        // 登录不闪退（审计⑤）：Android 12+ 在后台冷启动拒绝 startForegroundService 时，包装要把它
+        // 吃掉——采集晚一轮再起，调用方（登录链）不能被压崩。Robolectric 允许启动；这条钉住的是
+        // "refresh 全程不抛"，真机上的拒绝路径由同一个 runCatching 收口。
+        val controller = CollectController.forProduction(
+            ApplicationProvider.getApplicationContext(),
+            CollectController.Gates({ true }, { true }, { true }),
+        )
+
+        controller.refresh()
+    }
+
     /** In-memory stores only; the real catalog runs, and the framework provider wins it. */
     class ServiceApp : LinkUpApplication() {
         override val keyValueStores = InMemoryKeyValueStores()

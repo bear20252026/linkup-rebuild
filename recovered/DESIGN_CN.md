@@ -1807,6 +1807,8 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 80 | 待办 Tab（TodoFragment） | 入口保留不跳 |
 | 81 | 真机验收五点三十五的新面：无障碍截屏授权流+帧、悬浮窗盖板、滚轮停靠、水印成图、H5 线上页 13 action 实调 | 本机无设备 |
 | 82 | H5 bridge 的执行取舍回填：permissionTip 族载荷键、joinQQGroup 深链、selectPictures 上传语义 | 需线上 H5 配合或原版服务端源码 |
+| 83 | 第三方登录恢复的前置条件：厂商 OAuth code 服务端换取（微信 code2Session / QQ 侧同型）。开关（`ENABLE_THIRD_PARTY_LOGIN` / `-enable-third-login`）在两侧接通前必须保持关闭——开了没校验就是 AUDIT P0-1 的接管通道 | 需微信/QQ 开放平台凭据 |
+| 84 | 密码哈希是无盐 SHA-256（静态前缀），审计 P1-1：换 bcrypt/argon2id + 登录失败限速；顺带修 `PasswordHash` 带 `json:"-"` 重启后密码账号恒"密码错误" | 存量哈希迁移需一次性重置或双读 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -1914,6 +1916,70 @@ DeviceState 回填（待验 77 的"等 phone/state/report 携带"闭环）。顺
 编译 + 全部单测（go test ./... 全绿；:app/:net/:im/:location/:map 全绿，新增 8 个测试文件）+
 `assembleDebug` 出包。**真机/模拟器未验**：无障碍截屏的授权流与帧、悬浮窗盖板的手感、滚轮的
 停靠手感、水印的像素成图、H5 线上页对 13 action 的真实调用——都进待验表（81 起）。
+
+## 五点三十六、账号体系加固：第三方登录开关 / 邀请码模型 / 用户名查重 / 登录链兜底（2026-11-12）
+
+审计（`AUDIT.md`，基线 70f135b）之后的账号域加固。五项需求一次落地；注册页/接口在 #31
+（18f9b59）已交付，本轮不新建，围绕它做邀请码、查重与兜底增强。
+
+### 一、第三方登录：开关暂停，不删代码
+
+两侧各一枚同名开关：客户端 `LoginPlatform.ENABLE_THIRD_PARTY_LOGIN = false`（顶层 const）、
+服务端 `-enable-third-login`（默认 false → `Options.ThirdPartyLogin`）。关：登录页与首启隐私门
+（EmptyLoginActivity 经 `layout_login` include 同布局）隐藏 `tv_login_wechat`/`iv_login_qq`
+（手机号与客服入口保留），点击链与 `ThirdPartyAuth` seam 原样保留；服务端 `api/user/login`
+一律 `status=403 "第三方登录暂未开放"`（envelope 内 403，HTTP 恒 200 是本工程契约）。开：
+恢复 HEAD 上的原实现（unionId/phone 键账户 + 迟到手机号绑定，store 的 `ThirdAccount` 与
+绑定测试原样回归）。
+
+**开关只是暂停不是修复（如实写死）**：unionId/phone 是客户端自报的，开而不接厂商 OAuth
+code 服务端换取，就是 AUDIT P0-1 的接管通道。恢复前置条件进待验 83。
+
+### 二、邀请码：存在 / 未过期 / 未用尽，注册成功才扣减
+
+`store.InviteCode{code, expiresAt, maxUses, usedCount}`（unix 秒，0=永不/不限）随 store JSON
+持久化。启动 seed 两路：`-invite-code`（默认 LINKUP2026，永续单码，开箱行为不变）+
+`-invite-codes-file`（JSON 数组，坏文件拒绝启动，照 loadZone/loadOrCreateKey 的
+log.Fatal 模式）。`SeedInviteCodes` 是 upsert——元数据跟最新 seed 走（运维可改配额），
+**usedCount 保留**（重启不得把已烧掉的码回填）。
+
+`RegisterWithUsername` 单锁原子：码校验 → 用户名唯一性（UsernameIdx）→ 建号 → 扣减 → 落盘，
+"注册成功才扣减"由原子性成立（码无效不建号，建号失败不烧码）。**校验顺序码先于用户名**：
+拿无效码探测用户名学不到任何东西，"用户名已存在"只有持有效码者问得出。handler 只做
+sentinel → 文案映射（邀请码错误/已过期/已用尽 403，用户名已存在 1001——顺带修掉旧
+"预检+创建" TOCTOU 窗口把并发重复映射成 500 的病）。**行为变化如实记录**：邀请码校验恒开，
+`InviteCode==""` 的"开放注册"逃生门删除——没有 seed 的 store 注册一律拒。
+
+### 三、用户名查重：前端实时 + 服务端兜底
+
+新端点 `GET api/user/username/check`（免鉴权、正常签名，gateway.go 路由 + skip 列表两处），
+回 `{available, reason}`；与注册共享同一份 `usernameProblem` 口径（trim + 3-32 字节 +
+唯一性），内联提示与提交拒绝永不打架。客户端 RegisterActivity 加 400ms debounce 的
+TextWatcher（lifecycleScope，输入变化取消上一个 job、过期答案不上屏），绿/红内联提示
+（程序化 UI 风格延续）；正确性兜底是 store 的 UsernameIdx 唯一索引（锁内 check-then-insert）。
+
+### 四、登录不闪退：token 时序不动，补四处兜底
+
+token 写入顺序**本来就是对的**（user2 JSON → token → sideEffects，`the cached record is
+written before the token` 顺序测试钉着），缺的是异常兜底：
+1. `NetworkLoginRepository.loginByPhone/loginByThird`：`users.store/saveRecord` 包 runCatching，
+   失败返回 `ApiResponse(500, "会话保存失败，请重试")`——VM 走 toast，而不是未捕获异常顶进
+   viewModelScope（纯 JVM 下 LiveData 主线程断言、真机 MMKV 故障都会走这里）；
+2. `RegisterActivity`：会话写失败**不进主界面**（无 token 的主界面只会退回登录循环）——
+   toast "会话初始化异常，请改用账号密码登录" 停在注册页（账号已建成，密码登录可达）；
+3. `CollectController.forProduction` 的 `startForegroundService` 包 runCatching（Android 12+
+   后台限制 ForegroundServiceStartNotAllowedException），单点收口 refresh/onActivityResumed；
+4. `UserManager.store` 的 `sideEffects.onSignedIn` 包 runCatching（副作用失败不得把会话带崩）。
+
+### 五、测试
+
+server：`TestThirdPartyLoginDisabledByDefault` / `TestThirdPartyLoginWhenEnabled`（mutator
+复活原绑定契约）/ `TestInviteCodeGatesRegistration`（四态文案 + 成功扣减 + 码先于用户名）/
+`TestUsernameCheckEndpoint`；store：`TestRegisterWithUsernameValidatesTheInviteCode`（六态）/
+`TestInviteCodesSurviveReloadWithUsedCount`。客户端：`RegisterActivityTest`（成功/拒绝/会话
+写失败/查重 debounce，Robolectric + 程序化 UI 按位取控件）、`LoginRepositoryTest`（写失败→
+失败回答）、`UserManagerTest` 加副作用炸不丢会话、`TrackCollectServiceTest` 加
+forProduction refresh 不抛、`LoginActivityTest` 加"开关关→入口不可见"。
 
 ## 六、架构决定（写死，避免重写时反复）
 

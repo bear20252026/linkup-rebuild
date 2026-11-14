@@ -237,6 +237,22 @@ class LoginActivityTest {
     }
 
     @Test
+    fun `third-party entries are hidden while the login switch is off`() {
+        val activity = launch()
+
+        assertEquals(
+            View.GONE,
+            view<View>(activity, R.id.tv_login_wechat).visibility,
+            "ENABLE_THIRD_PARTY_LOGIN = false hides the WeChat entry; the server answers 403 meanwhile",
+        )
+        assertEquals(View.GONE, view<View>(activity, R.id.iv_login_qq).visibility)
+        assertTrue(
+            view<View>(activity, R.id.iv_login_phone).visibility != View.GONE,
+            "the phone login stays reachable",
+        )
+    }
+
+    @Test
     fun `wechat and qq presses stop at the install check`() {
         platform.wechatInstalled = false
         platform.qqInstalled = false

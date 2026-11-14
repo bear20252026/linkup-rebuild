@@ -79,7 +79,9 @@ class UserManager(
             _user.value = user
         }
         cache.saveToken(user.token.orEmpty())
-        sideEffects.onSignedIn(user)
+        // 会话本体（user2 JSON + token）到这里已写完；登录后的连锁动作（FGS/IM/设备自报）失败
+        // 不得把会话带崩——各副作用内部有自己的兜底，这里再挡一层（登录不闪退，审计⑤）。
+        runCatching { sideEffects.onSignedIn(user) }
     }
 
     /**

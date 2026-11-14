@@ -16,6 +16,9 @@ interface LoginRepository {
 
     suspend fun passwordLogin(username: String, password: String): ApiResponse<com.youloft.linkup.api.dto.User>
 
+    /** GET api/user/username/check — 注册页的实时查重，与注册同口径。 */
+    suspend fun usernameAvailable(username: String): ApiResponse<com.youloft.linkup.api.dto.UsernameAvailability>
+
     suspend fun loginCut(): ApiResponse<Cut>
 
     /** GET api/sms/send. `region` is the country code the original defaulted to `+86`. */
@@ -65,6 +68,8 @@ class NetworkLoginRepository(
     override suspend fun passwordLogin(username: String, password: String) =
         api.userPasswordLogin(payload = mutableMapOf("username" to username, "password" to password))
 
+    override suspend fun usernameAvailable(username: String) = api.usernameCheck(username)
+
     override suspend fun loginCut(): ApiResponse<Cut> = api.smsLoginCut()
 
     override suspend fun sendCode(phone: String, region: String): ApiResponse<Unit> =
@@ -95,7 +100,12 @@ class NetworkLoginRepository(
         val user = response.data
         if (response.isSuccess && user != null) {
             // `repository/c.e()`: binding a phone only replaces the cached record — no token, no sign-in.
-            if (bindingPhone) users.saveRecord(user) else users.store(user, fromLogin = true)
+            // 本地会话写不进去时按失败回答：VM 走 toast 错误路径，而不是把未捕获异常顶进
+            // viewModelScope（登录不闪退，审计⑤）。
+            val stored = runCatching {
+                if (bindingPhone) users.saveRecord(user) else users.store(user, fromLogin = true)
+            }
+            if (stored.isFailure) return ApiResponse(500, "会话保存失败，请重试")
         }
         return response
     }
@@ -118,8 +128,12 @@ class NetworkLoginRepository(
         val user = response.data
         if (response.isSuccess && user != null) {
             // `v0.i(..., user, false)`: a registered account is parked for profile completion instead.
-            users.store(user, fromLogin = false)
-            flags.recordLastLoginType(platform)
+            // 与 loginByPhone 同一道兜底（当前被 ENABLE_THIRD_PARTY_LOGIN=false 挡住，恢复时安全）。
+            val stored = runCatching {
+                users.store(user, fromLogin = false)
+                flags.recordLastLoginType(platform)
+            }
+            if (stored.isFailure) return ApiResponse(500, "会话保存失败，请重试")
         }
         return response
     }

@@ -97,9 +97,13 @@ class CollectController internal constructor(
         /** The production controller: real intents, real gates, one instance per app graph. */
         fun forProduction(context: Context, gates: Gates): CollectController = CollectController(
             startService = {
-                context.startForegroundService(
-                    Intent(context, TrackCollectService::class.java).setAction(TrackCollectService.ACTION_START),
-                )
+                // Android 12+ 后台启动 FGS 可抛 ForegroundServiceStartNotAllowedException（登录链
+                // 在后台冷启动时触发）；采集晚一轮再起没关系，不能把登录压崩（审计⑤）。
+                runCatching {
+                    context.startForegroundService(
+                        Intent(context, TrackCollectService::class.java).setAction(TrackCollectService.ACTION_START),
+                    )
+                }
             },
             stopService = { context.stopService(Intent(context, TrackCollectService::class.java)) },
             gates = gates,
