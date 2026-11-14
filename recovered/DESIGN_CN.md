@@ -1808,7 +1808,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 81 | 真机验收五点三十五的新面：无障碍截屏授权流+帧、悬浮窗盖板、滚轮停靠、水印成图、H5 线上页 13 action 实调 | 本机无设备 |
 | 82 | H5 bridge 的执行取舍回填：permissionTip 族载荷键、joinQQGroup 深链、selectPictures 上传语义 | 需线上 H5 配合或原版服务端源码 |
 | 83 | 第三方登录恢复的前置条件：厂商 OAuth code 服务端换取（微信 code2Session / QQ 侧同型）。开关（`ENABLE_THIRD_PARTY_LOGIN` / `-enable-third-login`）在两侧接通前必须保持关闭——开了没校验就是 AUDIT P0-1 的接管通道 | 需微信/QQ 开放平台凭据 |
-| 84 | 密码哈希是无盐 SHA-256（静态前缀），审计 P1-1：换 bcrypt/argon2id + 登录失败限速；顺带修 `PasswordHash` 带 `json:"-"` 重启后密码账号恒"密码错误" | 存量哈希迁移需一次性重置或双读 |
+| 84 | ~~密码哈希是无盐 SHA-256（静态前缀），审计 P1-1~~ **五点四十三闭环（#46）**：bcrypt + 双读迁移（旧哈希登录即升级）+ 按用户名登录限速（5 错锁 15 分钟）+ PasswordHash 落盘修复 | 本轮闭环 |
 | 85 | osmdroid + 高德道路瓦片（五点三十七）真机/模拟器验收：瓦片对齐与缩放级别手感（高德 web 瓦片历史上有 z 级偏移说法，以像素为准）、弱网/断网缓存表现、瓦片服务对包名 UA 的限流影响 | 需真机/模拟器 + 网络 |
 | 86 | 聊天语音消息（五点三十八）真机验收：各 ROM 录音权限流与音量、播放流媒体在弱网的表现、OpenIM 声音消息在重建栈（MinIO）的端到端收发 | 需真机 + 网络 + OpenIM 部署 |
 | 87 | 通话记录域（五点三十九）真机验收：各 ROM 的 CallLog 权限流与列兼容、ContentObserver 实时性（本轮登录/进主界面时同步，实时推送下一轮）、守护 Tab 卡真实数据行密度 | 需真机 + 两台设备 |
@@ -2231,6 +2231,51 @@ server：台账（插入 trim/更新原位/跨账号不可见/象限校验/封�
 新增流转/原位翻转/删除投影/空内容本地拒绝——fake api 用真实台账顶在 Proxy 后面，三路由语义
 一起转）。**待验 90（新）**：真机验收——三路由端到端、四象限切换手感、待办提醒通道
 （TodoRsp.notifyType，原版语义不可恢复）。
+
+## 五点四十三、P1 安全包：密码哈希 / 登录限速 / 短信码加固 / 隐私旗标服务端强制（2026-11-14）
+
+审计 P1 清单的服务端闭环（待验 84 同轮闭环），四个独立面一次打包：
+
+### 一、密码哈希：bcrypt + 双读迁移 + 落盘修复（P1-1）
+
+- 新哈希 **bcrypt**（`golang.org/x/crypto/bcrypt`，per-user salt 固有）——注册走
+  `store.HashPassword`；`User.PasswordHash` 去掉 `json:"-"` **落盘**（顺带修复审计发现的
+  "重启后所有密码账号恒密码错误" bug——哈希不落盘是旧实现的事故）。
+- **双读迁移**：`store.VerifyPassword` 按前缀分流（`$2` → bcrypt；否则旧的无盐 SHA-256 静态
+  前缀）——旧账号登录成功的一刻 `UpgradePassword` 重写为 bcrypt，弱哈希自此从台账消失。
+  测试：legacy 注册 → 登录 → 哈希变 `$2` → 再登录走强路径。
+
+### 二、登录限速（P1-1 的在线穷举面）
+
+按用户名计失败次数，连错 5 次锁 15 分钟（内存态，重启即清）；**锁定期内正确密码也拒绝**
+（在线穷举的窗口在锁定期关死），成功清零。Gateway 三件套 `loginLocked/recordLoginFail/
+resetLoginFails` + `loginFails` 内存表。
+
+### 三、短信码加固（P1-3）
+
+- **码长 4 → 6 位**：空间 10⁶；客户端 `LoginSmsDialog` 的自动提交口径随行（`CODE_LENGTH`
+  6、布局 `maxLength` 6）——两端同轮改。
+- **重发不重置尝试计数**：同一有效期内换新码，尝试计数跨重发存活——"发码→猜 5 次→再发码"
+  的循环不再获得新额度。测试把重发间隔收紧到 0 专验这条。
+- **60 秒发送冷却**（`Store.codeCooldown`，Open 默认 1 分钟，仅保护仍有效的码——过期的码换新
+  自由），`ErrCodeCooldown` 由 sendCode 原样透传。
+
+### 四、隐私旗标服务端强制（P1-2）
+
+`sensAllows(owner, viewer, kind)`：读的是 owner(被守护端) 对 viewer 的 Extra 行——**显式
+false 即拒**；行不存在时没有口径可查，放行（关系行已由 hasRelation 把门）。三个读面全覆盖：
+- 位置：`locationTarget`（轨迹/天）→ 403"对方已关闭位置共享"；widget/location 与 index 的
+  friendLocation 缺席；
+- 通话：index 的 `callRecordList` 缺键；
+- 应用使用与敏感行为：index 的 `appUseCard`/`sensitiveCard` 缺键。
+**确认时刻的缺省口径**：`sensSetting` 缺省即全开（显式传参才关）——否则重建客户端自己的确认
+流会把旗标落 false、把自己读死。`sensSetting` 缺省行为进 DESIGN 与测试。
+
+### 五、测试
+
+server 全绿（限流锁死正确密码 / 双读升级 / 6 位 / 重发保留 / 冷却 / sens 强制五面 + 存量测试
+对齐：位置测试种子补旗标、验证码测试断言 6 位与新语义）；`:app` 398 条全绿（短信对话框 6 位
+口径）。**待验 84 闭环**（本轮五项全落地；存量哈希迁移由双读自动完成，无需人工重置）。
 
 ## 六、架构决定（写死，避免重写时反复）
 

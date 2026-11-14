@@ -96,6 +96,10 @@ func (g *Gateway) sendCode(c *gin.Context) {
 	}
 	code, err := g.opts.Store.IssueCode(phone, 5*time.Minute)
 	if err != nil {
+		if errors.Is(err, store.ErrCodeCooldown) {
+			c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, err.Error()))
+			return
+		}
 		c.JSON(http.StatusOK, contract.Fail(http.StatusInternalServerError, "发送失败"))
 		return
 	}
@@ -392,14 +396,20 @@ func (g *Gateway) confirm(c *gin.Context) {
 	if !g.handleStatus(c, g.opts.IM.RespondApply(c.Request.Context(), store.IMID(requester.ID), store.IMID(me), openim.HandleResultAccepted, ""), "同意添加") {
 		return
 	}
+	// 隐私旗标在确认时刻的默认值:**缺省即全开**(显式传参才关)——确认后的位置/通话/敏感读
+	// 由服务端按旗标强制(审计 P1-2),默认关会把重建客户端自己的确认流读死。
 	sens := form["sensSetting"]
+	sensLoc, sensCall, sensAll := true, true, true
+	if sens != nil {
+		sensLoc, sensCall, sensAll = boolAt(sens, "sensLocation"), boolAt(sens, "sensCall"), boolAt(sens, "sensAppUse")
+	}
 	own := store.Extra{
 		OwnerID:  me,
 		FriendID: requester.ID,
 		Relation: relation,
-		SensAll:  boolAt(sens, "sensAppUse"),
-		SensLoc:  boolAt(sens, "sensLocation"),
-		SensCall: boolAt(sens, "sensCall"),
+		SensAll:  sensAll,
+		SensLoc:  sensLoc,
+		SensCall: sensCall,
 	}
 	theirs := own
 	theirs.OwnerID, theirs.FriendID = requester.ID, me

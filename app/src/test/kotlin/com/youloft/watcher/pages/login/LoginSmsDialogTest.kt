@@ -83,7 +83,7 @@ class LoginSmsDialogTest {
     }
 
     @Test
-    fun `eleven digits unlock the send button and four more unlock login`() {
+    fun `eleven digits unlock the send button and six more unlock login`() {
         val dialog = open()
 
         typePhone(dialog, "1380013800")
@@ -94,7 +94,7 @@ class LoginSmsDialogTest {
         assertTrue(view<TextView>(dialog, R.id.tv_send_code).isEnabled)
         assertFalse(view<android.view.View>(dialog, R.id.tv_login).isEnabled, "a code is still missing")
 
-        typeCode(dialog, "1234")
+        typeCode(dialog, "123456")
         assertTrue(view<android.view.View>(dialog, R.id.tv_login).isEnabled)
     }
 
@@ -103,13 +103,13 @@ class LoginSmsDialogTest {
         val dialog = open()
 
         typePhone(dialog, "13800138000")
-        typeCode(dialog, "1234")
+        typeCode(dialog, "123456")
 
         val sent = repository.phoneLogins
         assertEquals(1, sent.size, "the code watcher auto-submits once 11 and 4 are met")
         assertEquals(LoginRepository.TYPE_ID_SMS, sent.first().typeId)
         assertEquals("13800138000", sent.first().phone)
-        assertEquals("1234", sent.first().smsCode)
+        assertEquals("123456", sent.first().smsCode)
         assertEquals("+86", sent.first().region)
         assertFalse(sent.first().bindingPhone, "this is a login, not a bind")
     }
@@ -233,7 +233,7 @@ class LoginSmsDialogTest {
         val dialog = open(matchCode = 424_242L)
 
         typePhone(dialog, "13800138000")
-        typeCode(dialog, "1234")
+        typeCode(dialog, "123456")
 
         assertEquals(listOf("improve(avatar=,nickname=,fromH5=true,match=424242)"), navigation.calls)
     }
@@ -248,7 +248,7 @@ class LoginSmsDialogTest {
         val dialog = open()
 
         typePhone(dialog, "13800138000")
-        typeCode(dialog, "1234")
+        typeCode(dialog, "123456")
 
         assertEquals(listOf("main"), navigation.calls)
     }
@@ -263,7 +263,7 @@ class LoginSmsDialogTest {
         val dialog = open()
 
         typePhone(dialog, "13800138000")
-        typeCode(dialog, "1234")
+        typeCode(dialog, "123456")
 
         assertEquals(
             LoginFlags.LOGIN_TYPE_PHONE,
@@ -281,7 +281,7 @@ class LoginSmsDialogTest {
         val dialog = open()
 
         typePhone(dialog, "13800138000")
-        typeCode(dialog, "1234")
+        typeCode(dialog, "123456")
 
         assertEquals("验证码错误", ShadowToast.getTextOfLatestToast()?.toString())
         assertTrue(dialog.isShowing)
@@ -315,7 +315,7 @@ class LoginSmsDialogTest {
         idle()
 
         typePhone(dialog, "13800138000")
-        typeCode(dialog, "1234")
+        typeCode(dialog, "123456")
 
         assertEquals(listOf("callback", "main"), order)
     }

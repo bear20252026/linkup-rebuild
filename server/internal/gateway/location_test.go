@@ -207,8 +207,9 @@ func TestLocationReadsRespectTheRelation(t *testing.T) {
 		t.Errorf("own days should always answer: %+v", mine)
 	}
 
-	// An established relation in either direction opens it.
-	if err := h.store.PutExtra(store.Extra{OwnerID: other.ID, FriendID: me.ID, Relation: 3}); err != nil {
+	// An established relation in either direction opens it. SensLoc true = 对方没关位置共享
+	// (确认时刻的缺省全开,DESIGN 五点四十二);关掉的拒绝是另一条用例。
+	if err := h.store.PutExtra(store.Extra{OwnerID: other.ID, FriendID: me.ID, Relation: 3, SensLoc: true}); err != nil {
 		t.Fatal(err)
 	}
 	opened := h.request(t, http.MethodGet, "/api/location/v2/tracks",

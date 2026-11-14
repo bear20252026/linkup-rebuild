@@ -27,8 +27,8 @@ func TestVerificationCodesExpireAndAreBurned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(code.Value) != 4 {
-		t.Fatalf("the client auto-submits at four digits, got %q", code.Value)
+	if len(code.Value) != 6 {
+		t.Fatalf("six digits: the space is 10^6 with a burned-code window (audit P1-3), got %q", code.Value)
 	}
 	if !s.CheckCode("13800000100", code.Value) {
 		t.Fatal("a fresh code should be accepted")
@@ -37,7 +37,9 @@ func TestVerificationCodesExpireAndAreBurned(t *testing.T) {
 		t.Error("a code must not be usable twice")
 	}
 
-	// Wrong answers are bounded, and the bound is on attempts, not on how many codes were issued.
+	// 重发不重置尝试计数(审计 P1-3):烧掉 5 次之后,同有效期内换新码也救不回来。
+	// 冷却本会拒发——测试把间隔收紧到 0,让重发发生,专验"尝试计数跨重发存活"。
+	s.codeCooldown = 0
 	if _, err := s.IssueCode("13800000101", time.Hour); err != nil {
 		t.Fatal(err)
 	}
@@ -50,10 +52,20 @@ func TestVerificationCodesExpireAndAreBurned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !s.CheckCode("13800000101", fresh.Value) {
-		t.Error("a new code should clear the earlier guesses")
+	if s.CheckCode("13800000101", fresh.Value) {
+		t.Error("a reissued code must NOT clear the earlier guesses — that reset was the brute-force window")
 	}
 
+	// 冷却:仍然有效的码在间隔内拒发(收紧间隔后再验一次放行)。
+	s.codeCooldown = time.Minute
+	if _, err := s.IssueCode("13800000103", time.Hour); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.IssueCode("13800000103", time.Hour); err == nil {
+		t.Fatal("an in-window reissue must hit the cooldown")
+	}
+
+	// 过期的码不再被冷却保护:换新自由,且新码从零开始计尝试。
 	expired, err := s.IssueCode("13800000102", time.Nanosecond)
 	if err != nil {
 		t.Fatal(err)
@@ -62,9 +74,18 @@ func TestVerificationCodesExpireAndAreBurned(t *testing.T) {
 	if s.CheckCode("13800000102", expired.Value) {
 		t.Fatal("the ttl argument was accepted and then ignored, so codes would live forever")
 	}
+	s.codeCooldown = 0
+	renewed, err := s.IssueCode("13800000102", time.Hour)
+	if err != nil {
+		t.Fatalf("an expired code frees the cooldown: %v", err)
+	}
+	if !s.CheckCode("13800000102", renewed.Value) {
+		t.Fatal("a renewed code starts with a clean attempt count")
+	}
 	if s.CheckCode("13800000199", "1234") {
 		t.Error("a phone that never asked for a code logged in")
 	}
+	s.codeCooldown = time.Minute
 }
 
 func TestAccountIdsAreEightDigitsBecauseTheyAreTheMatchCode(t *testing.T) {
