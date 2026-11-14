@@ -1809,6 +1809,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 82 | H5 bridge 的执行取舍回填：permissionTip 族载荷键、joinQQGroup 深链、selectPictures 上传语义 | 需线上 H5 配合或原版服务端源码 |
 | 83 | 第三方登录恢复的前置条件：厂商 OAuth code 服务端换取（微信 code2Session / QQ 侧同型）。开关（`ENABLE_THIRD_PARTY_LOGIN` / `-enable-third-login`）在两侧接通前必须保持关闭——开了没校验就是 AUDIT P0-1 的接管通道 | 需微信/QQ 开放平台凭据 |
 | 84 | 密码哈希是无盐 SHA-256（静态前缀），审计 P1-1：换 bcrypt/argon2id + 登录失败限速；顺带修 `PasswordHash` 带 `json:"-"` 重启后密码账号恒"密码错误" | 存量哈希迁移需一次性重置或双读 |
+| 85 | osmdroid + 高德道路瓦片（五点三十七）真机/模拟器验收：瓦片对齐与缩放级别手感（高德 web 瓦片历史上有 z 级偏移说法，以像素为准）、弱网/断网缓存表现、瓦片服务对包名 UA 的限流影响 | 需真机/模拟器 + 网络 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -1980,6 +1981,55 @@ server：`TestThirdPartyLoginDisabledByDefault` / `TestThirdPartyLoginWhenEnable
 写失败/查重 debounce，Robolectric + 程序化 UI 按位取控件）、`LoginRepositoryTest`（写失败→
 失败回答）、`UserManagerTest` 加副作用炸不丢会话、`TrackCollectServiceTest` 加
 forProduction refresh 不抛、`LoginActivityTest` 加"开关关→入口不可见"。
+
+## 五点三十七、OSM 地图接入：开源底图点亮轨迹页与守护 Tab（2026-11-13）
+
+开源方案选型（见 AUDIT 第八节之后的功能盘点）的第一个大件：**osmdroid**（Apache 2.0，Maven
+Central，免 key 免 AAR）作为第三个 `TrackMapProvider` 落进 `:map`，`provider/osm/` 目录。
+
+### 一、为什么不是第四个反射适配器
+
+百度/高德走反射是因为 AAR 缺席、模块必须照常编译；osmdroid 是**始终在类路径上的开源库**——
+没有"缺席态"，反射只有成本没有收益。独立性门（`MapLayerIndependenceTest`）相应调整：
+`ALLOWED_RUNTIME` 显式放行 `org.osmdroid`（按组前缀匹配，注释写明与 vendor AAR 的区别），
+`provider/osm/` 进适配器目录 canary；vendor 包清单（com.baidu/com.amap/com.tencent/GMS/华为）
+与 dependency hint 清单（baidu/amap/autonavi/tencentmap）**不变**——osmdroid 不是 vendor，
+瓦片 URL 字符串里的 autonavi 域名只存在于 osm 适配器源码与 build 文件的依赖之外。
+
+### 二、datum 与瓦片源
+
+- 轨迹数据 WGS84 进 adapter；osmdroid 画布对的是**高德公开道路瓦片（style=8）**，GCJ02 基准
+  → 每个坐标走与 vendor 适配器同一个 `wgs84ToGcj02`（golden 值钉死在测试里）。
+- 瓦片 URL 是查询串形态，osmdroid 默认拼接拼不出来 → `AmapRoadTileSource` 覆写
+  `getTileURLString`，纯函数 `tileUrl(zoom, x, y)`（四个子域按 (x+y) mod 4 轮转）给 JVM 钉住。
+- 渲染常量与 vendor 适配器一致（TRACK_ZOOM 14 / 8dp / 0xFF2C7BE5）——同一轨迹两家底图应是
+  同一条线。
+- osmdroid 全局配置在 onCreate 先于 MapView：UA 换包名、瓦片缓存进私有 `cacheDir/osmdroid`
+  （不申请外部存储）；`:map` manifest 增补 `ACCESS_NETWORK_STATE`（osmdroid 离线判定用）。
+
+### 三、宿主接线与暴露出的排序契约修正
+
+OSM `isInstalled` 恒真、排在目录**末位**（vendor AAR 到位之日，`preferred()` 自动让位给原版
+厂商，OSM 退居兜底）；"尚未接入"占位画与 dimming mask 在 OSM 生效后自然隐藏（宿主已有的分支）。
+
+**宿主接线本身零改动，但 OSM 的到来暴露并修正了一个潜伏的排序契约**：`TrackMap.kt` 原文写
+"挂载先于 onCreate"，而百度 SDK 的现实是初始化必须先于 MapView 存在——两句话必有一句是错的，
+OSM 装机让它第一次真实执行，轨迹页当场 `IllegalStateException: onCreate 前没有可挂载的地图视图`。
+修正：**onCreate 先于挂载**写进排序契约（接口 doc + 两处宿主 `attachMapIfAvailable` 的顺序
+交换 + 注释说明成因）。vendor 适配器与其测试一字未动（它们的"onCreate 建视图、此前调用吸收"
+语义与新契约自洽），OSM 适配器同语义。
+
+### 四、测试与待验
+
+`:map` 30 条全绿：OsmTrackMapTest 9 条（**真实 osmdroid 类**，无替身——库在类路径上，测试跑
+生产类型；golden 转换值、宽度/颜色、停留 pin、重绘替换且瓦片层幸存、空 overlay 清空、生命周期
+吸收、tileUrl 形状钉死）。两处测试技术记录：`expectedCenter` 是包私有 → 手动 layout 后从画布
+中心反查投影；投影反查带瓦片像素舍入（z14 一像素 ≈9.5m，实测偏 2.4m）→ 容差 1e-4°（GCJ 偏移
+~500m 是其 45 倍，坐标基准错了必炸）。
+
+**待验 85（新）**：真机/模拟器验收 osmdroid 三件事——高德瓦片对齐与缩放级别手感（高德 web 瓦
+片历史上有 z 级偏移的说法，以真机像素为准）、弱网/断网的瓦片缓存表现、瓦片服务对包名 UA 的
+限流是否影响日常使用。
 
 ## 六、架构决定（写死，避免重写时反复）
 

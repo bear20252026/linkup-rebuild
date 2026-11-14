@@ -54,6 +54,13 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**OSM 地图已接入（#39，2026-11-13）**：`osmdroid`（开源 MapView，Maven Central，免 key 免 AAR）
+作为第三个 `TrackMapProvider` 落进 `:map`——**轨迹页与守护 Tab 的地图今日真实出图**，不再"尚未
+接入"。底图为高德公开道路瓦片（GCJ02，复用既有 golden 转换），vendor AAR 到位之日自动让位
+（`preferred()` 取首个已安装，厂商排在前面）。`:map` 独立性门放行 osmdroid 并保留 vendor
+清零约束；`:map` 30 条测试全绿（含 9 条真实 osmdroid 类用例）。真机瓦片对齐/缓存/限流见
+DESIGN 待验 85。
+
 **账号体系加固已落地（#37–#39，2026-11-12）**：全面审计（`AUDIT.md`，P0×4/P1×5 全部记录）
 之后的五项账号域改动——①第三方登录**开关暂停**（客户端 `ENABLE_THIRD_PARTY_LOGIN=false`
 隐藏微信/QQ 入口、服务端 `-enable-third-login=false` 时 `api/user/login` 恒 403，代码不删，

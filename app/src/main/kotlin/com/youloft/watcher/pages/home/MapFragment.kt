@@ -163,11 +163,12 @@ class MapFragment : Fragment() {
         val graph = appGraph(requireContext())
         val provider = graph.trackMaps.preferred() ?: return
         val map = provider.create(requireContext())
+        // 契约顺序：onCreate 先于挂载（TrackMap 排序契约，同 TrackRecordActivity）。
+        map.onCreate(null)
         binding.mapContainer.addView(
             map.view,
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
         )
-        map.onCreate(null)
         map.showTrack(com.youloft.linkup.map.TrackOverlay(path = emptyList(), stays = emptyList()))
     }
 

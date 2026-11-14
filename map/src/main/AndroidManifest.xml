@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- osmdroid 拉瓦片与离线判定（NetworkStatusReceiver）用；应用侧 INTERNET 已声明 -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+</manifest>
