@@ -96,6 +96,13 @@ class LoginActivity : AppCompatActivity() {
 
         fadeInDecoration()
 
+        // 第三方登录暂停（ENABLE_THIRD_PARTY_LOGIN）：隐藏微信/QQ 入口，点击链原样保留，
+        // 恢复时只翻开关。
+        if (!ENABLE_THIRD_PARTY_LOGIN) {
+            binding.tvLoginWechat.visibility = View.GONE
+            binding.ivLoginQq.visibility = View.GONE
+        }
+
         binding.tvLoginWechat.onIntervalClick { loginWithWechat() }
         binding.ivLoginPhone.onIntervalClick { loginWithPhone() }
         binding.ivLoginQq.onIntervalClick { loginWithQq() }

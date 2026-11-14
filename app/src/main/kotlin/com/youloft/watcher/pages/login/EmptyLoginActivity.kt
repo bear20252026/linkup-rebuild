@@ -39,6 +39,11 @@ class EmptyLoginActivity : AppCompatActivity() {
         window.statusBarColor = getColor(R.color.colorWhite)
 
         renderConsentLinks()
+        // 第三方登录暂停（ENABLE_THIRD_PARTY_LOGIN）：首启隐私门盖着的登录页同样隐藏微信/QQ 入口。
+        if (!ENABLE_THIRD_PARTY_LOGIN) {
+            binding.layoutLogin.tvLoginWechat.visibility = View.GONE
+            binding.layoutLogin.ivLoginQq.visibility = View.GONE
+        }
         binding.dialogPrivacyPolicy.tvAgree.onIntervalClick { agreeAndProceed() }
         binding.dialogPrivacyPolicy.tvDisagree.onIntervalClick {
             binding.flDialogContainer.visibility = View.GONE

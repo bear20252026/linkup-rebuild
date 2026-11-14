@@ -5,7 +5,10 @@ import com.youloft.linkup.api.dto.User
 import com.youloft.linkup.net.ApiResponse
 import com.youloft.watcher.data.LoginRepository
 import com.youloft.watcher.data.LinkUpApplication
+import com.youloft.watcher.data.UserManager
+import com.youloft.watcher.data.UserRepository
 import com.youloft.watcher.data.local.InMemoryKeyValueStores
+import com.youloft.watcher.data.local.KeyValueStore
 import com.youloft.watcher.data.local.KeyValueStores
 import com.youloft.watcher.data.local.UserCache
 
@@ -15,7 +18,7 @@ import com.youloft.watcher.data.local.UserCache
  */
 object LoginFixtures {
     var repository = FakeLoginRepository()
-    var stores = InMemoryKeyValueStores()
+    var stores: KeyValueStores = InMemoryKeyValueStores()
     var oneTap = RecordingOneTapAuth()
 
     fun reset() {
@@ -32,10 +35,39 @@ object LoginFixtures {
         )
     }
 
+    /**
+     * 登录/注册页共用的 Application 替身。`users` 也覆盖掉：真身的 userRepository 会拉起
+     * LinkUpClient 网络栈，而登录页的用户写路径只碰 cache 与 sideEffects——缓存语义不变
+     * （同一个 [stores]），只是免掉不需要的网络栈。
+     */
     class TestApplication : LinkUpApplication() {
         override val keyValueStores: KeyValueStores get() = stores
         override val loginRepository: LoginRepository get() = repository
         override val oneTapAuth: OneTapAuth get() = oneTap
+        override val users: UserManager
+            get() = UserManager(
+                object : UserRepository {
+                    override suspend fun userInfo() = ApiResponse<User>(500, "no fixture")
+                },
+                UserCache(stores),
+            )
+    }
+
+    /** 写必抛：验证“会话写失败不进主界面”的路径（登录不闪退，审计⑤）。 */
+    class ThrowingStores : KeyValueStores {
+        private val throwing = object : KeyValueStore {
+            override fun string(key: String): String? = null
+            override fun int(key: String, default: Int): Int = default
+            override fun boolean(key: String, default: Boolean): Boolean = default
+            override fun long(key: String, default: Long): Long = default
+            override fun putLong(key: String, value: Long) = throw IllegalStateException("mmkv down")
+            override fun putString(key: String, value: String) = throw IllegalStateException("mmkv down")
+            override fun putInt(key: String, value: Int) = throw IllegalStateException("mmkv down")
+            override fun putBoolean(key: String, value: Boolean) = throw IllegalStateException("mmkv down")
+        }
+
+        override val shared: KeyValueStore = throwing
+        override fun forUser(userId: Long): KeyValueStore = throwing
     }
 
     /** Records the four login calls and answers with whatever the test loaded. */
@@ -51,16 +83,30 @@ object LoginFixtures {
 
         var third = ApiResponse(200, "success", data = User(userId = 8L, nickname = "微信用户", token = "wx-token"))
 
+        /** 注册路径默认 500（原 stub）；RegisterActivityTest 按用例改写。 */
+        var registerResponse = ApiResponse<User>(500, "test stub", data = User())
+        val registerCalls = mutableListOf<RegisterAttempt>()
+
+        var usernameCheck = ApiResponse(200, "success", data = com.youloft.linkup.api.dto.UsernameAvailability(available = true))
+        val usernameChecks = mutableListOf<String>()
+
         val sentPhones = mutableListOf<Pair<String, String>>()
         val phoneLogins = mutableListOf<PhoneLogin>()
         val thirdLogins = mutableListOf<ThirdLogin>()
         var cutCalls = 0
 
-        override suspend fun register(username: String, password: String, inviteCode: String) =
-            ApiResponse(500, "test stub", data = User())
+        override suspend fun register(username: String, password: String, inviteCode: String): ApiResponse<User> {
+            registerCalls += RegisterAttempt(username, password, inviteCode)
+            return registerResponse
+        }
 
         override suspend fun passwordLogin(username: String, password: String) =
             ApiResponse(500, "test stub", data = User())
+
+        override suspend fun usernameAvailable(username: String): ApiResponse<com.youloft.linkup.api.dto.UsernameAvailability> {
+            usernameChecks += username
+            return usernameCheck
+        }
 
         override suspend fun loginCut(): ApiResponse<Cut> {
             cutFailure?.let { throw it }
@@ -101,6 +147,12 @@ object LoginFixtures {
             thirdLogins += ThirdLogin(unionId, platform, avatar, nickname, phone)
             return third
         }
+
+        data class RegisterAttempt(
+            val username: String,
+            val password: String,
+            val inviteCode: String,
+        )
 
         data class PhoneLogin(
             val typeId: Int,

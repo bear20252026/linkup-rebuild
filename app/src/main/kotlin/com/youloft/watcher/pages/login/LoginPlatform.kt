@@ -42,6 +42,14 @@ object UnavailableOneTapAuth : OneTapAuth {
 }
 
 /**
+ * 第三方登录的暂停开关（与服务端 `-enable-third-login` 同名同义）：关 → 登录页隐藏微信/QQ
+ * 入口、`api/user/login` 一律 status=403。**开关只是暂停不是修复**——重新打开之前必须先接
+ * 厂商 OAuth code 服务端换取（AUDIT P0-1：unionId/phone 都是客户端自报的）。点击链与
+ * [ThirdPartyAuth] seam 原样保留，恢复时只翻这枚开关。
+ */
+const val ENABLE_THIRD_PARTY_LOGIN = false
+
+/**
  * WeChat / QQ authorisation. The install checks are the recovered mechanism (a plain package query,
  * which is what the original did too, against the two `<queries>` entries in the manifest); the
  * authorisation calls themselves need `com.tencent.mm.opensdk` and the QQ connector, neither of which is

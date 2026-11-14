@@ -108,6 +108,24 @@ class UserManagerTest {
     )
 
     @Test
+    fun `a throwing side effect does not lose the session`() {
+        val manager = UserManager(
+            FakeUserRepository(),
+            UserCache(InMemoryKeyValueStores()),
+            object : AccountSideEffects {
+                override fun onVipStateChanged(user: User, wasVip: Boolean) = Unit
+                override fun onSignedIn(user: User) = throw IllegalStateException("fgs not allowed")
+            },
+        )
+
+        // 登录不闪退（审计⑤）：会话本体已落盘，连锁动作炸掉只算副作用失败。
+        manager.store(user(token = "jwt-abc"))
+
+        assertEquals("jwt-abc", manager.token())
+        assertEquals(7L, manager.current().userId)
+    }
+
+    @Test
     fun `the cached record is written before the token, in that order`() {
         val stores = OrderingStores()
         val manager = UserManager(FakeUserRepository(), UserCache(stores), Recorder())
