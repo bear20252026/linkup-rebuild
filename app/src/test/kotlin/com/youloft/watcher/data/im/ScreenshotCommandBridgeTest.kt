@@ -102,6 +102,8 @@ class ScreenshotCommandBridgeTest {
         override suspend fun sendText(peerUserId: Long, text: String) = Unit
         override suspend fun sendImage(peerUserId: Long, localPath: String): String? = null
 
+        override suspend fun sendVoice(peerUserId: Long, localPath: String, durationSeconds: Long): String? = null
+
         override suspend fun sendCommand(peerUserId: Long, action: String, data: String) {
             commandsSent += mapOf("peerUserId" to peerUserId.toString(), "action" to action) to
                 mapOf("peerUserId" to peerUserId.toString(), "data" to data)

@@ -232,6 +232,8 @@ class ImIntegrationTest {
 
         override suspend fun sendImage(peerUserId: Long, localPath: String): String? = null
 
+        override suspend fun sendVoice(peerUserId: Long, localPath: String, durationSeconds: Long): String? = null
+
         override suspend fun sendCommand(peerUserId: Long, action: String, data: String) = Unit
 
         suspend fun emitFriend(event: ImFriendEvent) {

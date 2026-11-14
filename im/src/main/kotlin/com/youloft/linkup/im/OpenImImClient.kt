@@ -148,6 +148,32 @@ class OpenImImClient(
         return sent.pictureElem?.sourcePicture?.url
     }
 
+    override suspend fun sendVoice(peerUserId: Long, localPath: String, durationSeconds: Long): String? {
+        // 声音消息与图片同一上传链：SDK 自己把文件送进 OpenIMServer 的对象存储（MinIO）。
+        val message: Message =
+            OpenIMClient.getInstance().messageManager.createSoundMessageFromFullPath(localPath, durationSeconds)
+        val sent = suspendCancellableCoroutine { continuation ->
+            OpenIMClient.getInstance().messageManager.sendMessage(
+                object : io.openim.android.sdk.listener.OnMsgSendCallback {
+                    override fun onSuccess(data: Message) {
+                        if (continuation.isActive) continuation.resume(data)
+                    }
+
+                    override fun onError(code: Int, error: String) {
+                        if (continuation.isActive) {
+                            continuation.resumeWith(Result.failure(ImTransportException(code, error)))
+                        }
+                    }
+                },
+                message,
+                peerUserId.toString(),
+                /* groupID = */ "",
+                OfflinePushInfo(),
+            )
+        }
+        return sent.soundElem?.sourceUrl
+    }
+
     override suspend fun sendCommand(peerUserId: Long, action: String, data: String) {
         val message: Message = OpenIMClient.getInstance().messageManager.createCustomMessage(
             /* data = */ data,

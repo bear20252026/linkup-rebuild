@@ -135,6 +135,8 @@ class LockCommandBridgeTest {
 
         override suspend fun sendImage(peerUserId: Long, localPath: String): String? = null
 
+        override suspend fun sendVoice(peerUserId: Long, localPath: String, durationSeconds: Long): String? = null
+
         override suspend fun sendCommand(peerUserId: Long, action: String, data: String) {
             commandsSent += action to mapOf("peerUserId" to peerUserId.toString(), "data" to data)
         }

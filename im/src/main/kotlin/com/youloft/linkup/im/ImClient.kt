@@ -68,6 +68,13 @@ interface ImClient {
     suspend fun sendImage(peerUserId: Long, localPath: String): String?
 
     /**
+     * 发送一条语音消息（录音文件 + 时长，秒）。上传与图片同一条链——SDK 自己把文件送进
+     * OpenIMServer 的对象存储（重建栈即 MinIO），不新增任何服务端端点；应答是回填后的
+     * 播放 URL（null 时传输层没能给出）。
+     */
+    suspend fun sendVoice(peerUserId: Long, localPath: String, durationSeconds: Long): String?
+
+    /**
      * Sends one device command as an OpenIM custom message — the port of the original's
      * `EMMessage.createSendMessage(Type.CMD)` + `setAttribute("data", gson(...))`, with the cmdType
      * action carried in the custom message's extension field.
@@ -113,9 +120,17 @@ data class ImMessage(
      * across clients. Null for text.
      */
     val mediaUrl: String? = null,
+    /**
+     * 语音消息的时长（秒，SDK 的 SoundElem 原样口径）；null 表示非语音。图片与语音都带
+     * [mediaUrl]，用本字段区分种类。
+     */
+    val durationSeconds: Long? = null,
 ) {
-    /** 文本之外的本轮媒体种类；语音/视频走各自卡时在此扩展。 */
-    val isImage: Boolean get() = mediaUrl != null
+    /** 语音消息：气泡按时长渲染、点击播放。 */
+    val isVoice: Boolean get() = durationSeconds != null
+
+    /** 图片消息（排除语音——两者都带 mediaUrl，靠时长字段分家）。 */
+    val isImage: Boolean get() = mediaUrl != null && !isVoice
 }
 
 /** One conversation row: the peer, the last line, the badge. */

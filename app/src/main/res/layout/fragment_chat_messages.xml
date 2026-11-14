@@ -47,6 +47,17 @@
             android:textColor="@color/appPrimary"
             android:textSize="15sp" />
 
+        <!-- 按住说话：DOWN 开始录音，UP 发送，划出取消；权限走运行时请求（RECORD_AUDIO） -->
+        <TextView
+            android:id="@+id/bt_chat_voice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:padding="8dp"
+            android:text="🎤"
+            android:textColor="@color/appPrimary"
+            android:textSize="15sp" />
+
         <TextView
             android:id="@+id/bt_chat_send"
             android:layout_width="wrap_content"

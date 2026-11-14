@@ -1810,6 +1810,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 83 | 第三方登录恢复的前置条件：厂商 OAuth code 服务端换取（微信 code2Session / QQ 侧同型）。开关（`ENABLE_THIRD_PARTY_LOGIN` / `-enable-third-login`）在两侧接通前必须保持关闭——开了没校验就是 AUDIT P0-1 的接管通道 | 需微信/QQ 开放平台凭据 |
 | 84 | 密码哈希是无盐 SHA-256（静态前缀），审计 P1-1：换 bcrypt/argon2id + 登录失败限速；顺带修 `PasswordHash` 带 `json:"-"` 重启后密码账号恒"密码错误" | 存量哈希迁移需一次性重置或双读 |
 | 85 | osmdroid + 高德道路瓦片（五点三十七）真机/模拟器验收：瓦片对齐与缩放级别手感（高德 web 瓦片历史上有 z 级偏移说法，以像素为准）、弱网/断网缓存表现、瓦片服务对包名 UA 的限流影响 | 需真机/模拟器 + 网络 |
+| 86 | 聊天语音消息（五点三十八）真机验收：各 ROM 录音权限流与音量、播放流媒体在弱网的表现、OpenIM 声音消息在重建栈（MinIO）的端到端收发 | 需真机 + 网络 + OpenIM 部署 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -2030,6 +2031,40 @@ OSM 装机让它第一次真实执行，轨迹页当场 `IllegalStateException: 
 **待验 85（新）**：真机/模拟器验收 osmdroid 三件事——高德瓦片对齐与缩放级别手感（高德 web 瓦
 片历史上有 z 级偏移的说法，以真机像素为准）、弱网/断网的瓦片缓存表现、瓦片服务对包名 UA 的
 限流是否影响日常使用。
+
+## 五点三十八、聊天语音消息：SDK 声音消息直连 + 录音/播放接线（2026-11-13）
+
+功能盘点后"缺外部依赖"清单里最便宜的一块：语音消息**不需要**火山 TOS 的新链路——OpenIM SDK
+的 `createSoundMessageFromFullPath(path, duration)` 与图片同一上传链（SDK 自己送
+OpenIMServer→MinIO），零服务端端点，`api/volcano/token` 的设计作废（那是原版的 TOS 路）。
+
+### 一、传输与模型
+
+- `ImClient.sendVoice(peerId, localPath, durationSeconds)`：与 `sendImage` 同构（创建→发送→
+  回填 URL），三处 fake（集成/锁机桥/截屏桥）随接口同步。
+- `ImMessage` 增 `durationSeconds`：语音与图片**都**带 `mediaUrl`，靠时长字段分家——
+  `isVoice`/`isImage` 互斥改由该字段裁决，映射（`ImMappings.toImMessage`，VOICE 类型的
+  `soundElem.sourceUrl/duration`）与会话预览（`latestText` 的 soundElem → "【语音】"）同步。
+- SDK 口径：`SoundElem.duration` 是秒（long），中性模型原样携带；`MessageType.VOICE`。
+
+### 二、客户端
+
+- **录音**（`VoiceRecorder`）：MediaRecorder AAC→MPEG4 落私有 `cacheDir/voice/`；太短时系统
+  `stop()` 抛异常——那是"没录上"的诚实信号，映射为"说话时间太短"提示；取消路径删文件。
+- **UI**：输入区 🎤 按住说话（DOWN 录、UP 发、划出取消），`RECORD_AUDIO` 运行时请求、拒绝只
+  提示不挡其他功能；语音气泡 `🎤 5″` / 播放中 `▶ 5″`（`formatVoice` 纯函数 JVM 钉住，一分钟
+  以上分秒）；点击播放——`MediaPlayer` 直播 MinIO URL（`VoicePlayer` seam，单条在响，测试可换
+  记录替身）。
+- 会话列表语音尾巴读"【语音】"而不是空白行。
+
+### 三、测试与待验
+
+`:im` 8 条（+2：voice 映射、会话预览）、`:app` 372 条全绿（+3 `ChatVoiceFormatTest`）。接口
+契约测试走 fake；**录音器与播放器的真机行为不在 JVM 覆盖内**（MediaRecorder/ MediaPlayer 是
+Android 运行时），进待验 86。
+
+**待验 86（新）**：真机验收语音消息三件事——各 ROM 录音权限流与音量、播放流媒体在弱网的表现、
+OpenIM 声音消息在重建栈（MinIO）的端到端收发。
 
 ## 六、架构决定（写死，避免重写时反复）
 

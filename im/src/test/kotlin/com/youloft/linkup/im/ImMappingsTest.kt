@@ -117,4 +117,35 @@ class ImMappingsTest {
         assertEquals("http://minio/1.jpg", fix.mediaUrl, "the served URL rides the neutral model")
         assertEquals("", fix.text)
     }
+
+    @Test
+    fun `a voice message carries url and duration, and is not an image`() {
+        val message = Message().apply {
+            sendID = "10000001"
+            recvID = "10000002"
+            sendTime = 1_700_000_000_000
+            contentType = io.openim.android.sdk.enums.MessageType.VOICE
+            soundElem = io.openim.android.sdk.models.SoundElem().apply {
+                sourceUrl = "http://minio/1.m4a"
+                duration = 6
+            }
+        }
+
+        val fix = ImMappings.toImMessage(message, loginUserId = "10000002")
+        assertTrue(fix.isVoice, "content type VOICE marks the row as voice")
+        assertFalse(fix.isImage, "voice also rides mediaUrl; the duration field is what splits the kinds")
+        assertEquals("http://minio/1.m4a", fix.mediaUrl)
+        assertEquals(6L, fix.durationSeconds, "SoundElem.duration is seconds, carried verbatim")
+        assertEquals("", fix.text)
+    }
+
+    @Test
+    fun `a voice latestMsg answers the voice preview instead of a blank row`() {
+        assertEquals(
+            "【语音】",
+            ImMappings.latestText("""{"soundElem":{"duration":6}}"""),
+            "a voice tail in the conversation list reads as 语音, not silence",
+        )
+        assertNull(ImMappings.latestText("""{"pictureElem":{"url":"http://minio/1.jpg"}}"""))
+    }
 }
