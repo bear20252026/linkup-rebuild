@@ -359,3 +359,23 @@ type CallRecord struct {
 	Phone      *string `json:"phone"`
 	Time       int64   `json:"time"`
 }
+
+// AppUsage is one app's usage row on the guardian's 应用使用 card (client bean AppUsage verbatim).
+// statisticsType carries the window kind (1 = today in this rebuild); Duration is seconds.
+type AppUsage struct {
+	AppName        *string `json:"appName"`
+	Count          int     `json:"count"`
+	Duration       int64   `json:"duration"`
+	Icon           *string `json:"icon"`
+	LastUseTime    int64   `json:"lastUseTime"`
+	PackageName    string  `json:"packageName"`
+	StatisticsType int     `json:"statisticsType"`
+}
+
+// AppUseCard is the 应用使用 card payload (client bean AppUseCard verbatim). UseToday/UsedYesterday
+// are whole minutes; the statistics list is today's rows sorted by duration.
+type AppUseCard struct {
+	UsageStatistics []*AppUsage `json:"usageStatistics"`
+	UseToday        int         `json:"useToday"`
+	UsedYesterday   int         `json:"usedYesterday"`
+}

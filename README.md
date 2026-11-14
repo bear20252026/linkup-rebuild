@@ -54,6 +54,12 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**应用使用域已接入（#42，2026-11-13）**：监控数据面第二域——UsageStatsManager 聚合（前台
+配对时长/打开计数，碎片丢弃）→ `api/phone/app_use/report`（v1/v2 同台账，**总量口径 replace**
+重报幂等，天数滚动 5 日封顶 400 行）→ `api/index` 的 `appUseCard`——**守护 Tab 应用使用卡
+点亮**（今日 N 分/榜首应用/昨日对照，无台账收起）。权限是 Settings 的"使用情况访问权限"AppOp。
+真机项见 DESIGN 待验 88。
+
 **通话记录域已接入（#41，2026-11-13）**：监控数据面第一域四层贯通——客户端 CallLog delta
 采集（READ_CALL_LOG 运行时授权，未授权静默跳过）→ `api/phone/call_record/report`（批量、
 去重、per-account 封顶 200）→ store 台账 → `api/index` 的 `callRecordList`——**守护 Tab 通话
