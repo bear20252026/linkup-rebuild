@@ -90,6 +90,9 @@ class TrackRecordActivity : AppCompatActivity() {
     private fun attachMapIfAvailable(graph: com.youloft.watcher.data.LinkUpApplication, savedState: Bundle?) {
         val provider = graph.trackMaps.preferred() ?: return
         val map = provider.create(this)
+        // 契约顺序：onCreate 先于挂载（TrackMap 排序契约——百度 SDK 要求初始化先于 MapView 存在），
+        // map.view 在此之后才有效。OSM 接入前没有任何 provider 装机，这个次序问题从未暴露过。
+        map.onCreate(savedState)
         binding.trackMapContainer.addView(
             map.view,
             android.widget.FrameLayout.LayoutParams(
@@ -97,7 +100,6 @@ class TrackRecordActivity : AppCompatActivity() {
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT,
             ),
         )
-        map.onCreate(savedState)
         trackMap = map
         binding.trackMapArt.visibility = View.GONE
     }

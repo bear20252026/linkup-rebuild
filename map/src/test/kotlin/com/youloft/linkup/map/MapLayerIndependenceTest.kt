@@ -109,15 +109,23 @@ class MapLayerIndependenceTest {
             assertTrue(dependencyLine == null, "$buildFile pulls a third-party map artifact: $dependencyLine")
         }
 
-        // Runtime coordinates are the platform, :location (for the datum conversions), and nothing else.
+        // Runtime coordinates are the platform, :location (for the datum conversions), osmdroid — the
+        // open-source basemap that is a plain Maven Central dependency (no key, no vendor contract, so
+        // the AAR-absence reason above does not apply to it) — and nothing else. The allow-list matches
+        // by group prefix ("androidx.core:…" passes "androidx"); ":location" is the exact project().
         val production = productionCoordinates(text)
         assertTrue(
             production.isNotEmpty(),
             "$buildFile declares no runtime dependency at all: the scan is vacuous, check the regex",
         )
+        val unexpected = production.filterNot { coord ->
+            ALLOWED_RUNTIME.any { prefix ->
+                if (prefix == ":location") coord == prefix else coord.startsWith(prefix)
+            }
+        }
         assertEquals(
             emptyList<String>(),
-            production.filterNot { it in ALLOWED_RUNTIME },
+            unexpected,
             ":map picked up an unexpected runtime dependency: $production",
         )
     }
@@ -141,6 +149,10 @@ class MapLayerIndependenceTest {
         assertTrue(
             mainSources.any { it.relativePath.contains("/provider/amap/") },
             "the amap adapter moved, so the exemption rule above needs updating",
+        )
+        assertTrue(
+            mainSources.any { it.relativePath.contains("/provider/osm/") },
+            "the osm adapter moved, so the open-source basemap has no home; update this rule",
         )
         assertTrue(
             mainSources.filter { it.isVendorAdapter }.all { it.file.isFile },
@@ -204,8 +216,10 @@ class MapLayerIndependenceTest {
     companion object {
         private const val MAIN_SOURCE_DIR = "src/main/kotlin"
 
-        /** What the map layer may sit on: its own platform, and the datum conversions from :location. */
-        private val ALLOWED_RUNTIME = setOf("androidx", "org.jetbrains.kotlinx", "org.jetbrains", ":location")
+        /** What the map layer may sit on: the platform, :location's datum conversions, and osmdroid —
+         *  the open-source basemap (Maven Central, no key), which is why it is allowed where vendor
+         *  artifacts are not. */
+        private val ALLOWED_RUNTIME = setOf("androidx", "org.jetbrains.kotlinx", "org.jetbrains", ":location", "org.osmdroid")
 
         /** Every Chinese map vendor the app could have shipped, plus Google's map API. */
         private val vendorPackages = listOf(

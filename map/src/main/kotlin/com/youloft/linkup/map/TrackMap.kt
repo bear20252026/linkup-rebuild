@@ -28,9 +28,15 @@ data class TrackOverlay(val path: List<MapLatLng>, val stays: List<StayMark>)
  * The lifecycle mirrors the vendor map views' own contract, forwarded verbatim from the hosting
  * activity/fragment: [onCreate] before first display, the pair pairs around visibility, [onSaveState] at
  * the same moment the host saves its own state, [onDestroy] last.
+ *
+ * **Ordering contract**: [onCreate] runs **before** [view] is mounted. Baidu's SDK demands its
+ * initializer before a MapView can even exist, so no adapter may promise a mountable view earlier —
+ * the host mounts the view *after* [onCreate]. The previous "mount before onCreate" wording here was
+ * wrong; it only never fired because no provider was installed, and OSM's arrival turned it into a
+ * real `IllegalStateException` on the track page.
  */
 interface TrackMap {
-    /** The vendor view; add it to a container with match_parent before [onCreate]. */
+    /** The vendor view; valid only after [onCreate] — the host mounts it then. */
     val view: View
 
     val id: String

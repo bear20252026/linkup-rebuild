@@ -25,6 +25,7 @@ import com.youloft.linkup.location.provider.system.LocationPermissions
 import com.youloft.linkup.map.TrackMapProviders
 import com.youloft.linkup.map.provider.amap.AmapTrackMapProvider
 import com.youloft.linkup.map.provider.baidu.BaiduTrackMapProvider
+import com.youloft.linkup.map.provider.osm.OsmTrackMapProvider
 import com.youloft.linkup.im.ImClient
 import com.youloft.linkup.im.OpenImImClient
 import com.youloft.watcher.data.im.ImFriendListSource
@@ -311,14 +312,16 @@ open class LinkUpApplication : Application() {
 
     /**
      * The map catalog for the track page: Baidu first (the vendor that shipped), AMap second (proof the
-     * seam takes a second vendor; no AAR today), and no framework fallback — the platform has no basemap,
-     * so with no vendor installed the screen keeps its own "尚未接入" state instead of constructing one.
+     * seam takes a second vendor; no AAR today), OSM last — the open-source basemap that is always
+     * installed, so this build draws real tiles today; a vendor AAR wins over it the day one lands,
+     * because `preferred()` picks the first installed and the vendors sit ahead of it.
      */
     open val trackMaps: TrackMapProviders by lazy {
         TrackMapProviders(
             listOf(
                 BaiduTrackMapProvider(privacyAgreed = { privacyGate.agreed() }),
                 AmapTrackMapProvider(),
+                OsmTrackMapProvider(),
             ),
         )
     }
