@@ -42,8 +42,8 @@ class AddFriendViewModel(
     private val _search = MutableLiveData<ApiResponse<SearchFriend>>()
     val search: LiveData<ApiResponse<SearchFriend>> = _search
 
-    private val _qrCode = MutableLiveData<Bitmap>()
-    val qrCode: LiveData<Bitmap> = _qrCode
+    private val _qrCode = MutableLiveData<Bitmap?>()
+    val qrCode: LiveData<Bitmap?> = _qrCode
 
     /** `r(code)` — a match code, a scanned userid or the H5 deep link all funnel through here. */
     fun preConfirmAdd(code: Long) {
@@ -103,7 +103,7 @@ class AddFriendViewModel(
     fun matchQrCode(shareUrl: String, sizePx: Int) {
         viewModelScope.launch {
             val bitmap = withContext(Dispatchers.IO) { qrRenderer.render(shareUrl, sizePx) }
-            if (bitmap != null) _qrCode.postValue(bitmap)
+            _qrCode.postValue(bitmap) // 渲染失败答 null:观察方清空二维码位
         }
     }
 

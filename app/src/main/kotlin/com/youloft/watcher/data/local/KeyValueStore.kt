@@ -66,17 +66,43 @@ private class MmkvStore(private val mmkv: MMKV) : KeyValueStore {
     }
 }
 
-/** Production stores. Initialized once because `MMKV.initialize` needs the app root dir. */
+/**
+ * Production stores. Initialized once because `MMKV.initialize` needs the app root dir.
+ *
+ * MMKV 加密（审计 P2-9）：cryptKey 是首启生成的随机 16 字节，落私有 `filesDir/mmkv.key`
+ * （仅属主可读写）——键与数据分离，外部备份/部分文件读取拿到的不再是明文会话。如实标注：
+ * 对已 root 的设备这层只是延迟，Keystore 才是不可导出的答案（MMKV 需要可导出的对称键，
+ * Keystore 不提供——口径记录在 DESIGN）；存量明文实例换键后按 MMKV 语义失效，重新登录即可。
+ */
 class MmkvKeyValueStores(context: Context) : KeyValueStores {
     private val rootDir = MMKV.initialize(context.applicationContext)
+    private val cryptKey: String by lazy { loadOrCreateCryptKey(context.applicationContext) }
     private val default: KeyValueStore by lazy {
-        MmkvStore(MMKV.defaultMMKV(MMKV.MULTI_PROCESS_MODE, null))
+        MmkvStore(MMKV.defaultMMKV(MMKV.MULTI_PROCESS_MODE, cryptKey))
     }
 
     override val shared: KeyValueStore get() = default
 
     override fun forUser(userId: Long): KeyValueStore =
-        MmkvStore(MMKV.mmkvWithID(userId.toString(), MMKV.MULTI_PROCESS_MODE, null))
+        MmkvStore(MMKV.mmkvWithID(userId.toString(), MMKV.MULTI_PROCESS_MODE, cryptKey))
+}
+
+/** 首启生成并落盘（仅属主可读写）；已存在则原样回读。 */
+private fun loadOrCreateCryptKey(context: Context): String {
+    val file = java.io.File(context.filesDir, "mmkv.key")
+    runCatching {
+        file.readText().takeIf { it.length == 22 }?.let { return it }
+    }
+    val bytes = ByteArray(16).also { java.security.SecureRandom().nextBytes(it) }
+    val key = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP) // 22 chars
+    runCatching {
+        file.writeText(key)
+        file.setReadable(false, false)
+        file.setReadable(true, true)
+        file.setWritable(false, false)
+        file.setWritable(true, true)
+    }
+    return key
 }
 
 /** Test/dev double: two independent key spaces, no native library involved. */

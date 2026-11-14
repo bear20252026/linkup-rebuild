@@ -1815,6 +1815,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 88 | 应用使用域（五点四十）真机验收：各 ROM 的 UsageStatsManager 事件粒度（息屏/锁屏口径差异）、"使用情况访问权限"授权流、跨天/跨时区的日切换表现 | 需真机 + 两台设备 |
 | 89 | 敏感行为域（五点四十一）真机验收：各 ROM 安装/卸载广播的可达性（MIUI 等对 PACKAGE_REMOVED 的广播顺序差异）、receiver 冷启时延、台账在真实安装节奏下的量级 | 需真机 + 两台设备 |
 | 90 | 四象限待办屏（五点四十二）真机验收：三路由端到端、四象限切换手感、待办提醒通道（TodoRsp.notifyType，原版语义不可恢复） | 需真机 + 两台设备 |
+| 91 | R8 release 包真机回归（五点四十四）：Retrofit/Gson 序列化、OpenIM 收发、H5 桥 JS 接口、osmdroid 瓦片、MMKV 加密迁移（存量安装重新登录） | 需真机 + release 包 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -2292,6 +2293,40 @@ JWT 送到第三方服务器。**修法是收窄追加环节**，不是收窄导
 `CredentialWhitelistTest` 3 条（JVM）：自家域追加形态（`?`/`&` 分隔）、子域与大小写命中、
 外域/后缀伪装/解析失败如实 false。导航本身不收窄——H5 容器仍可打开任意页面（产品语义），
 只是凭据不再跟着走。
+
+## 五点四十四、P2 清理包：store 0600 / 轨迹封顶 / MMKV 加密 / R8（2026-11-14）
+
+审计 P2 清单的服务端+构建四件：
+
+### 一、store 文件 0600（P2-3）
+台账文件（手机号/完整轨迹/验证码明文）从 0644 收紧到 0600——同机其他用户不可读。Windows
+权限位不生效是已知事实（README 记录），生产在 Linux 跑。
+
+### 二、轨迹台账封顶（P2-1 的第一步）
+`AddFix` 后 per-account 只留最新 **20000** 行（删最旧）——失控设备不再无界增长；全局 NextFix
+序号不受裁剪影响。审计指出的 O(n) 扫描面（DaysFor/FixesOnDay 全表线性扫）仍在——真正的答案
+是换 DB，store 文件是替换缝（架构决定六.3）。
+
+### 三、MMKV 加密（P2-9）
+cryptKey = 首启生成的随机 16 字节，落私有 `filesDir/mmkv.key`（仅属主可读写）——键与数据
+分离，外部备份/部分文件读取拿到的不再是明文会话。**如实标注**：对已 root 设备只是延迟，
+Keystore 才是不可导出的答案（MMKV 需要可导出对称键，Keystore 不提供——口径记录）；存量明文
+实例换键后按 MMKV 语义失效，重新登录即可。
+
+### 四、R8 混淆（release 与原版一致）
+`isMinifyEnabled = true` + `isShrinkResources = true` + proguard 规则（Retrofit 官方精简版、
+Gson 字段契约 bean（api.dto/OpenIM models/im）、OpenIM SDK、WebView JS 接口、百度/高德 AAR
+反射面、osmdroid dontwarn）。**顺带修了 release 构建两处存量阻断**：①AddFriendViewModel 的
+NullSafeMutableLiveData（qrCode LiveData 带 ?——渲染失败答 null，观察方清空二维码位）；
+②原版资源残留的 `assets/dexopt/baseline.prof(m)` 与 AGP 打包生成的 baseline profile 撞
+重复条目（packageRelease 即失败，debug 构建不触发所以从未暴露）——删除残留（AGP 生成的
+才是本 dexopt 的）。**assembleRelease 验证通过**；R8 后的运行时行为必须真机回归（待验 91）。
+
+### 测试
+server：`AddFix` 封顶（删最旧/保最新/per-account 隔离）全绿。
+
+**待验 91（新）**：R8 release 包真机回归——Retrofit/Gson 序列化、OpenIM 收发、H5 桥 JS 接口、
+osmdroid 瓦片、MMKV 加密迁移（存量安装重新登录）。
 
 ## 六、架构决定（写死，避免重写时反复）
 
