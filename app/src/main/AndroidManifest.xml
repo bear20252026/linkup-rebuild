@@ -164,6 +164,19 @@
                 android:resource="@xml/widget_track_info" />
         </receiver>
 
+        <!-- 敏感行为域（DESIGN 五点四十一）：应用安装/卸载/更新的系统广播不需要权限；
+             未登录期间的事件不回补（DESIGN 记录的局限） -->
+        <receiver
+            android:name=".data.SensitiveEventReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <data android:scheme="package" />
+            </intent-filter>
+        </receiver>
+
         <service
             android:name=".service.TrackCollectService"
             android:exported="false"

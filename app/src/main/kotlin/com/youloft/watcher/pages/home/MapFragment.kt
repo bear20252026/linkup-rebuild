@@ -151,6 +151,12 @@ class MapFragment : Fragment() {
         override val appUseToday: (Int) -> String = { getString(R.string.home_card_app_use_today, it) }
         override val appUseYesterday: (Int) -> String = { getString(R.string.home_card_app_use_yesterday, it) }
         override val unknownApp = getString(R.string.home_card_unknown_app)
+        override val sensitive = getString(R.string.home_card_sensitive)
+        override val sensitiveInstall = getString(R.string.home_card_sensitive_install)
+        override val sensitiveUninstall = getString(R.string.home_card_sensitive_uninstall)
+        override val sensitiveUpdate = getString(R.string.home_card_sensitive_update)
+        override val sensitiveUnknown = getString(R.string.home_card_sensitive_unknown)
+        override val sensitiveSummary: (Int) -> String = { getString(R.string.home_card_sensitive_summary, it) }
         override val lock = getString(R.string.home_card_lock)
         override val lockOff = getString(R.string.home_card_lock_off)
         override val lockRemaining: (String) -> String = { getString(R.string.home_card_lock_remaining, it) }

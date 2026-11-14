@@ -169,6 +169,11 @@ func New(opts Options) (*gin.Engine, error) {
 		// 应用使用域（v1/v2 两代上报合并同一台账，原版形状不可恢复见 handler 注释）。
 		api.POST("/phone/app_use/report", g.appUseReport)
 		api.POST("/phone/app_use/v2/report", g.appUseReport)
+		// 敏感行为域（DESIGN 五点四十一）：安装/卸载/更新事件台账；server_timer 原语义不可
+		// 恢复且客户端无调用方，路由不建（DESIGN 记录）。
+		api.POST("/sensitive/report", g.sensReport)
+		api.GET("/sensitive/user", g.sensUser)
+		api.GET("/sensitive/user/days", g.sensUserDays)
 		api.GET("/widget/location", g.widgetLocation)
 		api.GET("/widget/track", g.widgetTrack)
 

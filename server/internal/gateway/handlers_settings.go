@@ -109,12 +109,11 @@ func (g *Gateway) privacyUpdate(c *gin.Context) {
 func (g *Gateway) index(c *gin.Context) {
 	me := g.claims(c).UserID
 	peers := g.guardPeers(c, me)
-	payload := map[string]any{
-		"phoneUseCard":  nil,
-		"appUseCard":    nil,
-		"sensitiveCard": []any{},
-		"serverTime":    time.Now().Unix(),
-	}
+		payload := map[string]any{
+			"phoneUseCard": nil,
+			"appUseCard":   nil,
+			"serverTime":   time.Now().Unix(),
+		}
 	for _, peer := range peers {
 		if state := g.friendStateRow(peer); state != nil {
 			payload["friendState"] = state
@@ -148,6 +147,20 @@ func (g *Gateway) index(c *gin.Context) {
 		if card := g.appUseCardFor(peer); card != nil {
 			payload["appUseCard"] = card
 		}
+		// 敏感行为卡（sensitive/report 供数）：最新几条，只在有台账时下发（无则缺键，卡收起）。
+		if sens := g.opts.Store.SensRecordsFor(peer, "", indexSensLimit, g.opts.DayZone); len(sens) > 0 {
+			rows := make([]any, 0, len(sens))
+			for _, e := range sens {
+				rows = append(rows, &dto.SensRecord{
+					Type:      e.Type,
+					EventTime: e.EventTime,
+					AppName:   textPtr(e.AppName),
+					Phone:     textPtr(e.Phone),
+					CreatedAt: e.CreatedAt,
+				})
+			}
+			payload["sensitiveCard"] = rows
+		}
 		lock := g.opts.Store.LockFor(me, peer)
 		payload["lockInfo"] = map[string]any{
 			"userId":      peer,
@@ -170,6 +183,9 @@ func (g *Gateway) index(c *gin.Context) {
 
 /** The 通话记录 card reads at most this many ledger rows per guard target. */
 const indexCallRecordLimit = 10
+
+/** The 敏感行为 card reads at most this many ledger rows per guard target. */
+const indexSensLimit = 5
 
 func (g *Gateway) versionCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, contract.OK(map[string]any{

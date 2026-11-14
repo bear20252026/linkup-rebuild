@@ -710,6 +710,13 @@ data class SensBean(
     val wifi: String? = null,
 ) : java.io.Serializable
 
+/** 敏感行为的事件类型（本重建口径，DESIGN 五点四十一）：原版类型表不可恢复；服务端台账同值。 */
+object SensType {
+    const val APP_INSTALL = 1
+    const val APP_UNINSTALL = 2
+    const val APP_UPDATE = 3
+}
+
 /** recovered from com/youloft/watcher/bean/SensReportResult.java */
 data class SensReportResult(
     val openPhoneTimes: Int = 0,

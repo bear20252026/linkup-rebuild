@@ -1813,6 +1813,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 86 | 聊天语音消息（五点三十八）真机验收：各 ROM 录音权限流与音量、播放流媒体在弱网的表现、OpenIM 声音消息在重建栈（MinIO）的端到端收发 | 需真机 + 网络 + OpenIM 部署 |
 | 87 | 通话记录域（五点三十九）真机验收：各 ROM 的 CallLog 权限流与列兼容、ContentObserver 实时性（本轮登录/进主界面时同步，实时推送下一轮）、守护 Tab 卡真实数据行密度 | 需真机 + 两台设备 |
 | 88 | 应用使用域（五点四十）真机验收：各 ROM 的 UsageStatsManager 事件粒度（息屏/锁屏口径差异）、"使用情况访问权限"授权流、跨天/跨时区的日切换表现 | 需真机 + 两台设备 |
+| 89 | 敏感行为域（五点四十一）真机验收：各 ROM 安装/卸载广播的可达性（MIUI 等对 PACKAGE_REMOVED 的广播顺序差异）、receiver 冷启时延、台账在真实安装节奏下的量级 | 需真机 + 两台设备 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -2152,6 +2153,53 @@ payload 原样；+`HomeCardsTest` 2）。**调试实录**：首轮聚合测试 c
 
 **待验 88（新）**：真机验收应用使用域三件事——各 ROM 的 UsageStatsManager 事件粒度（息屏/
 锁屏事件口径差异）、"使用情况访问权限"授权流、跨天与跨时区的日切换表现。
+
+## 五点四十一、敏感行为域：安装/卸载/更新事件台账 + 敏感行为卡点亮（2026-11-14）
+
+监控数据面第三域（收尾），四件套同构前两域：**客户端广播采集 → `api/sensitive/report` →
+store 台账 → `api/sensitive/user`(+days) 读数与 `api/index` 的 sensitiveCard 卡片**。
+
+### 一、口径决定（如实写死）
+
+- **事件类型表是本重建自定的**（1=应用安装 2=应用卸载 3=应用更新，net 的 `SensType` 常量，
+  服务端同值）——原版类型表随服务端源码不可恢复；未定义的口径不编造（`sensTypeOf` 对未知
+  action 答 null，测试钉住）。
+- **`api/sensitive/server_timer` 不建**：原语义（服务端定时器触发敏感提醒）不可恢复且重建
+  客户端无调用方——路由不注册，测试断言签名请求落到 gin 404（这是"拒绝伪造不可恢复契约"的
+  第一个正面用例）。
+- **上报单条**（原版契约是单个 SensBean body 非 batch）；响应的 `SensReportResult` 统计读数
+  （开屏次数/应用使用）不可恢复，回零值（`dto.SensReportResult{}`），不编造。
+- 采集范围如实标注局限：**未登录期间的安装/卸载事件不回补**（隐私门未过/会话不在时静默丢弃，
+  不做离线队列）。
+
+### 二、服务端
+
+`SensEntry{type, eventTime, appName, phone, createdAt}`（秒口径）台账 + 三条规则：retry 去重
+（type+time+明细键）、per-account 封顶 200、日期过滤按 **store 配置的日区**（zone 参数显式传入，
+与 location/days 同一模式——两端本地日差异的近似口径）。路由三条：`report`（JWT 仅自己）、
+`user?date=&mainUser=`（JWT + **关系校验**：任一方向关系行，同 location 读权限规则）、
+`user/days`（调用者自己的 yyyyMMdd 桶——原签名无 user id，守护端分页走 user 的空 date 取最新
+页，DESIGN 记录）。`api/index` 的 sensitiveCard 从守护对象台账填充（最新 5 条，无则缺键卡收起）；
+响应去掉占位的 `sensitiveCard: []` 空键。
+
+### 三、客户端
+
+- **采集**（`SensitiveEventReceiver`，manifest receiver）：PACKAGE_ADDED/REMOVED/REPLACED
+  三类系统广播（data scheme=package，**不需要权限**），goAsync + IO 协程逐条上报；门是隐私同意
+  + 已登录（未登录事件不回补，见上）；卸载后 label 不可查——包名就是诚实答案。
+- **卡片**（HomeCards 第七张）：`Kind.SENSITIVE`——最新事件"类型词 · 对象应用"、行一时间、
+  行二"最近 N 条"；无台账缺席。类型词映射 `sensLabel`。
+- 读接口（`sensitiveUser/sensitiveUserDays`）LinkUpApi 已有声明，服务端本轮补齐——敏感行为
+  列表屏未重建，读数先服务卡片与未来的屏。
+
+### 四、测试
+
+server：台账（去重/日期桶/封顶/重载）+ 路由（事件上报/关系读/自己 days/陌生人拒绝/匿名拒绝/
+type 缺失拒绝/server_timer 落 404）全绿。客户端：:app 391 条全绿（+`SensitiveEventReceiverTest`
+2：三广播映射/未知 action 不编造；+`HomeCardsTest` 2 敏感卡渲染与缺席）。
+
+**待验 89（新）**：真机验收敏感行为域三件事——各 ROM 安装/卸载广播的可达性（MIUI 等对
+PACKAGE_REMOVED 的广播顺序差异）、receiver 冷启时延、台账在真实安装节奏下的量级。
 
 ## 六、架构决定（写死，避免重写时反复）
 

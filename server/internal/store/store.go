@@ -121,7 +121,22 @@ type Data struct {
 	InviteCodes map[string]InviteCode    `json:"inviteCodes,omitempty"`
 	CallRecords map[int64][]CallRecordEntry `json:"callRecords,omitempty"`
 	AppUses     map[int64][]AppUseEntry    `json:"appUses,omitempty"`
+	SensRecords map[int64][]SensEntry      `json:"sensRecords,omitempty"`
 }
+
+// SensEntry is one sensitive-behavior event on the guarded phone (监控数据面第三域, DESIGN 五点四十一).
+// The original's event-type table is not recoverable from the APK, so this rebuild pins its own:
+// 1=应用安装 2=应用卸载 3=应用更新 (see gateway's sensEventLabel for the card wording). Seconds again.
+// Deduped by (type, eventTime, detail) and capped per account like the call ledger.
+type SensEntry struct {
+	Type      int    `json:"type"`
+	EventTime int64  `json:"eventTime"`
+	AppName   string `json:"appName,omitempty"`
+	Phone     string `json:"phone,omitempty"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+const SensCap = 200
 
 // AppUseEntry is one app's usage totals for one day on the guarded phone (day = epoch seconds of the
 // local day start). Reports are **totals so far**, not increments: AddAppUses replaces the duration
@@ -958,6 +973,106 @@ func (s *Store) AppUsesFor(userID int64, days []int64) []AppUseEntry {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Duration > out[j].Duration })
 	return out
+}
+
+// AddSensRecords appends sensitive-behavior events. Duplicates (type+time+detail) are absorbed and
+// the per-account list stays capped at the newest SensCap rows, newest appended last.
+func (s *Store) AddSensRecords(userID int64, records []SensEntry) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(records) == 0 {
+		return
+	}
+	if s.data.SensRecords == nil {
+		s.data.SensRecords = map[int64][]SensEntry{}
+	}
+	existing := s.data.SensRecords[userID]
+	seen := map[string]bool{}
+	for _, e := range existing {
+		seen[sensKey(e)] = true
+	}
+	for _, e := range records {
+		if seen[sensKey(e)] {
+			continue
+		}
+		seen[sensKey(e)] = true
+		existing = append(existing, e)
+	}
+	if len(existing) > SensCap {
+		existing = existing[len(existing)-SensCap:]
+	}
+	s.data.SensRecords[userID] = existing
+	s.markDirtyLocked()
+}
+
+func sensKey(e SensEntry) string {
+	return strconv.Itoa(e.Type) + "|" + strconv.FormatInt(e.EventTime, 10) + "|" + e.AppName + "|" + e.Phone
+}
+
+// SensRecordsFor answers the newest  events of one account whose event time falls on the
+// given yyyyMMdd day ("" = all days), newest first. The day bucketing uses the store's own zone
+// because the events carry the guarded phone's epoch seconds — the approximate cross-device day
+//口径 is written down in DESIGN 五点四十一.
+func (s *Store) SensRecordsFor(userID int64, day string, limit int, zone *time.Location) []SensEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	all := s.data.SensRecords[userID]
+	if len(all) == 0 {
+		return nil
+	}
+	out := make([]SensEntry, 0, limit)
+	if day == "" {
+		for i := len(all) - 1; i >= 0 && len(out) < limit; i-- {
+			out = append(out, all[i])
+		}
+		return out
+	}
+	for i := len(all) - 1; i >= 0 && len(out) < limit; i-- {
+		if zoneDay(all[i].EventTime, zone) == day {
+			out = append(out, all[i])
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+// SensDaysFor answers the yyyyMMdd days the account has events on, newest first.
+func (s *Store) SensDaysFor(userID int64, zone *time.Location) []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	seen := map[string]bool{}
+	var out []string
+	for i := len(s.data.SensRecords[userID]) - 1; i >= 0; i-- {
+		day := zoneDay(s.data.SensRecords[userID][i].EventTime, zone)
+		if !seen[day] {
+			seen[day] = true
+			out = append(out, day)
+		}
+	}
+	return out
+}
+
+// LatestSensDay answers the newest day with events; empty when none.
+func (s *Store) LatestSensDay(userID int64, zone *time.Location) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var latest int64
+	for _, e := range s.data.SensRecords[userID] {
+		if e.EventTime > latest {
+			latest = e.EventTime
+		}
+	}
+	if latest == 0 {
+		return ""
+	}
+	return zoneDay(latest, zone)
+}
+
+// zoneDay buckets an epoch-second stamp into yyyyMMdd using the store's configured day zone.
+func zoneDay(seconds int64, zone *time.Location) string {
+	return time.Unix(seconds, 0).In(zone).Format("20060102")
 }
 
 // AppUseMinutes answers the whole ledger's duration summed into minutes for the given days — the
