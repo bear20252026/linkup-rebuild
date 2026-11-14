@@ -25,7 +25,7 @@ object HomeCards {
         val kind: Kind,
     )
 
-    enum class Kind { PHONE_STATE, LOCATION, CALL_RECORD, APP_USE, LOCK, OWN_DEVICE }
+    enum class Kind { PHONE_STATE, LOCATION, CALL_RECORD, APP_USE, SENSITIVE, LOCK, OWN_DEVICE }
 
     fun fromData(
         data: HomeData?,
@@ -78,6 +78,18 @@ object HomeCards {
                 line1 = appWho(top, texts) + " · " + formatDuration(top.duration),
                 line2 = texts.appUseYesterday(card.usedYesterday),
                 kind = Kind.APP_USE,
+            )
+        }
+        // 敏感行为卡（敏感行为域，DESIGN 五点四十一）：最新一通事件的方向词+对象，行一时间，
+        // 行二批次摘要。没有台账就缺席（原卡空数据时收起）。
+        data.sensitiveCard?.orEmpty()?.filterNotNull()?.takeIf { it.isNotEmpty() }?.let { events ->
+            val latest = events.first()
+            cards += Card(
+                title = texts.sensitive,
+                value = sensLabel(latest, texts),
+                line1 = formatEpochSeconds(latest.eventTime),
+                line2 = texts.sensitiveSummary(events.size),
+                kind = Kind.SENSITIVE,
             )
         }
         data.lockInfo?.let { lock ->
@@ -136,6 +148,18 @@ object HomeCards {
         row.appName?.takeIf { it.isNotBlank() }
             ?: row.packageName?.takeIf { it.isNotBlank() }
             ?: texts.unknownApp
+
+    /** 敏感行为卡的行值：类型词 + 对象应用（缺省如实省略）。类型口径见 net 的 [SensType]。 */
+    private fun sensLabel(event: com.youloft.linkup.api.dto.SensBean, texts: Texts): String {
+        val typeWord = when (event.type) {
+            com.youloft.linkup.api.dto.SensType.APP_INSTALL -> texts.sensitiveInstall
+            com.youloft.linkup.api.dto.SensType.APP_UNINSTALL -> texts.sensitiveUninstall
+            com.youloft.linkup.api.dto.SensType.APP_UPDATE -> texts.sensitiveUpdate
+            else -> texts.sensitiveUnknown
+        }
+        val who = event.appName?.takeIf { it.isNotBlank() }
+        return if (who != null) "$typeWord · $who" else typeWord
+    }
 
     /** 方向词：未接（来电未接通）/ 来电 / 去电——原版 bean 只有两个方向，未接是没接通的来电。 */
     private fun callDirection(record: com.youloft.linkup.api.dto.CallRecord, texts: Texts): String = when {
@@ -201,6 +225,12 @@ object HomeCards {
         val appUseToday: (Int) -> String
         val appUseYesterday: (Int) -> String
         val unknownApp: String
+        val sensitive: String
+        val sensitiveInstall: String
+        val sensitiveUninstall: String
+        val sensitiveUpdate: String
+        val sensitiveUnknown: String
+        val sensitiveSummary: (Int) -> String
         val lock: String
         val lockOff: String
         val lockRemaining: (String) -> String

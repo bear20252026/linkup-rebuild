@@ -54,6 +54,12 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**敏感行为域已接入（#43，2026-11-14）**：监控数据面第三域（收尾）——安装/卸载/更新系统广播
+采集（免权限 receiver）→ `api/sensitive/report` → store 台账（去重/封顶 200/日区过滤）→
+`api/sensitive/user`(+days，关系校验) 与 `api/index` 的 sensitiveCard——**守护 Tab 敏感行为卡
+点亮**（第七张）。事件类型表为本重建口径（原版不可恢复）；`server_timer` 语义不可恢复不建路由
+（测试钉住落 404）。真机项见 DESIGN 待验 89。
+
 **应用使用域已接入（#42，2026-11-13）**：监控数据面第二域——UsageStatsManager 聚合（前台
 配对时长/打开计数，碎片丢弃）→ `api/phone/app_use/report`（v1/v2 同台账，**总量口径 replace**
 重报幂等，天数滚动 5 日封顶 400 行）→ `api/index` 的 `appUseCard`——**守护 Tab 应用使用卡

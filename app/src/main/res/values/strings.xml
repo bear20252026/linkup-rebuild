@@ -137,6 +137,12 @@
     <string name="home_card_app_use_today">今日 %d 分</string>
     <string name="home_card_app_use_yesterday">昨日 %d 分</string>
     <string name="home_card_unknown_app">未知应用</string>
+    <string name="home_card_sensitive">敏感行为</string>
+    <string name="home_card_sensitive_install">安装应用</string>
+    <string name="home_card_sensitive_uninstall">卸载应用</string>
+    <string name="home_card_sensitive_update">更新应用</string>
+    <string name="home_card_sensitive_unknown">敏感事件</string>
+    <string name="home_card_sensitive_summary">最近 %d 条</string>
     <string name="home_card_call_record">通话记录</string>
     <string name="home_card_call_incoming">来电</string>
     <string name="home_card_call_outgoing">去电</string>

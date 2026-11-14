@@ -499,3 +499,65 @@ func TestAppUsesSurviveReload(t *testing.T) {
 		t.Fatalf("the day bookkeeping did not survive: %d", reopened.LatestAppUseDay(7))
 	}
 }
+
+// TestSensRecordsDedupeCapAndDays pins the sensitive-behavior ledger: retry absorbed, the day
+// bucketing answers yyyyMMdd newest first, and the per-account cap keeps the file bounded.
+func TestSensRecordsDedupeCapAndDays(t *testing.T) {
+	s := mustOpen(t, "")
+	zone := time.UTC
+	base := int64(1_760_000_000_000 / 1000) // inside some yyyyMMdd day
+	s.AddSensRecords(7, []SensEntry{
+		{Type: 1, EventTime: base, AppName: " игры", Phone: "", CreatedAt: base},
+		{Type: 2, EventTime: base + 60, AppName: "com.b", CreatedAt: base},
+	})
+	s.AddSensRecords(7, []SensEntry{{Type: 1, EventTime: base, AppName: " игры"}}) // retry
+
+	all := s.SensRecordsFor(7, "", 10, zone)
+	if len(all) != 2 {
+		t.Fatalf("retry absorbed: %d rows", len(all))
+	}
+	if all[0].Type != 2 || all[1].Type != 1 {
+		t.Fatalf("newest first: %+v", all)
+	}
+
+	days := s.SensDaysFor(7, zone)
+	if len(days) != 1 || days[0] != time.Unix(base, 0).In(zone).Format("20060102") {
+		t.Fatalf("one day bucket, yyyyMMdd: %+v", days)
+	}
+	if got := s.SensRecordsFor(7, days[0], 10, zone); len(got) != 2 {
+		t.Fatalf("the day filter keeps both rows: %+v", got)
+	}
+	if got := s.SensRecordsFor(7, "19990101", 10, zone); got != nil {
+		t.Fatalf("another day answers nil: %+v", got)
+	}
+	if s.LatestSensDay(7, zone) != days[0] {
+		t.Fatalf("the latest day bookkeeping: %q", s.LatestSensDay(7, zone))
+	}
+	if got := s.SensRecordsFor(99, "", 10, zone); got != nil {
+		t.Fatalf("an account with no events answers nil: %+v", got)
+	}
+
+	// The cap keeps the newest rows.
+	for i := 0; i < SensCap+50; i++ {
+		s.AddSensRecords(7, []SensEntry{{Type: 1, EventTime: base + int64(i) + 10}})
+	}
+	if len(s.data.SensRecords[7]) != SensCap {
+		t.Fatalf("cap: %d rows", len(s.data.SensRecords[7]))
+	}
+}
+
+// TestSensRecordsSurviveReload pins the persistence of the sensitive-behavior ledger.
+func TestSensRecordsSurviveReload(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "linkup.json")
+	first := mustOpen(t, path)
+	zone := time.UTC
+	base := int64(1_760_000_000_000 / 1000)
+	first.AddSensRecords(7, []SensEntry{{Type: 2, EventTime: base, AppName: "com.b", CreatedAt: base}})
+	first.Close()
+
+	reopened := mustOpen(t, path)
+	all := reopened.SensRecordsFor(7, "", 10, zone)
+	if len(all) != 1 || all[0].Type != 2 || all[0].AppName != "com.b" {
+		t.Fatalf("the ledger did not survive the restart: %+v", all)
+	}
+}

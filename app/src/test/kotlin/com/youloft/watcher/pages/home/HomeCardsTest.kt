@@ -34,6 +34,12 @@ class HomeCardsTest {
         override val appUseToday: (Int) -> String = { "今日 $it 分" }
         override val appUseYesterday: (Int) -> String = { "昨日 $it 分" }
         override val unknownApp = "未知应用"
+        override val sensitive = "敏感行为"
+        override val sensitiveInstall = "安装应用"
+        override val sensitiveUninstall = "卸载应用"
+        override val sensitiveUpdate = "更新应用"
+        override val sensitiveUnknown = "敏感事件"
+        override val sensitiveSummary: (Int) -> String = { "最近 $it 条" }
         override val lock = "锁机"
         override val lockOff = "未锁机"
         override val lockRemaining: (String) -> String = { "剩余 $it" }
@@ -236,6 +242,44 @@ class HomeCardsTest {
             "a missing card hides it too",
             HomeCards.fromData(HomeData(appUseCard = null), texts, ::remainingFormatter)
                 .none { it.kind == HomeCards.Kind.APP_USE },
+        )
+    }
+
+    @Test
+    fun sensitiveCardRendersTheLatestEventWithItsTypeWord() {
+        val cards = HomeCards.fromData(
+            HomeData(
+                sensitiveCard = listOf(
+                    com.youloft.linkup.api.dto.SensBean(
+                        type = 2,
+                        eventTime = 1_760_000_100,
+                        appName = "com.game",
+                    ),
+                    com.youloft.linkup.api.dto.SensBean(type = 1, eventTime = 1_760_000_000, appName = "com.chat"),
+                ),
+            ),
+            texts,
+            ::remainingFormatter,
+        )
+        val card = cards.first()
+        assertEquals(HomeCards.Kind.SENSITIVE, card.kind)
+        assertEquals("敏感行为", card.title)
+        assertEquals("卸载应用 · com.game", card.value)
+        assertEquals(true, card.line1.isNotEmpty())
+        assertEquals("最近 2 条", card.line2)
+    }
+
+    @Test
+    fun sensitiveCardIsAbsentWithoutEvents() {
+        assertTrue(
+            "an empty list hides the card",
+            HomeCards.fromData(HomeData(sensitiveCard = emptyList()), texts, ::remainingFormatter)
+                .none { it.kind == HomeCards.Kind.SENSITIVE },
+        )
+        assertTrue(
+            "a missing key hides it too",
+            HomeCards.fromData(HomeData(sensitiveCard = null), texts, ::remainingFormatter)
+                .none { it.kind == HomeCards.Kind.SENSITIVE },
         )
     }
 

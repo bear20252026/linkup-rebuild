@@ -379,3 +379,25 @@ type AppUseCard struct {
 	UseToday        int         `json:"useToday"`
 	UsedYesterday   int         `json:"usedYesterday"`
 }
+
+// SensRecord is one sensitive-behavior event row (a subset of the client's big multi-purpose
+// SensBean: the fields this rebuild's collector actually produces — the original's full shape is
+// not recoverable from the APK). Time fields are epoch seconds.
+type SensRecord struct {
+	Type      int     `json:"type"`
+	EventTime int64   `json:"eventTime"`
+	AppName   *string `json:"appName"`
+	Phone     *string `json:"phone"`
+	CreatedAt int64   `json:"createdAt"`
+}
+
+// SensReportResult is the post-report statistics the original answered (client bean verbatim).
+// The original's numbers are not recoverable from the APK, so the rebuild answers the zero value —
+// honest absence, written down in DESIGN 五点四十一.
+type SensReportResult struct {
+	OpenPhoneTimes int         `json:"openPhoneTimes"`
+	StayNHours     bool        `json:"stayNHours"`
+	UseApp         []*AppUsage `json:"useApp"`
+	UseAppCount    int         `json:"useAppCount"`
+	UseTime        int64       `json:"useTime"`
+}

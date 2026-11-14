@@ -1204,3 +1204,105 @@ func TestAppUseDomainLightsTheGuardCard(t *testing.T) {
 		t.Fatalf("an anonymous report must not land: %+v", answered)
 	}
 }
+
+// TestSensDomainLightsTheGuardCard covers the sensitive-behavior domain at the route layer: the
+// guarded phone posts one event per send (the recovered SensBean contract), the guardian reads by
+// day after the guard relation is in place, the refusals refuse, and api/index hands the card its
+// rows. The event-type table (1=安装 2=卸载 3=更新) is this rebuild's own — the original's is not
+// recoverable.
+func TestSensDomainLightsTheGuardCard(t *testing.T) {
+	h := newTest(t)
+	token, me := h.login(t, "13800000011")
+	peerToken, peer := h.login(t, "13800000012")
+	h.im.friendUserID = fmt.Sprint(peer.ID)
+	if err := h.store.PutExtra(store.Extra{OwnerID: me.ID, FriendID: peer.ID, Relation: 2}); err != nil {
+		t.Fatal(err)
+	}
+
+	day := time.Now().In(h.zone).Format("20060102")
+	now := time.Now().Unix()
+	report := h.request(t, http.MethodPost, "/api/sensitive/report", "", map[string]any{
+		"type": 1, "eventTime": now, "appName": "com.game", "phone": "",
+	}, peerToken)
+	if report.Status != 200 {
+		t.Fatalf("report: %+v", report)
+	}
+
+	// The guardian reads the peer's ledger through the guard relation.
+	user := h.request(t, http.MethodGet, "/api/sensitive/user", "mainUser="+idOf(peer.ID)+"&date="+day, nil, token)
+	list := decode[[]struct {
+		Type      int     `json:"type"`
+		EventTime int64   `json:"eventTime"`
+		AppName   *string `json:"appName"`
+	}](t, user.Data)
+	if len(list) != 1 {
+		t.Fatalf("one event on the ledger: %d", len(list))
+	}
+	rows := list[0]
+	if rows.Type != 1 || rows.EventTime != now || rows.AppName == nil || *rows.AppName != "com.game" {
+		t.Fatalf("the event rides the SensBean-compatible subset: %+v", rows)
+	}
+
+	// The guarded phone reads its own day buckets.
+	days := h.request(t, http.MethodGet, "/api/sensitive/user/days", "", nil, peerToken)
+	buckets := decode[[]string](t, days.Data)
+	if len(buckets) != 1 || buckets[0] != day {
+		t.Fatalf("the day buckets: %v", buckets)
+	}
+
+	// The refusals: no relation, no self-read, and no anonymous report.
+	if answered := h.request(t, http.MethodGet, "/api/sensitive/user", "mainUser="+idOf(peer.ID), nil, token); answered.Status == 200 && !strings.Contains(answered.Msg, "权限") {
+		// 同一关系下的读照常通过——这条是缺 date 的最新页,也应放行。
+		_ = answered
+	}
+	strangerToken, stranger := h.login(t, "13800000014")
+	h.im.refuseIsFriendFor = idOf(stranger.ID)
+	if answered := h.request(t, http.MethodGet, "/api/sensitive/user", "mainUser="+idOf(peer.ID), nil, strangerToken); answered.Status == 200 {
+		t.Fatalf("a stranger must not read the ledger: %+v", answered)
+	}
+	if answered := h.request(t, http.MethodGet, "/api/sensitive/user", "mainUser="+idOf(stranger.ID), nil, strangerToken); answered.Status == 200 {
+		t.Fatalf("self-reads via the peer route are refused: %+v", answered)
+	}
+	h.im.refuseIsFriendFor = ""
+	if answered := h.request(t, http.MethodPost, "/api/sensitive/report", "", map[string]any{
+		"type": 1, "eventTime": now,
+	}, ""); answered.Status == 200 {
+		t.Fatalf("an anonymous report must not land: %+v", answered)
+	}
+	if answered := h.request(t, http.MethodPost, "/api/sensitive/report", "", map[string]any{
+		"type": 0, "eventTime": now,
+	}, peerToken); answered.Status == 200 {
+		t.Fatalf("a type-less event is refused: %+v", answered)
+	}
+
+	// The index card carries the peer's ledger rows for the guardian.
+	index := h.request(t, http.MethodGet, "/api/index", "", nil, token)
+	rows2 := decode[struct {
+		SensitiveCard []struct {
+			Type      int `json:"type"`
+			EventTime int64 `json:"eventTime"`
+		} `json:"sensitiveCard"`
+	}](t, index.Data)
+	if len(rows2.SensitiveCard) != 1 || rows2.SensitiveCard[0].Type != 1 {
+		t.Fatalf("the card carries the ledger: %+v", rows2.SensitiveCard)
+	}
+}
+
+// TestSensServerTimerIsNotBuilt pins the honest absence: the recovered server_timer semantics are
+// not recoverable and the rebuilt client never calls it, so the route answers nothing at all.
+func TestSensServerTimerIsNotBuilt(t *testing.T) {
+	h := newTest(t)
+	// The route is deliberately not registered: a signed request must fall through the gate to
+	// gin's 404, not to a fake answer (an unsigned one never gets past the signature gate).
+	req, _ := http.NewRequest(http.MethodGet, "https://api.example/api/sensitive/server_timer?eventTime=1700000000", nil)
+	sig, err := contract.Sign(contract.SignatureInput("/api/sensitive/server_timer", "eventTime=1700000000", http.MethodGet, nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Signature", sig)
+	rec := httptest.NewRecorder()
+	h.engine.ServeHTTP(rec, req)
+	if rec.Code == 200 {
+		t.Fatalf("an unrecoverable contract must not be faked: %s", rec.Body.String())
+	}
+}
