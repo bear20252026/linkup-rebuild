@@ -2,6 +2,7 @@ package com.youloft.watcher.data.im
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Log
 import com.youloft.linkup.im.CmdType
 import com.youloft.linkup.im.ImClient
 import com.youloft.linkup.net.LinkUpApi
@@ -20,12 +21,16 @@ import kotlinx.coroutines.launch
  *   （成败）→ PNG 落 cache → 上传 → 回 step3（图 URL）。上传与聊天图片同一条 OpenIM/MinIO 链，
  *   与原版的偏离记录在 DESIGN：原版 TOS 上传不落会话，本重建的图会以图片消息出现在双方会话里。
  * - **发起端**（[request]）：发 `step=1, callBack=0`；回执从 [replies] 流出，由弹窗按步推进。
+ *
+ * 采集端只信任确认过的好友（审计 P0-3）：[trusted] 不过的请求直接丢弃——静默截屏是
+ * 整屏内容出设备，不能"谁发都采"。
  */
 class ScreenshotCommandBridge(
     private val context: Context,
     private val imClient: ImClient,
     private val api: LinkUpApi,
     private val scope: CoroutineScope,
+    private val trusted: suspend (peerUserId: Long) -> Boolean,
     private val myUserId: () -> Long,
 ) {
     /** 发起端收到的回执流（callBack=1 的命令）；弹窗订阅它推进 step 1→3。 */
@@ -39,6 +44,10 @@ class ScreenshotCommandBridge(
                 if (payload.callBack == CALLBACK_REPLY) {
                     // 发起端只消费回执；"对方给我发的请求"不进这条流。
                     if (payload.userid != myUserId()) replies.tryEmit(payload)
+                    return@onEach
+                }
+                if (!trusted(command.peerUserId)) {
+                    Log.w(TAG, "screenshot request from non-friend ${command.peerUserId} dropped")
                     return@onEach
                 }
                 handleRequest(command.peerUserId)
@@ -109,6 +118,7 @@ class ScreenshotCommandBridge(
     }.getOrNull()
 
     private companion object {
+        private const val TAG = "ScreenshotBridge"
         const val CALLBACK_REQUEST = 0
         const val CALLBACK_REPLY = 1
     }

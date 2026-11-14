@@ -231,6 +231,10 @@ interface LinkUpApi {
     @POST("api/user/password_login")
     suspend fun userPasswordLogin(@Body payload: MutableMap<String, Any?>): ApiResponse<com.youloft.linkup.api.dto.User>
 
+    /** 注册页的实时查重：与注册同口径（trim + 3-32 字节 + 唯一性），available=false 时 reason 带原因。 */
+    @GET("api/user/username/check")
+    suspend fun usernameCheck(@Query("username") username: String): ApiResponse<com.youloft.linkup.api.dto.UsernameAvailability>
+
     @GET("api/user/im_token")
     suspend fun imToken(): ApiResponse<ImToken>
 

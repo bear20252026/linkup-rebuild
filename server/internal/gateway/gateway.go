@@ -61,9 +61,10 @@ type Options struct {
 	// emulator reaches host loopback only through 10.0.2.2, so that is the default; the client never
 	// hardcodes the address, it reads it from this response.
 	OpenIMWs string
-	// InviteCode is the admin-set invitation code required for username/password registration.
-	// Empty means no check (open registration); set via -invite-code flag.
-	InviteCode string
+	// ThirdPartyLogin gates `api/user/login` (WeChat/QQ). Default off: the identity on that body is
+	// client-asserted, and turning it on without vendor-side OAuth verification is the audit's P0-1.
+	// The client hides its vendor buttons behind the same switch (LoginPlatform's constant).
+	ThirdPartyLogin bool
 }
 
 // Gateway holds the routes' shared state.
@@ -133,6 +134,8 @@ func New(opts Options) (*gin.Engine, error) {
 		api.POST("/user/login", g.loginByThird)
 		api.POST("/user/register", g.userRegister)
 		api.POST("/user/password_login", g.userPasswordLogin)
+		// The register page's live dedup: signed (no sms/login segment) but pre-login.
+		api.GET("/user/username/check", g.usernameCheck)
 
 		// Authenticated.
 		api.GET("/user/info", g.userInfo)
@@ -246,7 +249,7 @@ func (g *Gateway) deny(c *gin.Context, reason string) {
 func (g *Gateway) account() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		switch c.FullPath() {
-		case "/api/client/config", "/api/sms/login/cut", "/api/sms/send", "/api/sms/click_to_login", "/api/user/login", "/api/user/register", "/api/user/password_login":
+		case "/api/client/config", "/api/sms/login/cut", "/api/sms/send", "/api/sms/click_to_login", "/api/user/login", "/api/user/register", "/api/user/password_login", "/api/user/username/check":
 			c.Set(authSkipKey, true)
 			c.Next()
 			return

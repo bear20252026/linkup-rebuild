@@ -182,6 +182,12 @@ data class Cut(
     val loginType: String? = null,
 ) : java.io.Serializable
 
+/** `api/user/username/check` — 注册页实时查重的回答；available=false 时 reason 是可直接上屏的原因。 */
+data class UsernameAvailability(
+    val available: Boolean = false,
+    val reason: String? = null,
+) : java.io.Serializable
+
 /** recovered from com/youloft/watcher/bean/CutConfig.java */
 data class CutConfig(
     val extra: JsonElement? = null,
