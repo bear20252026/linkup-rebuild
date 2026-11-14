@@ -224,6 +224,32 @@ open class LinkUpApplication : Application() {
         }
     }
 
+    /**
+     * 通话记录域（DESIGN 五点三十九）：被守护端把新通话 delta 报上来，守护端从 api/index 读。
+     * 三重门里的运行时权限在这里裁决（未授权静默跳过，请求入口在权限列表屏）；时间戳水位记在
+     * 共享 store，失败不推进——下一次同步重报，服务端台账去重。
+     */
+    open val callRecordReporter: CallRecordReporter by lazy {
+        val shared = keyValueStores.shared
+        val lastTimeKey = "call_report_last_time"
+        CallRecordReporter(
+            scope = imScope,
+            lastTime = { shared.long(lastTimeKey, 0L) },
+            saveLastTime = { shared.putLong(lastTimeKey, it) },
+            granted = {
+                checkSelfPermission(android.Manifest.permission.READ_CALL_LOG) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
+            },
+            queryNew = { since ->
+                runCatching { CallLogReader(this).read(since) }.getOrDefault(emptyList())
+            },
+            report = { records ->
+                runCatching { imApi.phoneCallRecordReport(CallRecordReporter.buildPayload(records)) }
+                    .getOrNull()?.isSuccess == true
+            },
+        )
+    }
+
     private val imScope: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     /**
@@ -356,6 +382,8 @@ open class LinkUpApplication : Application() {
                 imRepository.connectAsync(user.userId)
                 // 本机自报跟登录同刻：lock_list / 实时截屏屏的版本行由此而来。
                 phoneStateReporter.reportOnce { AndroidPhoneFacts.read(this@LinkUpApplication) }
+                // 通话记录 delta 同刻上报（通话记录域，DESIGN 五点三十九）；没授权就静默跳过。
+                callRecordReporter.reportOnce()
             }
 
             override fun onSignedOut() {

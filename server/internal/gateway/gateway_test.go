@@ -36,6 +36,9 @@ type stubIM struct {
 	mu                sync.Mutex
 	calls             []stubCall
 	refuseIsFriendFor string
+	// get_friend_list 答的好友 id：默认 "2"（harness 的老约定），可按用例改写成真实账号 id——
+	// 通话记录域的端到端（被守护端上报 → 守护端 index 读）需要两边落在同一个 id 上。
+	friendUserID string
 }
 
 type stubCall struct {
@@ -79,8 +82,12 @@ func (s *stubIM) handle(w http.ResponseWriter, r *http.Request) {
 			data = `{"inUser1Friends":true,"inUser2Friends":true}`
 		}
 	case "/friend/get_friend_list":
+		friendID := s.friendUserID
+		if friendID == "" {
+			friendID = "2"
+		}
 		data = `{"friendsInfo":[{"ownerUserID":"1","remark":"","createTime":1700000000,` +
-			`"friendUser":{"userID":"2","nickname":"女儿","faceURL":"http://a/2.png","ex":""}}],"total":1}`
+			`"friendUser":{"userID":"` + friendID + `","nickname":"女儿","faceURL":"http://a/2.png","ex":""}}],"total":1}`
 	case "/friend/get_friend_apply_list":
 		data = `{"FriendRequests":[{"fromUserID":"2","fromNickname":"女儿","toUserID":"1",` +
 			`"handleResult":0,"reqMsg":"妈加我","createTime":1700000000}],"total":1}`
@@ -1043,5 +1050,91 @@ func TestPhoneStateReportFeedsLockAndScreenshotRows(t *testing.T) {
 	}
 	if bad := h.request(t, http.MethodGet, "/api/screenshot/done", "friendId=2", nil, tokenA); bad.Status != contract.StatusParamErr {
 		t.Errorf("done without a pic must be 参数异常, got %+v", bad)
+	}
+}
+
+// TestCallRecordDomainLightsTheGuardCard covers the call-record domain at the route layer: the
+// guarded phone reports its delta, a retry is absorbed, and api/index hands the card its rows —
+// only when the guard relation exists and only when records exist (the card hides otherwise,
+// exactly like the original's empty-state).
+func TestCallRecordDomainLightsTheGuardCard(t *testing.T) {
+	h := newTest(t)
+	token, me := h.login(t, "13800000011")
+	peerToken, peer := h.login(t, "13800000012")
+	h.im.friendUserID = fmt.Sprint(peer.ID)
+
+	// The stub friend list answers one friend, userID "2": the guard relation to it is the Extra row.
+	if err := h.store.PutExtra(store.Extra{OwnerID: me.ID, FriendID: peer.ID, Relation: 2}); err != nil {
+		t.Fatal(err)
+	}
+
+	record := func(phone, contact string, time int64) map[string]any {
+		return map[string]any{"phone": phone, "contact": contact, "duration": 180, "isIncoming": true, "time": time}
+	}
+	report := h.request(t, http.MethodPost, "/api/phone/call_record/report", "", map[string]any{
+		"records": []any{record("13800000077", "妈妈", 1_700_000_000), record("13800000078", "", 1_700_000_100)},
+	}, peerToken)
+	if report.Status != 200 {
+		t.Fatalf("report: %+v", report)
+	}
+	// The retry: the same call again must not double-count.
+	if retry := h.request(t, http.MethodPost, "/api/phone/call_record/report", "", map[string]any{
+		"records": []any{record("13800000077", "妈妈", 1_700_000_000)},
+	}, peerToken); retry.Status != 200 {
+		t.Fatalf("retry: %+v", retry)
+	}
+
+	index := h.request(t, http.MethodGet, "/api/index", "", nil, token)
+	rows := decode[struct {
+		CallRecordList []struct {
+			Contact   *string `json:"contact"`
+			Duration  int64   `json:"duration"`
+			IsIncoming bool   `json:"isIncoming"`
+			Phone     *string `json:"phone"`
+			Time      int64   `json:"time"`
+		} `json:"callRecordList"`
+	}](t, index.Data)
+	if len(rows.CallRecordList) != 2 {
+		t.Fatalf("the retry must be absorbed: %d rows", len(rows.CallRecordList))
+	}
+	latest := rows.CallRecordList[0]
+	if latest.Time != 1_700_000_100 || !latest.IsIncoming || latest.Duration != 180 {
+		t.Fatalf("the newest first, fields verbatim: %+v", latest)
+	}
+	if latest.Phone == nil || *latest.Phone != "13800000078" {
+		t.Fatalf("the empty contact stays null on the wire: %+v", latest)
+	}
+	if rows.CallRecordList[1].Contact == nil || *rows.CallRecordList[1].Contact != "妈妈" {
+		t.Fatalf("the named call carries its contact: %+v", rows.CallRecordList[1])
+	}
+
+	// A second account with no guard relation to the stub friend sees no card at all.
+	otherToken, _ := h.login(t, "13800000010")
+	otherIndex := h.request(t, http.MethodGet, "/api/index", "", nil, otherToken)
+	if strings.Contains(string(otherIndex.Data), "callRecordList") {
+		t.Errorf("no guard relation, no call-record card: %s", otherIndex.Data)
+	}
+}
+
+// TestCallRecordReportRejectsAbuse pins the two abuse caps: an oversized batch is refused, and the
+// route demands the session token like every other device write.
+func TestCallRecordReportRejectsAbuse(t *testing.T) {
+	h := newTest(t)
+	token, _ := h.login(t, "13800000013")
+
+	oversized := make([]any, callRecordReportMaxBatch+1)
+	for i := range oversized {
+		oversized[i] = map[string]any{"phone": "1", "time": int64(i)}
+	}
+	if answered := h.request(t, http.MethodPost, "/api/phone/call_record/report", "", map[string]any{
+		"records": oversized,
+	}, token); answered.Status == 200 {
+		t.Fatalf("an oversized batch must be refused: %+v", answered)
+	}
+
+	if answered := h.request(t, http.MethodPost, "/api/phone/call_record/report", "", map[string]any{
+		"records": []any{map[string]any{"phone": "1", "time": 1}},
+	}, ""); answered.Status == 200 {
+		t.Fatalf("an anonymous report must not land: %+v", answered)
 	}
 }

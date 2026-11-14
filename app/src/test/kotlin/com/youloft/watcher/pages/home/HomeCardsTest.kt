@@ -1,5 +1,6 @@
 package com.youloft.watcher.pages.home
 
+import com.youloft.linkup.api.dto.CallRecord
 import com.youloft.linkup.api.dto.FriendLocation
 import com.youloft.linkup.api.dto.FriendState
 import com.youloft.linkup.api.dto.HomeData
@@ -23,6 +24,12 @@ class HomeCardsTest {
         override val location = "对方位置"
         override val noAddress = "暂无定位"
         override val arrivedAt: (String) -> String = { "到达于 $it" }
+        override val callRecord = "通话记录"
+        override val callIncoming = "来电"
+        override val callOutgoing = "去电"
+        override val callMissed = "未接"
+        override val callSummary: (Int) -> String = { "最近 $it 通" }
+        override val unknownNumber = "未知号码"
         override val lock = "锁机"
         override val lockOff = "未锁机"
         override val lockRemaining: (String) -> String = { "剩余 $it" }
@@ -126,6 +133,60 @@ class HomeCardsTest {
         assertEquals("88%", card.value)
         assertEquals("Pixel 8 · 15", card.line1)
         assertEquals("移动网络在线", card.line2)
+    }
+
+    @Test
+    fun callRecordCardRendersTheLatestCallAndTheBatchSummary() {
+        val cards = HomeCards.fromData(
+            HomeData(
+                callRecordList = listOf(
+                    CallRecord(contact = null, phone = "13800000001", duration = 0, isIncoming = true, time = 1_760_000_100),
+                    CallRecord(contact = "妈妈", phone = "13800000002", duration = 180, isIncoming = true, time = 1_760_000_000),
+                ),
+            ),
+            texts,
+            ::remainingFormatter,
+        )
+        val card = cards.first()
+        assertEquals(HomeCards.Kind.CALL_RECORD, card.kind)
+        assertEquals("通话记录", card.title)
+        // junit4 的三参形态是 message 在前；无联系人时答真实号码，不编造名字。
+        assertEquals("no contact → the honest number", "13800000001", card.value)
+        assertEquals("an incoming call with zero duration is the missed kind", "未接", card.line1)
+        assertEquals("最近 2 通", card.line2)
+    }
+
+    @Test
+    fun callRecordCardNamesTheContactAndDurationWhenKnown() {
+        val cards = HomeCards.fromData(
+            HomeData(
+                callRecordList = listOf(
+                    CallRecord(contact = "妈妈", phone = "13800000002", duration = 180, isIncoming = true, time = 1_760_000_000),
+                ),
+            ),
+            texts,
+            ::remainingFormatter,
+        )
+        val card = cards.first()
+        assertEquals("妈妈", card.value)
+        assertEquals("来电 · 3分", card.line1)
+        assertEquals("最近 1 通", card.line2)
+    }
+
+    @Test
+    fun callRecordCardIsAbsentWithoutRecords() {
+        assertTrue(
+            "an empty list is the original's empty-state: the card hides",
+            HomeCards.fromData(HomeData(callRecordList = emptyList()), texts, ::remainingFormatter).none {
+                it.kind == HomeCards.Kind.CALL_RECORD
+            },
+        )
+        assertTrue(
+            "a missing key hides the card too",
+            HomeCards.fromData(HomeData(callRecordList = null), texts, ::remainingFormatter).none {
+                it.kind == HomeCards.Kind.CALL_RECORD
+            },
+        )
     }
 
     @Test

@@ -104,17 +104,16 @@ func (g *Gateway) privacyUpdate(c *gin.Context) {
 }
 
 // index aggregates the guard tab's feature cards (`manager/x.java` HomeManager 的 `api/index`):
-// the guarded peer's device facts, live location, lock ledger row and this account's own
-// permission row. Call records / app-use cards stay empty until their report routes carry data.
+// the guarded peer's device facts, live location, call-record card, lock ledger row and this
+// account's own permission row. The app-use cards stay empty until their report route carries data.
 func (g *Gateway) index(c *gin.Context) {
 	me := g.claims(c).UserID
 	peers := g.guardPeers(c, me)
 	payload := map[string]any{
-		"callRecordList": []any{},
-		"phoneUseCard":   nil,
-		"appUseCard":     nil,
-		"sensitiveCard":  []any{},
-		"serverTime":     time.Now().Unix(),
+		"phoneUseCard":  nil,
+		"appUseCard":    nil,
+		"sensitiveCard": []any{},
+		"serverTime":    time.Now().Unix(),
 	}
 	for _, peer := range peers {
 		if state := g.friendStateRow(peer); state != nil {
@@ -128,6 +127,21 @@ func (g *Gateway) index(c *gin.Context) {
 				Lng:         fix.Lng,
 				Speed:       float32(fix.Speed),
 			}
+		}
+		// 通话记录卡：被守护端的台账（call_record/report 供数）。只在有记录时下发——没有的
+		// 时候缺键，客户端的卡照原版语义收起。
+		if calls := g.opts.Store.CallRecordsFor(peer, indexCallRecordLimit); len(calls) > 0 {
+			rows := make([]any, 0, len(calls))
+			for _, call := range calls {
+				rows = append(rows, &dto.CallRecord{
+					Contact:    textPtr(call.Contact),
+					Duration:   call.Duration,
+					IsIncoming: call.IsIncoming,
+					Phone:      textPtr(call.Phone),
+					Time:       call.Time,
+				})
+			}
+			payload["callRecordList"] = rows
 		}
 		lock := g.opts.Store.LockFor(me, peer)
 		payload["lockInfo"] = map[string]any{
@@ -148,6 +162,10 @@ func (g *Gateway) index(c *gin.Context) {
 }
 
 // versionCheck: this rebuild is always the newest — the updater channel is its own card.
+
+/** The 通话记录 card reads at most this many ledger rows per guard target. */
+const indexCallRecordLimit = 10
+
 func (g *Gateway) versionCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, contract.OK(map[string]any{
 		"version":  "1.6.6",

@@ -18,6 +18,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -118,7 +119,21 @@ type Data struct {
 	Screens   map[string]ScreenshotState `json:"screenshots,omitempty"`
 	UsernameIdx map[string]int64         `json:"usernameIdx,omitempty"`
 	InviteCodes map[string]InviteCode    `json:"inviteCodes,omitempty"`
+	CallRecords map[int64][]CallRecordEntry `json:"callRecords,omitempty"`
 }
+
+// CallRecordEntry is one reported phone call (guarded phone → guardian's 通话记录 card). Seconds
+// everywhere: time is the call's own stamp, duration is what the dialer recorded. Cap is per account
+// (CallRecordCap) so a失控 device cannot grow the file without bound — the audit's P2-1 lesson.
+type CallRecordEntry struct {
+	Contact    string `json:"contact,omitempty"`
+	Phone      string `json:"phone,omitempty"`
+	Duration   int64  `json:"duration"`
+	IsIncoming bool   `json:"isIncoming"`
+	Time       int64  `json:"time"`
+}
+
+const CallRecordCap = 200
 
 // InviteCode is one registration invitation: what it costs to join while it lasts. ExpiresAt and
 // MaxUses are unix seconds / 0-means-unlimited; UsedCount survives restarts because the codes live
@@ -775,6 +790,59 @@ func (s *Store) Fixes(userID int64) []location.Point {
 	}
 	location.Sort(out)
 	return out
+}
+
+// AddCallRecords appends the batch the guarded phone reported. Duplicates (same time+phone+direction)
+// are absorbed — a report retry or a ContentObserver double-fire must not double-count a call — and the
+// per-account list stays capped at the newest CallRecordCap rows.
+func (s *Store) AddCallRecords(userID int64, records []CallRecordEntry) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(records) == 0 {
+		return
+	}
+	if s.data.CallRecords == nil {
+		s.data.CallRecords = map[int64][]CallRecordEntry{}
+	}
+	existing := s.data.CallRecords[userID]
+	seen := map[string]bool{}
+	for _, e := range existing {
+		seen[callRecordKey(e)] = true
+	}
+	for _, e := range records {
+		if seen[callRecordKey(e)] {
+			continue
+		}
+		seen[callRecordKey(e)] = true
+		existing = append(existing, e)
+	}
+	if len(existing) > CallRecordCap {
+		existing = existing[len(existing)-CallRecordCap:]
+	}
+	s.data.CallRecords[userID] = existing
+	s.markDirtyLocked()
+}
+
+// CallRecordsFor answers the newest `limit` calls of one account, newest first; nil when none.
+func (s *Store) CallRecordsFor(userID int64, limit int) []CallRecordEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	all := s.data.CallRecords[userID]
+	if len(all) == 0 || limit <= 0 {
+		return nil
+	}
+	if len(all) > limit {
+		all = all[len(all)-limit:]
+	}
+	out := make([]CallRecordEntry, 0, len(all))
+	for i := len(all) - 1; i >= 0; i-- {
+		out = append(out, all[i])
+	}
+	return out
+}
+
+func callRecordKey(e CallRecordEntry) string {
+	return strconv.FormatInt(e.Time, 10) + "|" + e.Phone + "|" + strconv.FormatBool(e.IsIncoming)
 }
 
 // SettingFor answers one settings slot ("im" today) for an account; empty when never written.
