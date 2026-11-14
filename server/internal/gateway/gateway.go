@@ -191,6 +191,15 @@ func New(opts Options) (*gin.Engine, error) {
 		api.GET("/sensitive/user/days", g.sensUserDays)
 		// 四象限待办域（DESIGN 五点四十二）：本人台账的三路由（get_list 的 listType 参数语义
 		// 不可恢复，本重建忽略它、一次回答全部四组）。
+		// 小域四件（DESIGN 五点四十五）：反馈/弹窗/纪念日/地址标签——契约闭环的外围域。
+		api.POST("/feedback", g.feedbackCreate)
+		api.GET("/feedback/check", g.feedbackCheck)
+		api.GET("/feedback/checkPop", g.feedbackCheckPop)
+		api.GET("/pop/homePage", g.popHomepage)
+		api.GET("/anniversary/choose", g.anniversaryChoose)
+		api.POST("/anniversary/createOrEdit", g.anniversaryCreateoredit)
+		api.GET("/address/tag_list", g.addressTagList)
+		api.POST("/address/tag", g.addressTagCreate)
 		api.GET("/four_quadrant_list/get_list", g.todoGetList)
 		api.POST("/four_quadrant_list/edit", g.todoEdit)
 		api.POST("/four_quadrant_list/del", g.todoDel)

@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Button
+import android.widget.EditText
 import android.provider.Settings
 import android.view.View
 import android.widget.LinearLayout
@@ -216,6 +218,7 @@ class ContactUsActivity : SubScreenActivity(R.string.contact_us) {
         row(column, "抖音") { openApp("com.ss.android.ugc.aweme", "snssdk1128://user/profile/2198617717999182", "请先安装抖音") }
         row(column, "快手") { openApp("com.smile.gifmaker", "kwai://profile/4563027025", "请先安装快手") }
         row(column, "微信客服") { toast("微信客服需微信SDK卡") }
+        row(column, "意见反馈") { startActivity(Intent(this, FeedbackActivity::class.java)) }
     }
 
     private fun openApp(pkg: String, uri: String?, notInstalled: String) {
@@ -227,7 +230,50 @@ class ContactUsActivity : SubScreenActivity(R.string.contact_us) {
     }
 }
 
-/** 关于我们，`pages/mine/AboutUsActivity`：版本 + 协议 + 反馈（Feedback 卡未重建→记录）。 */
+/** 意见反馈（小域四件,DESIGN 五点四十五）：文本提交到 `api/feedback`——append-only 台账，
+ *  回复通道未重建，提交成功 toast 即诚实答案。 */
+class FeedbackActivity : SubScreenActivity(R.string.contact_us) {
+    override fun buildContent(column: LinearLayout) {
+        val input = EditText(this).apply {
+            hint = "写下你的建议或问题"
+            minLines = 4
+            gravity = android.view.Gravity.TOP
+            setBackgroundColor(0xFFF5F6FA.toInt())
+            setPadding(16, 16, 16, 16)
+        }
+        val inputParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        ).apply { setMargins(0, 0, 0, 24) }
+        column.addView(input, inputParams)
+
+        column.addView(android.widget.Button(this).apply {
+            text = "提交反馈"
+            setOnClickListener {
+                val content = input.text?.toString()?.trim().orEmpty()
+                if (content.isEmpty()) {
+                    toast("内容不能为空")
+                    return@setOnClickListener
+                }
+                lifecycleScope.launch {
+                    val response = runCatching {
+                        appGraph(this@FeedbackActivity).imApi.feedback(
+                            mutableMapOf("content" to content),
+                        )
+                    }.getOrNull()
+                    if (response?.isSuccess == true) {
+                        toast("已提交，谢谢你的反馈")
+                        input.setText("")
+                    } else {
+                        toast(response?.msg ?: "提交失败")
+                    }
+                }
+            }
+        })
+    }
+}
+
+/** 关于我们，`pages/mine/AboutUsActivity`：版本 + 协议 + 反馈入口接通（Feedback 屏本轮重建）。 */
 class AboutUsActivity : SubScreenActivity(R.string.about_us) {
     override fun buildContent(column: LinearLayout) {
         row(column, "版本", packageManager.getPackageInfo(packageName, 0).versionName ?: "")

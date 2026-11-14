@@ -54,6 +54,11 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**小域四件已接入（#49，2026-11-14）**：反馈（台账+反馈屏挂联系我们）/ 首页弹窗（恒答空——
+运营配置不可恢复不编造）/ 纪念日（createOrEdit+choose，per-account 台账）/ 收藏地址标签
+（tag+tag_list）——客户端 LinkUpApi 声明的四个外围域契约闭环，路由 45/99 → 53/99。纪念日与
+地址标签的屏未重建（原版 UI 不可恢复），DESIGN 待验 92。
+
 **P2 清理包已落地（#48，2026-11-14）**：store 文件 0600（同机不可读）、轨迹台账 per-account
 封顶 20000（删最旧）、MMKV cryptKey 加密（随机键落私有 filesDir，键数据分离）、**R8 混淆开启**
 （规则覆盖 Retrofit/Gson/OpenIM/JS 接口/反射面；顺带修 NullSafeMutableLiveData 与

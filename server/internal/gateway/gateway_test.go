@@ -1504,3 +1504,77 @@ func TestSensEnforcementBlocksDeniedReads(t *testing.T) {
 // day after the guard relation is in place, the refusals refuse, and api/index hands the card its
 // rows. The event-type table (1=安装 2=卸载 3=更新) is this rebuild's own — the original's is not
 // recoverable.
+
+// TestSmallDomainsPinTheHonestContract covers the four small domains at the route layer: feedback
+// is an append-only ledger with honest zeros on check/checkPop, the home pop is an empty list (the
+// operation-driven campaign is not recoverable), anniversaries insert/update/choose, and address
+// tags insert/list. All are JWT-gated.
+func TestSmallDomainsPinTheHonestContract(t *testing.T) {
+	h := newTest(t)
+	token, me := h.login(t, "13800000020")
+
+	// 反馈：提交落台账，check/checkPop 答诚实零值。
+	if answered := h.request(t, http.MethodPost, "/api/feedback", "", map[string]any{
+		"content": "希望支持夜间模式",
+	}, token); answered.Status != 200 {
+		t.Fatalf("feedback: %+v", answered)
+	}
+	if check := h.request(t, http.MethodGet, "/api/feedback/check", "", nil, token); !strings.Contains(string(check.Data), `"hasNew":false`) {
+		t.Fatalf("check: %s", check.Data)
+	}
+	if pop := h.request(t, http.MethodGet, "/api/feedback/checkPop", "userId="+idOf(me.ID), nil, token); !strings.Contains(string(pop.Data), `"feedbackPop":false`) {
+		t.Fatalf("checkPop: %s", pop.Data)
+	}
+
+	// 弹窗：运营配置不可恢复，恒答空列表。
+	if pop := h.request(t, http.MethodGet, "/api/pop/homePage", "", nil, token); !strings.Contains(string(pop.Data), `"popList":[]`) {
+		t.Fatalf("homePage: %s", pop.Data)
+	}
+
+	// 纪念日：createOrEdit 新增/更新，choose 读最新。
+	if answered := h.request(t, http.MethodPost, "/api/anniversary/createOrEdit", "", map[string]any{
+		"title": "认识一周年", "anniversaryTime": 1_760_000_000,
+	}, token); answered.Status != 200 {
+		t.Fatalf("anniversary create: %+v", answered)
+	}
+	choose := h.request(t, http.MethodGet, "/api/anniversary/choose", "userId="+idOf(me.ID)+"&friendId="+idOf(me.ID)+"&friendAvatar=", nil, token)
+	row := decode[struct {
+		Title           string `json:"title"`
+		AnniversaryTime int64  `json:"anniversaryTime"`
+	}](t, choose.Data)
+	if row.Title != "认识一周年" || row.AnniversaryTime != 1_760_000_000 {
+		t.Fatalf("choose: %+v", row)
+	}
+	if answered := h.request(t, http.MethodPost, "/api/anniversary/createOrEdit", "", map[string]any{
+		"id": 1, "title": "认识两周年", "anniversaryTime": 1_760_000_100,
+	}, token); answered.Status != 200 {
+		t.Fatalf("anniversary edit: %+v", answered)
+	}
+	edited := decode[struct {
+		Title string `json:"title"`
+		ID    int64  `json:"id"`
+	}](t, h.request(t, http.MethodPost, "/api/anniversary/createOrEdit", "", map[string]any{
+		"id": 1, "title": "认识两周年", "anniversaryTime": 1_760_000_100,
+	}, token).Data)
+	if edited.ID != 1 || edited.Title != "认识两周年" {
+		t.Fatalf("the edit kept the id: %+v", edited)
+	}
+
+	// 地址标签：添加进列表。
+	if answered := h.request(t, http.MethodPost, "/api/address/tag", "", map[string]any{
+		"name": "学校", "lat": 31.0, "lng": 121.0, "address": "校门口",
+	}, token); answered.Status != 200 {
+		t.Fatalf("tag create: %+v", answered)
+	}
+	tags := h.request(t, http.MethodGet, "/api/address/tag_list", "", nil, token)
+	if !strings.Contains(string(tags.Data), "学校") {
+		t.Fatalf("tag_list carries the row: %s", tags.Data)
+	}
+
+	// 匿名一律拒绝。
+	for _, path := range []string{"/api/feedback", "/api/anniversary/createOrEdit", "/api/address/tag"} {
+		if answered := h.request(t, http.MethodPost, path, "", map[string]any{"content": "x", "title": "x"}, ""); answered.Status == 200 {
+			t.Fatalf("%s: an anonymous write must not land", path)
+		}
+	}
+}

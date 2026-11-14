@@ -347,7 +347,8 @@ class AddFriendActivity : AppCompatActivity() {
     }
 
     private fun onQrCode(bitmap: Bitmap?) {
-        binding.ivCode.setImageBitmap(bitmap)
+        // 渲染失败答 null：清空二维码位（ImageView 的 XML src 可能占位，显式清 drawable）。
+        binding.ivCode.setImageDrawable(bitmap?.let { android.graphics.drawable.BitmapDrawable(resources, it) })
         bitmap?.let { platform.uploadQrImage(it.pngBytes(), QR_FILE_NAME) }
     }
 
