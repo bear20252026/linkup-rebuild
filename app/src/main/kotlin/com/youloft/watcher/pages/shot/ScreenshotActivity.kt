@@ -46,6 +46,8 @@ class ScreenshotActivity : AppCompatActivity(), ScreenshotReplies {
             imClient = graph.imClient,
             api = graph.imApi,
             scope = lifecycleScope,
+            // 采集请求发送方守门（审计 P0-3）：截屏只认确认过的好友，别人的请求丢弃。
+            trusted = { peer -> graph.peerGuard.trusted(peer) },
             myUserId = { graph.users.current().userId },
         ).also { it.start() }
         load()

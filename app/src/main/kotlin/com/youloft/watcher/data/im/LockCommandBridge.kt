@@ -1,5 +1,6 @@
 package com.youloft.watcher.data.im
 
+import android.util.Log
 import com.youloft.linkup.im.CmdType
 import com.youloft.linkup.im.ImClient
 import com.youloft.linkup.net.LinkUpApi
@@ -13,11 +14,15 @@ import kotlinx.coroutines.flow.onEach
  * 锁机命令桥：发起端把 [LockScreen] 经 IM `lockMachine` 命令发给对方（原版 CmdMsgManager.A/K/L 的
  * 重建），收端订阅 [ImClient.commands] 交给 [onLock]——悬浮窗宿主（WindowHelper 的重建位）决定
  * 是全屏锁住还是降级通知。台账（`api/relation/lock`/`unlock`）由发起方调 API，命令与台账同时发。
+ *
+ * 收端只信任确认过的好友（审计 P0-4）：[trusted] 不过的命令直接丢弃——勒索式锁机的门槛
+ * 必须卡在"这人是守护关系里的人"，而不是"这人能给我发消息"。
  */
 class LockCommandBridge(
     private val imClient: ImClient,
     private val api: LinkUpApi,
     private val scope: CoroutineScope,
+    private val trusted: suspend (peerUserId: Long) -> Boolean,
     private val onLock: (LockScreen) -> Unit,
 ) {
     fun start() {
@@ -27,6 +32,10 @@ class LockCommandBridge(
                 val payload = LockScreen.fromJson(command.data) ?: return@onEach
                 if (payload.lockType == LOCK_TYPE_REMOTE_UNLOCK) {
                     // lockType 3 在原版是"解锁到问题确认"变体；本 round 的解锁只走台账，收端不弹窗。
+                    return@onEach
+                }
+                if (!trusted(command.peerUserId)) {
+                    Log.w(TAG, "lock command from non-friend ${command.peerUserId} dropped")
                     return@onEach
                 }
                 onLock(payload)
@@ -58,6 +67,8 @@ class LockCommandBridge(
     }
 
     companion object {
+        private const val TAG = "LockBridge"
+
         /** `widget/im/e.java` 的 sendLocked：设置页发起。 */
         const val LOCK_TYPE_FROM_SETTINGS = 1
 

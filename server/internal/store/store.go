@@ -117,7 +117,28 @@ type Data struct {
 	Settings  map[int64]map[string]string `json:"settings,omitempty"`
 	Screens   map[string]ScreenshotState `json:"screenshots,omitempty"`
 	UsernameIdx map[string]int64         `json:"usernameIdx,omitempty"`
+	InviteCodes map[string]InviteCode    `json:"inviteCodes,omitempty"`
 }
+
+// InviteCode is one registration invitation: what it costs to join while it lasts. ExpiresAt and
+// MaxUses are unix seconds / 0-means-unlimited; UsedCount survives restarts because the codes live
+// in the store file, seeded at boot by SeedInviteCodes.
+type InviteCode struct {
+	Code      string `json:"code"`
+	ExpiresAt int64  `json:"expiresAt,omitempty"`
+	MaxUses   int    `json:"maxUses,omitempty"`
+	UsedCount int    `json:"usedCount"`
+}
+
+// The registration rejections RegisterWithUsername can produce; the handler maps each to its own
+// user-facing message instead of one opaque 500.
+var (
+	ErrUsernameTaken    = fmt.Errorf("username already exists")
+	ErrInviteUnknown    = fmt.Errorf("invite code unknown")
+	ErrInviteExpired    = fmt.Errorf("invite code expired")
+	ErrInviteExhausted  = fmt.Errorf("invite code exhausted")
+	ErrInviteNotSeeded  = fmt.Errorf("no invite codes configured")
+)
 
 // ScreenshotState is the last capture one account pulled off one guarded friend (api/screenshot/done).
 // The picture bytes live in the object store; only the served URL is ledgered.
@@ -326,6 +347,10 @@ func (s *Store) CreateAccount(phone string) (*User, error) {
 // bind it. The union id is the lookup key, so the same identity always returns to the same account and
 // a late phone just attaches to it. When only the phone is known to us, that account adopts the union
 // id if it has none — one person cannot end up with two accounts because they used two entry points.
+//
+// Kept but parked behind the gateway's -enable-third-login switch (default off): the identity is
+// client-asserted, so an enabled deployment without vendor-side OAuth verification is an account
+// takeover channel (audit P0-1). The code stays for the day that verification exists.
 func (s *Store) ThirdAccount(platform int, unionID, phone string) (*User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -489,15 +514,55 @@ func (s *Store) ByUsername(username string) (User, error) {
 	return User{}, fmt.Errorf("user not found: %s", username)
 }
 
-// CreateUserWithUsername creates a new account with username/password auth (no phone needed).
-func (s *Store) CreateUserWithUsername(username, passwordHash string) (*User, error) {
+// SeedInviteCodes upserts boot-time codes into the store. Metadata (expiry, quota) follows the
+// newest seed so an operator can tighten or extend a code by restarting; the burn count is kept —
+// a restart must never refill a code that has already been spent.
+func (s *Store) SeedInviteCodes(codes []InviteCode) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.data.InviteCodes == nil {
+		s.data.InviteCodes = map[string]InviteCode{}
+	}
+	for _, c := range codes {
+		if c.Code == "" {
+			continue
+		}
+		if old, exists := s.data.InviteCodes[c.Code]; exists {
+			c.UsedCount = old.UsedCount
+		}
+		s.data.InviteCodes[c.Code] = c
+	}
+	s.markDirtyLocked()
+}
+
+// RegisterWithUsername is the whole username/password registration under one lock: the username is
+// new, the invite code exists and is neither expired nor exhausted, the account is created, and the
+// code is burned — all or nothing. "注册成功才扣减" is this atomicity: an invalid code never
+// creates a user, and a failed creation never consumes a slot.
+func (s *Store) RegisterWithUsername(username, passwordHash, invite string) (*User, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	// The invite code is judged before the username so probing usernames cannot be done without a
+	// live code — "用户名已存在" is only ever an answer a valid code can earn.
+	if len(s.data.InviteCodes) == 0 {
+		// No codes configured at all: registration is closed until an operator seeds one.
+		return nil, ErrInviteNotSeeded
+	}
+	code, ok := s.data.InviteCodes[invite]
+	if !ok {
+		return nil, ErrInviteUnknown
+	}
+	if code.ExpiresAt != 0 && time.Now().Unix() > code.ExpiresAt {
+		return nil, ErrInviteExpired
+	}
+	if code.MaxUses != 0 && code.UsedCount >= code.MaxUses {
+		return nil, ErrInviteExhausted
+	}
 	if s.data.UsernameIdx == nil {
 		s.data.UsernameIdx = map[string]int64{}
 	}
 	if _, exists := s.data.UsernameIdx[username]; exists {
-		return nil, fmt.Errorf("username already exists: %s", username)
+		return nil, ErrUsernameTaken
 	}
 	s.data.NextID++
 	u := User{
@@ -509,6 +574,8 @@ func (s *Store) CreateUserWithUsername(username, passwordHash string) (*User, er
 	}
 	s.data.Users = append(s.data.Users, u)
 	s.data.UsernameIdx[username] = u.ID
+	code.UsedCount++
+	s.data.InviteCodes[invite] = code
 	s.save()
 	return &u, nil
 }

@@ -71,6 +71,10 @@ func (g *Gateway) privacyUserList(c *gin.Context) {
 
 // privacyUpdate flips one direction's sens flags (the recovered `api/setting/update` contract;
 // the exact original body keys are not recoverable, so this rebuild pins friendId + four flags).
+// The flags live on the relation row and the row is what location reads authorize on, so this write
+// goes through the same confirmed-pair gate as `api/relation/update` — the old "no row yet, treat
+// as friend" fallback could mint a row for any user id and open their tracks (audit P0-2), and a
+// privacy flip has no business mutating the relation value anyway.
 func (g *Gateway) privacyUpdate(c *gin.Context) {
 	form := body(c)
 	me, id := g.claims(c).UserID, num(form, "friendId")
@@ -78,11 +82,11 @@ func (g *Gateway) privacyUpdate(c *gin.Context) {
 		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
 		return
 	}
+	if !g.confirmedPair(c, me, id, "仅确认过的好友可修改隐私") {
+		return
+	}
 	extra := g.opts.Store.ExtraFor(me, id)
 	extra.OwnerID, extra.FriendID = me, id
-	if extra.Relation == 0 {
-		extra.Relation = 2 // 只对好友改隐私；无关系行时按好友兜底，与 location 域读权限一致
-	}
 	if v, ok := form["sensLocation"].(bool); ok {
 		extra.SensLoc = v
 	}

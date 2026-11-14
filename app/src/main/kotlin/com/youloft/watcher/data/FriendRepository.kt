@@ -28,6 +28,7 @@ import com.youloft.linkup.map.provider.baidu.BaiduTrackMapProvider
 import com.youloft.linkup.im.ImClient
 import com.youloft.linkup.im.OpenImImClient
 import com.youloft.watcher.data.im.ImFriendListSource
+import com.youloft.watcher.data.im.PeerGuard
 import com.youloft.watcher.data.im.ImRepository
 import com.youloft.watcher.AndroidDeviceContext
 import com.youloft.watcher.data.local.FriendCache
@@ -197,6 +198,17 @@ open class LinkUpApplication : Application() {
 
     /** The OpenIM transport for this account; the SDK types stay inside `:im`. */
     open val imClient: ImClient by lazy { OpenImImClient(this) }
+
+    /**
+     * IM 命令发送方守门（锁机/截屏桥共用，审计 P0-3/P0-4）：本地好友缓存命中即信任，
+     * 未命中权威拉一次名单，都不认的人 fail-closed。
+     */
+    open val peerGuard: PeerGuard by lazy {
+        PeerGuard(
+            api = imApi,
+            cachedFriends = { FriendCache(keyValueStores, accountCache).cachedFriends() },
+        )
+    }
 
     /** The session half: `api/user/im_token` → SDK login, and the sign-out mirror. */
     open val imRepository: ImRepository by lazy { ImRepository(imApi, imClient, imScope) }

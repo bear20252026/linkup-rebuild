@@ -20,15 +20,23 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
-/** 锁机命令桥：发起端"台账先行、命令随后"；收端把 lockMachine 命令转成 LockScreen。 */
+/**
+ * 锁机命令桥：发起端"台账先行、命令随后"；收端把 lockMachine 命令转成 LockScreen。
+ * Robolectric 因为收端的丢弃路径走 `Log.w`（审计 P0-4 的守门日志），纯 JVM 没有 Android 桩。
+ */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = com.youloft.watcher.pages.friend.FriendFlowFixtures.TestApplication::class)
 class LockCommandBridgeTest {
 
     @Test
     fun `sendLock posts the ledger first, then the command`() = runBlocking {
         val api = fakeApi()
         val client = FakeImClient()
-        val bridge = LockCommandBridge(client, api, unconfined()) {}
+        val bridge = LockCommandBridge(client, api, unconfined(), trusted = { true }) {}
         val screen = LockScreen(userid = 10000002L, lockType = 2, lockTitle = "写作业", lockDuration = 600L)
 
         bridge.sendLock(10000002L, screen)
@@ -46,7 +54,7 @@ class LockCommandBridgeTest {
     fun `an incoming lockMachine command becomes a LockScreen callback`() = runBlocking {
         val client = FakeImClient()
         val received = mutableListOf<LockScreen>()
-        val bridge = LockCommandBridge(client, fakeApi(), unconfined(), onLock = { received += it })
+        val bridge = LockCommandBridge(client, fakeApi(), unconfined(), trusted = { true }, onLock = { received += it })
         bridge.start()
 
         val payload = LockScreen(userid = 10000001L, lockType = 1, lockTitle = "吃饭啦")
@@ -61,7 +69,7 @@ class LockCommandBridgeTest {
     fun `the remote-unlock variant does not re-lock the screen`() = runBlocking {
         val client = FakeImClient()
         val received = mutableListOf<LockScreen>()
-        val bridge = LockCommandBridge(client, fakeApi(), unconfined(), onLock = { received += it })
+        val bridge = LockCommandBridge(client, fakeApi(), unconfined(), trusted = { true }, onLock = { received += it })
         bridge.start()
 
         val unlock = LockScreen(userid = 10000001L, lockType = LockCommandBridge.LOCK_TYPE_REMOTE_UNLOCK)
@@ -70,7 +78,30 @@ class LockCommandBridgeTest {
         assertTrue(received.isEmpty(), "lockType 3 is the unlock receipt, not a lock")
     }
 
+    @Test
+    fun `a lock command from a non-friend is dropped`() = runBlocking {
+        val client = FakeImClient()
+        val received = mutableListOf<LockScreen>()
+        val bridge = LockCommandBridge(
+            client, fakeApi(), unconfined(),
+            trusted = { peer -> peer != STRANGER },
+            onLock = { received += it },
+        )
+        bridge.start()
+
+        // 非好友(审计 P0-4):勒索式锁机的门槛,丢弃而不是上锁。
+        client.emit(ImCommand(STRANGER, CmdType.LOCK_MACHINE, LockScreen(userid = STRANGER, lockType = 2).toJson(), incoming = true))
+        assertTrue(received.isEmpty(), "a non-friend's lock command must be dropped, not applied")
+
+        // 确认好友的命令照常上锁。
+        client.emit(ImCommand(10000001L, CmdType.LOCK_MACHINE, LockScreen(userid = 10000001L, lockType = 1).toJson(), incoming = true))
+        assertEquals(1, received.size, "the trusted friend's command still lands")
+    }
+
     // ------------------------------------------------------------------ fixtures
+
+    /** 守门测试里"不在好友名单上"的对端。 */
+    private val STRANGER = 99999999L
 
     private fun unconfined() = CoroutineScope(Dispatchers.Unconfined + Job())
 

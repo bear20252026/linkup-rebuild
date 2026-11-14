@@ -169,7 +169,17 @@ func (g *Gateway) ensureIMAccount(ctx context.Context, u store.User) {
 // loginByThird answers `api/user/login`, the WeChat (platform 4) and QQ (platform 5) path. The body is
 // exactly `unionId, platform, avatar, nickname, phone`, with platform as a *string* — the client sends
 // the phone only when the user typed it to bind, so a login can arrive with `phone: null`.
+//
+// The whole path sits behind -enable-third-login (default off). The pause is not the audit's P0-1
+// fix, it is the pause *of* it: the unionId and phone are client-asserted, so an enabled deployment
+// without a vendor OAuth code exchange still hands a JWT — sometimes a stranger's whole account — to
+// whoever types the answer first. Re-enable only together with that server-side verification; the
+// rebuilt client hides its vendor buttons behind the same switch meanwhile.
 func (g *Gateway) loginByThird(c *gin.Context) {
+	if !g.opts.ThirdPartyLogin {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusForbidden, "第三方登录暂未开放"))
+		return
+	}
 	form := body(c)
 	unionID := str(form, "unionId")
 	if unionID == "" {
@@ -527,9 +537,21 @@ func (g *Gateway) deleteFriend(c *gin.Context) {
 	c.JSON(http.StatusOK, contract.OK(nil))
 }
 
+// updateRelation answers `api/relation/update`. A relation row is the *only* grant path to someone's
+// tracks (location.go's `hasRelation` reads it), so the write that mints or rewrites one must be
+// reachable only across a confirmed pair: the target has to be an IM friend **and** already carry a
+// confirm-stamped row. Without both gates, one request forges a row against any user id and opens
+// their whole location history — the audit's P0-2.
 func (g *Gateway) updateRelation(c *gin.Context) {
 	form := body(c)
 	me, id := g.claims(c).UserID, num(form, "friendId")
+	if id <= 0 {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
+		return
+	}
+	if !g.confirmedPair(c, me, id, "仅确认过的好友可修改关系") {
+		return
+	}
 	extra := g.opts.Store.ExtraFor(me, id)
 	extra.OwnerID, extra.FriendID, extra.Relation = me, id, int(num(form, "relation"))
 	if err := g.opts.Store.PutExtra(extra); err != nil {
@@ -537,6 +559,21 @@ func (g *Gateway) updateRelation(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, contract.OK(nil))
+}
+
+// confirmedPair is the shared gate of the relation-row writes: IM friendship, then a row that
+// relation/confirm stamped. Refusing is the caller's answer shape, so the helper writes it and says
+// whether the request may proceed.
+func (g *Gateway) confirmedPair(c *gin.Context, me, id int64, msg string) bool {
+	if friend, err := g.opts.IM.IsFriend(c.Request.Context(), store.IMID(me), store.IMID(id)); err != nil || !friend {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusForbidden, msg))
+		return false
+	}
+	if g.opts.Store.ExtraFor(me, id).Since == 0 {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusForbidden, msg))
+		return false
+	}
+	return true
 }
 
 func (g *Gateway) updateRemark(c *gin.Context) {

@@ -43,6 +43,8 @@ class LockListActivity : AppCompatActivity() {
             imClient = graph.imClient,
             api = graph.imApi,
             scope = lifecycleScope,
+            // 命令发送方守门（审计 P0-4）：锁机只认确认过的好友，别人的命令丢弃。
+            trusted = { peer -> graph.peerGuard.trusted(peer) },
             onLock = { /* 收端在本设备：锁机盖板/降级 Activity 由 MainActivity 的命令桥接管 */ },
         )
         bridge.start()

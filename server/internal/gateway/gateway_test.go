@@ -314,11 +314,43 @@ func TestOneTapLoginIsRefusedRatherThanFaked(t *testing.T) {
 	}
 }
 
-// TestThirdPartyLoginKeysByUnionIdAndBindsThePhone covers `api/user/login`, the WeChat (platform "4")
-// and QQ (platform "5") path. The client sends the phone only when the user typed it to bind, so the
-// same person must end up on one account whichever of the three calls brings them in.
-func TestThirdPartyLoginKeysByUnionIdAndBindsThePhone(t *testing.T) {
+// TestThirdPartyLoginDisabledByDefault pins the pause on `api/user/login`: the switch is off, so the
+// route answers envelope 403 without touching state, and the SMS path next to it still works. The
+// pause is not the P0-1 fix — an enabled deployment still needs the vendor OAuth exchange.
+func TestThirdPartyLoginDisabledByDefault(t *testing.T) {
 	h := newTest(t)
+	for name, payload := range map[string]map[string]any{
+		"plain union id": {"unionId": "wx-union-77", "platform": "4"},
+		"phone takeover": {"unionId": "wx-union-77", "platform": "4", "phone": "13800000077"},
+	} {
+		answered := h.request(t, http.MethodPost, "/api/user/login", "", payload, "")
+		if answered.Status != 403 || !strings.Contains(answered.Msg, "第三方登录暂未开放") {
+			t.Fatalf("%s: expected the switch's refusal, got %+v", name, answered)
+		}
+	}
+
+	// The refusal is the whole answer: nothing was created or mutated behind it.
+	if accounts := len(h.store.Accounts()); accounts != 0 {
+		t.Errorf("a refused login left %d accounts behind", accounts)
+	}
+	token, record := h.login(t, "13800000077")
+	if record.UnionID != "" || record.Platform != 0 {
+		t.Errorf("the phone account must not carry the attacker's union id: %+v", record)
+	}
+	info := h.request(t, http.MethodGet, "/api/user/info", "", nil, token)
+	if got := decode[struct {
+		UserID int64 `json:"userId"`
+	}](t, info.Data); got.UserID != record.ID {
+		t.Errorf("the sms login after a refused takeover is broken: %d vs %d", got.UserID, record.ID)
+	}
+}
+
+// TestThirdPartyLoginWhenEnabled pins what the switch re-opens: the original three-call contract
+// (union-id keyed login, one account per identity, a late phone binding in place). Every line below
+// carries the takeover risk documented on the handler — this test exists so re-enabling after the
+// vendor OAuth exchange is wired cannot silently break the shape the client expects.
+func TestThirdPartyLoginWhenEnabled(t *testing.T) {
+	h := newTest(t, func(o *Options) { o.ThirdPartyLogin = true })
 	body := func(phone any) map[string]any {
 		return map[string]any{
 			"unionId": "wx-union-77", "platform": "4",
@@ -366,6 +398,80 @@ func TestThirdPartyLoginKeysByUnionIdAndBindsThePhone(t *testing.T) {
 		Nickname string `json:"nickname"`
 	}](t, info.Data); got.Nickname != "微信用户" {
 		t.Errorf("the WeChat nickname did not survive the phone login: %q", got.Nickname)
+	}
+}
+
+// TestInviteCodeGatesRegistration covers the invite-code model at the route: a valid code joins, and
+// every other state gets its own message — unknown, expired, exhausted — without creating an account.
+// A duplicate username maps the store's sentinel instead of the old TOCTOU 500.
+func TestInviteCodeGatesRegistration(t *testing.T) {
+	h := newTest(t)
+	now := time.Now().Unix()
+	h.store.SeedInviteCodes([]store.InviteCode{
+		{Code: "OPEN-2026", ExpiresAt: now + 3600, MaxUses: 1},
+		{Code: "SPENT", MaxUses: 1, UsedCount: 1},
+		{Code: "OLD", ExpiresAt: now - 1},
+	})
+
+	register := func(username, code string) envelope {
+		return h.request(t, http.MethodPost, "/api/user/register", "", map[string]any{
+			"username": username, "password": "secret1", "inviteCode": code,
+		}, "")
+	}
+
+	if answered := register("user-a", "NOPE"); answered.Status != 403 || !strings.Contains(answered.Msg, "邀请码错误") {
+		t.Errorf("an unknown code: %+v", answered)
+	}
+	if answered := register("user-a", "OLD"); answered.Status != 403 || !strings.Contains(answered.Msg, "邀请码已过期") {
+		t.Errorf("an expired code: %+v", answered)
+	}
+	if answered := register("user-a", "SPENT"); answered.Status != 403 || !strings.Contains(answered.Msg, "邀请码已用尽") {
+		t.Errorf("an exhausted code: %+v", answered)
+	}
+
+	first := register("user-a", "OPEN-2026")
+	if first.Status != 200 {
+		t.Fatalf("a valid code registers: %+v", first)
+	}
+	// The slot burned on success only: a second use of the single-use code is refused...
+	if answered := register("user-b", "OPEN-2026"); answered.Status != 403 || !strings.Contains(answered.Msg, "邀请码已用尽") {
+		t.Errorf("the burned code: %+v", answered)
+	}
+	// ...and the code is judged before the username, so probing names without a live code learns nothing.
+	if answered := register("user-a", "NOPE"); answered.Status != 403 || !strings.Contains(answered.Msg, "邀请码错误") {
+		t.Errorf("an unknown code still outranks the username: %+v", answered)
+	}
+	if n := len(h.store.Accounts()); n != 1 {
+		t.Errorf("failed registrations must not leave accounts: %d", n)
+	}
+}
+
+// TestUsernameCheckEndpoint covers the register page's live dedup: the same rules as registration,
+// answered as available/reason instead of a rejection.
+func TestUsernameCheckEndpoint(t *testing.T) {
+	h := newTest(t)
+	h.store.SeedInviteCodes([]store.InviteCode{{Code: "OPEN"}})
+	if _, err := h.store.RegisterWithUsername("taken-name", "hash", "OPEN"); err != nil {
+		t.Fatal(err)
+	}
+
+	check := func(username string) (bool, string) {
+		answered := h.request(t, http.MethodGet, "/api/user/username/check", "username="+username, nil, "")
+		row := decode[struct {
+			Available bool   `json:"available"`
+			Reason    string `json:"reason"`
+		}](t, answered.Data)
+		return row.Available, row.Reason
+	}
+
+	if available, reason := check("fresh-name"); !available || reason != "" {
+		t.Errorf("a fresh name is available: %v %q", available, reason)
+	}
+	if available, reason := check("taken-name"); available || !strings.Contains(reason, "用户名已存在") {
+		t.Errorf("a taken name: %v %q", available, reason)
+	}
+	if available, reason := check("ab"); available || !strings.Contains(reason, "3-32") {
+		t.Errorf("a too-short name: %v %q", available, reason)
 	}
 }
 
@@ -551,6 +657,61 @@ func TestRemarkRelationAndDelete(t *testing.T) {
 	}
 	if extra := h.store.ExtraFor(me.ID, other.ID); extra.Relation != 0 || extra.Remark != "" {
 		t.Errorf("local extras survived the deletion: %+v", extra)
+	}
+}
+
+// TestRelationWritesRequireConfirmedPair pins the P0-2 fix: a relation row is the grant path to
+// someone's tracks, so neither `api/relation/update` nor `api/setting/update` may mint one. A
+// stranger is refused at the IM gate; a friend without a confirm-stamped row is refused at the row
+// gate; only a confirmed pair writes, and a stranger's tracks stay closed the whole time.
+func TestRelationWritesRequireConfirmedPair(t *testing.T) {
+	h := newTest(t)
+	token, me := h.login(t, "13800000009")
+	_, other := h.login(t, "13800000010")
+	update := map[string]any{"friendId": other.ID, "relation": 1}
+	privacy := map[string]any{"friendId": other.ID, "sensLocation": true}
+
+	// A stranger: the stub answers is_friend with a no for this id.
+	h.im.refuseIsFriendFor = idOf(other.ID)
+	for name, call := range map[string]struct {
+		path string
+		body map[string]any
+	}{"relation/update": {"/api/relation/update", update}, "setting/update": {"/api/setting/update", privacy}} {
+		if answered := h.request(t, http.MethodPost, call.path, "", call.body, token); answered.Status == 200 {
+			t.Fatalf("%s: a stranger must not mint a relation row: %+v", name, answered)
+		}
+	}
+	days := h.request(t, http.MethodGet, "/api/location/days", "queryId="+idOf(other.ID), nil, token)
+	if days.Status == 200 {
+		t.Fatalf("the forged-row route is closed, tracks must be too: %+v", days)
+	}
+
+	// An IM friend whose confirm never happened: friendship alone is still not a grant.
+	h.im.refuseIsFriendFor = ""
+	for name, call := range map[string]struct {
+		path string
+		body map[string]any
+	}{"relation/update": {"/api/relation/update", update}, "setting/update": {"/api/setting/update", privacy}} {
+		if answered := h.request(t, http.MethodPost, call.path, "", call.body, token); answered.Status == 200 {
+			t.Fatalf("%s: an unconfirmed friend must not mint a relation row: %+v", name, answered)
+		}
+	}
+
+	// The confirmed pair goes through, and the flip lands on the row it was asked for.
+	if err := h.store.PutExtra(store.Extra{OwnerID: me.ID, FriendID: other.ID, Relation: 2}); err != nil {
+		t.Fatal(err)
+	}
+	if answered := h.request(t, http.MethodPost, "/api/relation/update", "", update, token); answered.Status != 200 {
+		t.Fatalf("update between a confirmed pair: %+v", answered)
+	}
+	if extra := h.store.ExtraFor(me.ID, other.ID); extra.Relation != 1 {
+		t.Errorf("relation not updated: %+v", extra)
+	}
+	if answered := h.request(t, http.MethodPost, "/api/setting/update", "", privacy, token); answered.Status != 200 {
+		t.Fatalf("privacy update between a confirmed pair: %+v", answered)
+	}
+	if extra := h.store.ExtraFor(me.ID, other.ID); !extra.SensLoc {
+		t.Errorf("sens flag not updated: %+v", extra)
 	}
 }
 

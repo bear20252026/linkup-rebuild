@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -241,53 +242,74 @@ func TestStoreReloadsFromDisk(t *testing.T) {
 	}
 }
 
-func TestThirdPartyAccountsBindWithoutDoublingUp(t *testing.T) {
+// TestRegisterWithUsernameValidatesTheInviteCode pins the invite-code model: every rejection is its
+// own sentinel, nothing is created on a rejection, and the burn happens on success only.
+func TestRegisterWithUsernameValidatesTheInviteCode(t *testing.T) {
 	s := mustOpen(t, "")
+	s.SeedInviteCodes([]InviteCode{
+		{Code: "OPEN", MaxUses: 2},
+		{Code: "OLD", ExpiresAt: 1}, // unix second 1 is long past
+		{Code: "SPENT", MaxUses: 1, UsedCount: 1},
+	})
 
-	// A WeChat login with no phone yet: a phone-less account keyed by the union id.
-	anon, err := s.ThirdAccount(4, "wx-union-1", "")
-	if err != nil {
-		t.Fatal(err)
+	if _, err := s.RegisterWithUsername("alice", "hash", "NOPE"); !errors.Is(err, ErrInviteUnknown) {
+		t.Fatalf("an unknown code: %v", err)
 	}
-	again, err := s.ThirdAccount(4, "wx-union-1", "")
-	if err != nil {
-		t.Fatal(err)
+	if _, err := s.RegisterWithUsername("alice", "hash", "OLD"); !errors.Is(err, ErrInviteExpired) {
+		t.Fatalf("an expired code: %v", err)
 	}
-	if again.ID != anon.ID {
-		t.Fatalf("the same union id minted a second account: %d vs %d", again.ID, anon.ID)
+	if _, err := s.RegisterWithUsername("alice", "hash", "SPENT"); !errors.Is(err, ErrInviteExhausted) {
+		t.Fatalf("an exhausted code: %v", err)
 	}
-
-	// The same identity arriving with a phone binds it, and does not move the account.
-	bound, err := s.ThirdAccount(4, "wx-union-1", "13800000500")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if bound.ID != anon.ID || bound.Phone != "13800000500" {
-		t.Fatalf("binding changed the account instead of the phone: %+v", bound)
+	if n := len(s.Accounts()); n != 0 {
+		t.Fatalf("rejected registrations must not leave accounts: %d", n)
 	}
 
-	// A phone that already has an account adopts the new union id rather than cloning the person.
-	qq, err := s.ThirdAccount(5, "wx-union-2", "13800000500")
+	u, err := s.RegisterWithUsername("alice", "hash", "OPEN")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if qq.ID != bound.ID {
-		t.Fatalf("the same phone became a second account: %d vs %d", qq.ID, bound.ID)
+	if got, err := s.ByUsername("alice"); err != nil || got.ID != u.ID || got.PasswordHash != "hash" {
+		t.Fatalf("the account did not land as asked: %+v %v", got, err)
 	}
-	if got, err := s.ByID(anon.ID); err != nil || got.UnionID != "wx-union-1" || got.Platform != 4 {
-		t.Fatalf("the first binding was lost: %+v %v", got, err)
-	}
-	if n := len(s.Accounts()); n != 1 {
-		t.Fatalf("one person, %d accounts", n)
+	if code := s.data.InviteCodes["OPEN"]; code.UsedCount != 1 {
+		t.Fatalf("the valid code was not burned on success: %+v", code)
 	}
 
-	// A vendor identity with no phone at all gets its own account.
-	other, err := s.ThirdAccount(5, "wx-union-3", "")
-	if err != nil {
+	// The duplicate answers the username, not the code, and does not burn another slot.
+	if _, err := s.RegisterWithUsername("alice", "hash", "OPEN"); !errors.Is(err, ErrUsernameTaken) {
+		t.Fatalf("a duplicate username: %v", err)
+	}
+	if code := s.data.InviteCodes["OPEN"]; code.UsedCount != 1 {
+		t.Fatalf("a failed registration burned a slot: %+v", code)
+	}
+
+	// A fresh store without any seeded codes is closed registration, not open.
+	empty := mustOpen(t, "")
+	if _, err := empty.RegisterWithUsername("bob", "hash", "OPEN"); !errors.Is(err, ErrInviteNotSeeded) {
+		t.Fatalf("an unseeded store: %v", err)
+	}
+}
+
+// TestInviteCodesSurviveReloadWithUsedCount pins the operational semantics: a restart keeps the
+// burn count, and re-seeding a known code updates its metadata without refilling it.
+func TestInviteCodesSurviveReloadWithUsedCount(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "linkup.json")
+	first := mustOpen(t, path)
+	first.SeedInviteCodes([]InviteCode{{Code: "OPEN", MaxUses: 1}})
+	if _, err := first.RegisterWithUsername("alice", "hash", "OPEN"); err != nil {
 		t.Fatal(err)
 	}
-	if other.ID == anon.ID || other.Platform != 5 {
-		t.Fatalf("a different vendor identity reused the WeChat account: %+v", other)
+	first.Close()
+
+	reopened := mustOpen(t, path)
+	// The old pattern of the batching store: the file is whole after Close only.
+	reopened.SeedInviteCodes([]InviteCode{{Code: "OPEN", MaxUses: 1}})
+	if _, err := reopened.RegisterWithUsername("bob", "hash", "OPEN"); !errors.Is(err, ErrInviteExhausted) {
+		t.Fatalf("a restart refilled the burned code: %v", err)
+	}
+	if n := len(reopened.Accounts()); n != 1 {
+		t.Fatalf("the refused registration left an account: %d", n)
 	}
 }
 

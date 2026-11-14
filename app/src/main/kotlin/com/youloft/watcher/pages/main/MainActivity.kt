@@ -64,6 +64,8 @@ class MainActivity : AppCompatActivity() {
             imClient = graph.imClient,
             api = graph.imApi,
             scope = lifecycleScope,
+            // 命令发送方守门（审计 P0-4）：锁机只认确认过的好友，别人的命令丢弃。
+            trusted = { peer -> graph.peerGuard.trusted(peer) },
             onLock = { screen ->
                 if (screen.userid <= 0) return@LockCommandBridge
                 if (com.youloft.watcher.utils.LockOverlayWindow.canShow(this)) {

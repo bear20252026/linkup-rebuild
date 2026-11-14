@@ -10,6 +10,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"flag"
 	"fmt"
@@ -39,7 +40,9 @@ func main() {
 		staySeconds = flag.Int64("stay-seconds", 120, "how long a phone must sit still before the day counts another arrival point (not observable from the APK)")
 		gapSeconds  = flag.Int64("gap-seconds", 1800, "how long a silence becomes 没有新定位 instead of movement (not observable from the APK)")
 		dayZone     = flag.String("loc-timezone", "Asia/Shanghai", "timezone the track days are counted in")
-		inviteCode  = flag.String("invite-code", "LINKUP2026", "admin invitation code for username/password registration")
+		inviteCode  = flag.String("invite-code", "LINKUP2026", "admin invitation code for username/password registration (never expires, unlimited uses)")
+		inviteFile  = flag.String("invite-codes-file", "", "JSON file seeding richer invite codes: [{\"code\":\"...\",\"expiresAt\":0,\"maxUses\":100}] (unix seconds; 0 = never/unlimited)")
+		thirdLogin  = flag.Bool("enable-third-login", false, "gate for POST api/user/login (WeChat/QQ). Off is the pause; on without vendor OAuth verification is audit P0-1 — do not flip alone")
 		imWs        = flag.String("openim-ws", "ws://10.0.2.2:10001", "msg_gateway address handed to clients by api/user/im_token (10.0.2.2 is the emulator's host loopback)")
 		dev         = flag.Bool("dev", false, "allow the published OpenIM demo secret and an empty JWT secret")
 	)
@@ -92,6 +95,22 @@ func main() {
 		log.Error("timezone", "err", err)
 		os.Exit(1)
 	}
+	// Registration needs a live invite code: the -invite-code convenience seed plus whatever the
+	// codes file adds. Seeding happens on every boot; the burn counts already in the store survive.
+	seeds := []store.InviteCode{}
+	if *inviteCode != "" {
+		seeds = append(seeds, store.InviteCode{Code: *inviteCode})
+	}
+	if *inviteFile != "" {
+		fileCodes, err := loadInviteCodes(*inviteFile)
+		if err != nil {
+			log.Error("invite codes", "err", err)
+			os.Exit(1)
+		}
+		seeds = append(seeds, fileCodes...)
+	}
+	db.SeedInviteCodes(seeds)
+
 	engine, err := gateway.New(gateway.Options{
 		Store:            db,
 		IM:               client,
@@ -106,7 +125,7 @@ func main() {
 		LocationSettings: location.Settings{StaySeconds: *staySeconds, GapSeconds: *gapSeconds},
 		DayZone:          zone,
 		OpenIMWs:         *imWs,
-		InviteCode:       *inviteCode,
+		ThirdPartyLogin:  *thirdLogin,
 	})
 	if err != nil {
 		log.Error("build gateway", "err", err)
@@ -123,6 +142,25 @@ func main() {
 		log.Error("serve", "err", err)
 		os.Exit(1)
 	}
+}
+
+// loadInviteCodes reads the codes file: a JSON array of InviteCode records. A code without a "code"
+// field is a config typo, not a valid invitation, and refuses the boot rather than seeding garbage.
+func loadInviteCodes(path string) ([]store.InviteCode, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	var codes []store.InviteCode
+	if err := json.Unmarshal(raw, &codes); err != nil {
+		return nil, fmt.Errorf("%s is not an invite-code array: %w", path, err)
+	}
+	for _, c := range codes {
+		if c.Code == "" {
+			return nil, fmt.Errorf("%s holds an entry without a code field", path)
+		}
+	}
+	return codes, nil
 }
 
 // loadZone accepts a named zone and falls back to a fixed +08:00 when the machine has no tzdata
