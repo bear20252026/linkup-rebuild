@@ -371,3 +371,59 @@ func TestParseIDOnlyAcceptsPlainDigits(t *testing.T) {
 		t.Errorf("ParseID(\"0\") = %d", got)
 	}
 }
+
+// TestCallRecordsDedupeAndCap pins the ledger's three rules: a retry is absorbed, the newest-first
+// read honours its limit, and the per-account cap keeps the file bounded (audit P2-1's lesson,
+// learned the hard way on Locations).
+func TestCallRecordsDedupeAndCap(t *testing.T) {
+	s := mustOpen(t, "")
+	s.AddCallRecords(7, []CallRecordEntry{
+		{Phone: "13800000001", Contact: "妈妈", Time: 100, IsIncoming: true, Duration: 60},
+		{Phone: "13800000002", Time: 200, IsIncoming: false, Duration: 30},
+	})
+	// A report retry: the same call again must not double-count.
+	s.AddCallRecords(7, []CallRecordEntry{{Phone: "13800000001", Contact: "妈妈", Time: 100, IsIncoming: true}})
+
+	all := s.CallRecordsFor(7, 10)
+	if len(all) != 2 {
+		t.Fatalf("two distinct calls after the retry, got %d", len(all))
+	}
+	if all[0].Time != 200 || all[1].Time != 100 {
+		t.Fatalf("the read is newest first: %+v", all)
+	}
+	if got := s.CallRecordsFor(7, 1); len(got) != 1 || got[0].Time != 200 {
+		t.Fatalf("the limit takes the newest only: %+v", got)
+	}
+	if got := s.CallRecordsFor(7, 0); got != nil {
+		t.Fatalf("a non-positive limit answers nil, not an empty dump: %+v", got)
+	}
+	if got := s.CallRecordsFor(99, 10); got != nil {
+		t.Fatalf("an account with no calls answers nil: %+v", got)
+	}
+
+	// The cap keeps the newest rows: 300 distinct calls leave exactly the last CallRecordCap.
+	for i := 0; i < 300; i++ {
+		s.AddCallRecords(7, []CallRecordEntry{{Phone: "1", Time: 1000 + int64(i)}})
+	}
+	capped := s.data.CallRecords[7]
+	if len(capped) != CallRecordCap {
+		t.Fatalf("cap: %d rows", len(capped))
+	}
+	if capped[len(capped)-1].Time != 1000+299 || capped[0].Time != 1000+299-CallRecordCap+1 {
+		t.Fatalf("the cap keeps the newest window: first=%d last=%d", capped[0].Time, capped[len(capped)-1].Time)
+	}
+}
+
+// TestCallRecordsSurviveReload pins the persistence: the ledger rides the store file like the rest.
+func TestCallRecordsSurviveReload(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "linkup.json")
+	first := mustOpen(t, path)
+	first.AddCallRecords(7, []CallRecordEntry{{Phone: "13800000001", Contact: "妈妈", Time: 100, IsIncoming: true}})
+	first.Close()
+
+	reopened := mustOpen(t, path)
+	all := reopened.CallRecordsFor(7, 10)
+	if len(all) != 1 || all[0].Contact != "妈妈" || all[0].Time != 100 {
+		t.Fatalf("the ledger did not survive the restart: %+v", all)
+	}
+}

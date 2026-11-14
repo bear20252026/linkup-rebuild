@@ -164,6 +164,8 @@ func New(opts Options) (*gin.Engine, error) {
 		// Device state + widget domain (待验 59): pairing = confirmed relation, per-device facts
 		// recorded by api/phone/state/report.
 		api.POST("/phone/state/report", g.phoneStateReport)
+		// 通话记录域：被守护端批量上报（delta），守护端的 通话记录卡 从 api/index 读台账。
+		api.POST("/phone/call_record/report", g.callRecordReport)
 		api.GET("/widget/location", g.widgetLocation)
 		api.GET("/widget/track", g.widgetTrack)
 

@@ -133,6 +133,12 @@
     <string name="send_failed">发送失败</string>
     <string name="send_success">发送成功</string>
     <string name="invite_join_qq_group">请加入我们的QQ交流群，反馈你的问题和想法：%s</string>
+    <string name="home_card_call_record">通话记录</string>
+    <string name="home_card_call_incoming">来电</string>
+    <string name="home_card_call_outgoing">去电</string>
+    <string name="home_card_call_missed">未接</string>
+    <string name="home_card_call_summary">最近 %d 通</string>
+    <string name="home_card_unknown_number">未知号码</string>
     <string name="chat_voice_recording">松开发送</string>
     <string name="chat_voice_denied">需要麦克风权限才能发语音</string>
     <string name="chat_voice_too_short">说话时间太短</string>

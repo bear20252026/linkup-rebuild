@@ -11,7 +11,7 @@ import java.util.Locale
  * 空数据（对方从未上报/无定位）产出"如实缺省"行，不编造数字。
  *
  * 原版面板由 view/home/Card*View 家族渲染，卡片种类与读数由服务端 HomeData 驱动；本重建渲染
- * 其中已接线的四张（对方手机状态/对方位置/锁机/我的设备），通话记录与应用使用卡在报表路由
+ * 其中已接线的五张（对方手机状态/对方位置/**通话记录**/锁机/我的设备），应用使用卡在报表路由
  * 供数前保持缺席（原卡也是空数据时收起，DESIGN 五点三十三）。
  */
 object HomeCards {
@@ -25,7 +25,7 @@ object HomeCards {
         val kind: Kind,
     )
 
-    enum class Kind { PHONE_STATE, LOCATION, LOCK, OWN_DEVICE }
+    enum class Kind { PHONE_STATE, LOCATION, CALL_RECORD, LOCK, OWN_DEVICE }
 
     fun fromData(
         data: HomeData?,
@@ -53,6 +53,18 @@ object HomeCards {
                 line1 = texts.arrivedAt(formatEpochSeconds(location.arrivalTime)),
                 line2 = "",
                 kind = Kind.LOCATION,
+            )
+        }
+        // 通话记录卡（通话记录域，DESIGN 五点三十九）：只在有记录时渲染——没有就缺席，与原版
+        // "空数据时收起"同一语义。最新一通是谁/什么方向/多久，行二是批次的数量摘要。
+        data.callRecordList?.orEmpty()?.filterNotNull()?.takeIf { it.isNotEmpty() }?.let { records ->
+            val latest = records.first()
+            cards += Card(
+                title = texts.callRecord,
+                value = whoOf(latest, texts),
+                line1 = callDirection(latest, texts) + durationSuffix(latest),
+                line2 = texts.callSummary(records.size),
+                kind = Kind.CALL_RECORD,
             )
         }
         data.lockInfo?.let { lock ->
@@ -100,6 +112,22 @@ object HomeCards {
         return parts.joinToString(" · ").takeIf { it.isNotBlank() }?.take(24)
     }
 
+    /** 通话记录卡的对象行：联系人优先，退回号码，都没有如实答"未知号码"。 */
+    private fun whoOf(record: com.youloft.linkup.api.dto.CallRecord, texts: Texts): String =
+        record.contact?.takeIf { it.isNotBlank() }
+            ?: record.phone?.takeIf { it.isNotBlank() }
+            ?: texts.unknownNumber
+
+    /** 方向词：未接（来电未接通）/ 来电 / 去电——原版 bean 只有两个方向，未接是没接通的来电。 */
+    private fun callDirection(record: com.youloft.linkup.api.dto.CallRecord, texts: Texts): String = when {
+        record.isIncoming && record.duration <= 0 -> texts.callMissed
+        record.isIncoming -> texts.callIncoming
+        else -> texts.callOutgoing
+    }
+
+    private fun durationSuffix(record: com.youloft.linkup.api.dto.CallRecord): String =
+        if (record.duration > 0) " · " + formatDuration(record.duration) else ""
+
     private fun battery(percent: Int): String = "$percent%"
 
     private fun network(type: Int, texts: Texts): String = when (type) {
@@ -144,6 +172,12 @@ object HomeCards {
         val location: String
         val noAddress: String
         val arrivedAt: (String) -> String
+        val callRecord: String
+        val callIncoming: String
+        val callOutgoing: String
+        val callMissed: String
+        val callSummary: (Int) -> String
+        val unknownNumber: String
         val lock: String
         val lockOff: String
         val lockRemaining: (String) -> String

@@ -1811,6 +1811,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 84 | 密码哈希是无盐 SHA-256（静态前缀），审计 P1-1：换 bcrypt/argon2id + 登录失败限速；顺带修 `PasswordHash` 带 `json:"-"` 重启后密码账号恒"密码错误" | 存量哈希迁移需一次性重置或双读 |
 | 85 | osmdroid + 高德道路瓦片（五点三十七）真机/模拟器验收：瓦片对齐与缩放级别手感（高德 web 瓦片历史上有 z 级偏移说法，以像素为准）、弱网/断网缓存表现、瓦片服务对包名 UA 的限流影响 | 需真机/模拟器 + 网络 |
 | 86 | 聊天语音消息（五点三十八）真机验收：各 ROM 录音权限流与音量、播放流媒体在弱网的表现、OpenIM 声音消息在重建栈（MinIO）的端到端收发 | 需真机 + 网络 + OpenIM 部署 |
+| 87 | 通话记录域（五点三十九）真机验收：各 ROM 的 CallLog 权限流与列兼容、ContentObserver 实时性（本轮登录/进主界面时同步，实时推送下一轮）、守护 Tab 卡真实数据行密度 | 需真机 + 两台设备 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -2065,6 +2066,46 @@ Android 运行时），进待验 86。
 
 **待验 86（新）**：真机验收语音消息三件事——各 ROM 录音权限流与音量、播放流媒体在弱网的表现、
 OpenIM 声音消息在重建栈（MinIO）的端到端收发。
+
+## 五点三十九、通话记录域：delta 上报 + 守护 Tab 通话卡点亮（2026-11-13）
+
+监控数据面三域的第一个（通话记录，随后是应用使用/敏感行为）。四层一次贯通：**客户端采集 →
+`api/phone/call_record/report` → store 台账 → `api/index` 的 `callRecordList` 卡片**。
+
+### 一、服务端
+
+- store 新 `CallRecordEntry{contact, phone, duration, isIncoming, time}`（秒口径）+
+  `Data.CallRecords` per-account 台账；**规则三条**：retry 去重（time+phone+方向键）、per-account
+  封顶 200 条（审计 P2-1 的 Locations 教训不再犯）、读取按"最新优先 + limit"。
+- `POST api/phone/call_record/report`（JWT，仅自己）：`{records: [...]}` 批量，单批上限 500——
+  上报失败是下一次同步的问题，不是聊天屏的崩溃源；回答恒 OK。原版 body 形状不可恢复，本重建
+  钉这个形状（DESIGN 记录）。
+- `api/index`：`callRecordList` 从守护对象台账填充（最新 10 条）——**只在有记录时下发**，没有
+  就缺键，客户端的卡照原版"空数据收起"语义隐藏。
+
+### 二、客户端
+
+- **上报器**（`CallRecordReporter`，PhoneStateReporter 的 seam 模式）：水位（MMKV 秒键）→
+  CallLog delta 查询 → 批量上报 → **成功才推进水位**（失败重报，服务端台账去重兜底）。三重门：
+  隐私同意（挂 onSignedIn 即隐含）+ 已登录 + READ_CALL_LOG 运行时授权——未授权**静默跳过**，
+  请求入口在权限列表屏。接线三处：onSignedIn、MainActivity token 路径、graph lazy。
+- **读取**（`CallLogReader`）：唯一碰 ContentResolver 的薄胶（date ≥ 水位、date DESC、limit 100）；
+  行映射 `callRecordFromCursor` 用 MatrixCursor 在 JVM 跑真实代码——方向规则照拨号器口径：
+  OUTGOING 之外（来电/未接/拒接）都走来电方向，原版 bean 没有第三方向。
+- **卡片**（HomeCards 第五张）：`Kind.CALL_RECORD`，最新一通是谁（联系人→号码→"未知号码"）、
+  方向词（未接/来电/去电）+ 时长、行二"最近 N 通"；无记录缺席。水位键与 MapFragment texts/
+  strings 同步。
+
+### 三、测试与待验
+
+server：store 台账（去重/封顶/水位/重载）+ 路由层（retry 吸收、index 填充、无关系无卡、批上限、
+匿名拒绝）全绿；stub 的 get_friend_list 好友 id 改为可注入（默认 "2" 不变，通话记录端到端需要
+上报方与守护卡读数落在同一 id 上）。客户端：:app 381 条全绿（+CallRecordReporterTest 5：水位
+推进/失败保持/静默跳过/MatrixCursor 映射/payload 原样；HomeCardsTest +3）。
+
+**待验 87（新）**：真机验收通话记录域三件事——各 ROM 的 CallLog 权限流与列兼容（厂商定制
+calllog 列差异）、ContentObserver 实时性（本轮只在登录与进主界面时同步，实时推送是下一轮）、
+守护 Tab 卡在真实数据下的行密度。
 
 ## 六、架构决定（写死，避免重写时反复）
 

@@ -4,6 +4,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- 通话记录域（DESIGN 五点三十九）：被守护端读系统通话日志做 delta 上报；运行时权限，
+         未授权静默跳过（请求入口在权限列表屏） -->
+    <uses-permission android:name="android.permission.READ_CALL_LOG" />
     <!-- 聊天语音消息的录音；运行时请求，拒绝则语音按钮提示并保持其余功能可用 -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.CAMERA" />

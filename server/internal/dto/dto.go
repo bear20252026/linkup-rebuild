@@ -348,3 +348,14 @@ type TrackWidget struct {
 	TotalDistance  float64         `json:"totalDistance"`
 	TotalStayTime  int64           `json:"totalStayTime"`
 }
+
+// CallRecord is one phone call on the guardian's 通话记录 card (client bean CallRecord verbatim:
+// contact/duration/isIncoming/phone/time). Time is epoch seconds — the card renders it with the
+// same HH:mm formatter the location card uses.
+type CallRecord struct {
+	Contact    *string `json:"contact"`
+	Duration   int64   `json:"duration"`
+	IsIncoming bool    `json:"isIncoming"`
+	Phone      *string `json:"phone"`
+	Time       int64   `json:"time"`
+}

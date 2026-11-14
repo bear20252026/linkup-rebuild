@@ -54,6 +54,11 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**通话记录域已接入（#41，2026-11-13）**：监控数据面第一域四层贯通——客户端 CallLog delta
+采集（READ_CALL_LOG 运行时授权，未授权静默跳过）→ `api/phone/call_record/report`（批量、
+去重、per-account 封顶 200）→ store 台账 → `api/index` 的 `callRecordList`——**守护 Tab 通话
+记录卡点亮**（最新一通/方向/时长/批次摘要，无记录收起）。真机项见 DESIGN 待验 87。
+
 **聊天语音消息已接入（#40，2026-11-13）**：🎤 按住说话（MediaRecorder AAC，RECORD_AUDIO 运行
 时请求）→ SDK 声音消息直连（上传与图片同链 OpenIMServer→MinIO，零服务端端点）→ 语音气泡按时长
 渲染、点击播放（MediaPlayer 直播 URL）。`ImClient.sendVoice` 进接口，中性模型以 `durationSeconds`

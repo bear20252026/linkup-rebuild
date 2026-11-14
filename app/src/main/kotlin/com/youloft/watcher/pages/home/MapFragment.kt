@@ -141,6 +141,12 @@ class MapFragment : Fragment() {
         override val location = getString(R.string.home_card_location)
         override val noAddress = getString(R.string.home_card_no_address)
         override val arrivedAt: (String) -> String = { getString(R.string.home_card_arrived_at, it) }
+        override val callRecord = getString(R.string.home_card_call_record)
+        override val callIncoming = getString(R.string.home_card_call_incoming)
+        override val callOutgoing = getString(R.string.home_card_call_outgoing)
+        override val callMissed = getString(R.string.home_card_call_missed)
+        override val callSummary: (Int) -> String = { getString(R.string.home_card_call_summary, it) }
+        override val unknownNumber = getString(R.string.home_card_unknown_number)
         override val lock = getString(R.string.home_card_lock)
         override val lockOff = getString(R.string.home_card_lock_off)
         override val lockRemaining: (String) -> String = { getString(R.string.home_card_lock_remaining, it) }

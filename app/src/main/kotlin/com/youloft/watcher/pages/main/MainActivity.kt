@@ -45,11 +45,14 @@ class MainActivity : AppCompatActivity() {
         binding.layoutMine.setOnClickListener { switchTo(TAB_MINE) }
         switchTo(intent.getStringExtra(EXTRA_TAG) ?: TAB_GUARD)
         receiveLockCommands()
-        // 已登录的 token 路径不经过 onSignedIn：进主界面时补一次设备自报（待验 77 的写入方）。
+        // 已登录的 token 路径不经过 onSignedIn：进主界面时补一次设备自报（待验 77 的写入方）
+        // 与通话记录 delta 同步（通话记录域）。
         if (appGraph(this).users.current().userId > 0L) {
-            appGraph(this).phoneStateReporter.reportOnce {
+            val graph = appGraph(this)
+            graph.phoneStateReporter.reportOnce {
                 com.youloft.watcher.data.AndroidPhoneFacts.read(this)
             }
+            graph.callRecordReporter.reportOnce()
         }
     }
 

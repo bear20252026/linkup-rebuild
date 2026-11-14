@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -49,6 +50,39 @@ func truthy(m map[string]any, key string) bool {
 		return v == 1
 	}
 	return false
+}
+
+// callRecordReport is `api/phone/call_record/report`: the guarded phone posts the calls it has seen
+// since its last sync, in one batch. The ledger dedupes (same time+phone+direction) and caps per
+// account, so a report retry or an observer double-fire cannot double-count; the answer is an empty
+// OK either way — a failed call-record upload is the next report's problem, not a chat breaker.
+// The original server's body shape is not recoverable; this rebuild pins {records: [CallRecord]}.
+func (g *Gateway) callRecordReport(c *gin.Context) {
+	var payload struct {
+		Records []store.CallRecordEntry `json:"records"`
+	}
+	if err := json.Unmarshal(rawBody(c), &payload); err != nil {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
+		return
+	}
+	if len(payload.Records) > callRecordReportMaxBatch {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "单次上报条数超限"))
+		return
+	}
+	g.opts.Store.AddCallRecords(g.claims(c).UserID, payload.Records)
+	c.JSON(http.StatusOK, contract.OK(nil))
+}
+
+// One report cannot exceed this batch — a well-behaved client reports its delta (a handful), and
+// the cap keeps a misbehaving one from writing half a megabyte per request into the store file.
+const callRecordReportMaxBatch = 500
+
+// textPtr maps an optional string onto the client bean's nullable fields (absent → null, not "").
+func textPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 // friendStateRow assembles the client's FriendState for one user from the device-state ledger.
