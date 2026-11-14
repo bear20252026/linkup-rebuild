@@ -102,6 +102,21 @@ class ChatViewModel(private val imClient: ImClient, private val peerUserId: Long
         }
     }
 
+    /** 语音：与图片同一上传链（SDK 自己送 MinIO），成功后回执流带来带时长的消息。 */
+    fun sendVoice(localPath: String, durationSeconds: Long) {
+        mutableState.update { it.copy(sending = true, error = null) }
+        viewModelScope.launch {
+            try {
+                imClient.sendVoice(peerUserId, localPath, durationSeconds)
+                mutableState.update { it.copy(sending = false) }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                mutableState.update { it.copy(sending = false, error = "发送失败：${error.message}") }
+            }
+        }
+    }
+
     fun consumeError() {
         mutableState.update { it.copy(error = null) }
     }

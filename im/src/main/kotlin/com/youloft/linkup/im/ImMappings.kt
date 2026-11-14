@@ -27,17 +27,21 @@ import io.openim.android.sdk.models.Message
  */
 object ImMappings {
 
-    /** [Message] → [ImMessage]. Text keeps its body; a picture carries its served URL in [ImMessage.mediaUrl]. */
+    /** [Message] → [ImMessage]. Text keeps its body; a picture carries its served URL in [ImMessage.mediaUrl];
+     *  a voice message carries url + duration (seconds, the SDK's own unit) and is not an image. */
     fun toImMessage(message: Message, loginUserId: String): ImMessage {
         val incoming = message.sendID != loginUserId
         val isPicture = message.contentType == io.openim.android.sdk.enums.MessageType.PICTURE
+        val isVoice = message.contentType == io.openim.android.sdk.enums.MessageType.VOICE
         return ImMessage(
             peerUserId = (if (incoming) message.sendID else message.recvID).toLongOrNull() ?: 0L,
             text = message.textElem?.content ?: "",
             incoming = incoming,
             epochSeconds = (message.sendTime.takeIf { it > 0 } ?: message.createTime) / 1000,
             clientId = message.clientMsgID,
-            mediaUrl = if (isPicture) message.pictureElem?.sourcePicture?.url else null,
+            mediaUrl = if (isPicture) message.pictureElem?.sourcePicture?.url
+                else if (isVoice) message.soundElem?.sourceUrl else null,
+            durationSeconds = if (isVoice) message.soundElem?.duration ?: 0L else null,
         )
     }
 
@@ -59,8 +63,8 @@ object ImMappings {
     /**
      * The text a conversation row shows. `latestMsg` is a JSON string whose exact shape moved between
      * OpenIM versions — the text lived in `content` in some releases and inside `textElem` in others —
-     * so both are tried before giving up, and anything unparseable becomes null, not a crash on the
-     * conversation list.
+     * so both are tried before giving up; a voice message answers "[语音]" instead of a blank row.
+     * Anything unparseable becomes null, not a crash on the conversation list.
      */
     fun latestText(latestMsgJson: String?): String? {
         if (latestMsgJson.isNullOrBlank()) return null
@@ -68,6 +72,7 @@ object ImMappings {
             val obj = JsonParser.parseString(latestMsgJson).asJsonObject
             obj.getAsJsonObject("textElem")?.get("content")?.takeIf { !it.isJsonNull }?.asString
                 ?: obj.get("content")?.takeIf { !it.isJsonNull }?.asString
+                ?: if (obj.has("soundElem")) "【语音】" else null
         }.getOrNull()
     }
 }

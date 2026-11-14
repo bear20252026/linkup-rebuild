@@ -54,6 +54,12 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**聊天语音消息已接入（#40，2026-11-13）**：🎤 按住说话（MediaRecorder AAC，RECORD_AUDIO 运行
+时请求）→ SDK 声音消息直连（上传与图片同链 OpenIMServer→MinIO，零服务端端点）→ 语音气泡按时长
+渲染、点击播放（MediaPlayer 直播 URL）。`ImClient.sendVoice` 进接口，中性模型以 `durationSeconds`
+分家语音与图片；会话列表语音尾巴读"【语音】"。真机项（各 ROM 权限流/弱网播放/端到端收发）见
+DESIGN 待验 86。
+
 **OSM 地图已接入（#39，2026-11-13）**：`osmdroid`（开源 MapView，Maven Central，免 key 免 AAR）
 作为第三个 `TrackMapProvider` 落进 `:map`——**轨迹页与守护 Tab 的地图今日真实出图**，不再"尚未
 接入"。底图为高德公开道路瓦片（GCJ02，复用既有 golden 转换），vendor AAR 到位之日自动让位
