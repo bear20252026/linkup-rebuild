@@ -81,14 +81,15 @@ class CommonInterceptor(
     }
 
     override fun rewriteUrl(url: String): String {
-        // 原版 ext.m.c 注入 token/userid 等公共参数；隐私协议页不带鉴权参数（原版同路径），
-        // 其余页追加 userid/token（CommonWebActivity.e 的公共串子集）。
+        // 原版 ext.m.c 注入 token/userid 等公共参数——但只对**凭据白名单内的自家域**注入
+        // （审计 P1-4：容器内任意导航都被追加 JWT 的外泄链在此关死；白名单外照常导航，
+        // 只是拿不到凭据）。隐私协议页与未登录态同样不带。
         if (!url.startsWith("http")) return url
+        if (!hostNeedsCredentials(url)) return url
         val app = graphProvider()
         val user = app.users.current()
         if (user.userId <= 0) return url
-        val sep = if (url.contains('?')) '&' else '?'
-        return "$url${sep}userid=${user.userId}&token=${user.token.orEmpty()}&av=1.6.6&client=android"
+        return appendCredentials(url, user.userId, user.token)
     }
 
     override fun dispatchCommand(webView: WebView, command: String, args: Map<String, String>): Any? {
@@ -257,4 +258,27 @@ class CommonInterceptor(
 /** 选图宿主：容器 Activity 实现它，把系统相册选择器接给拦截器。 */
 interface PicturePickingHost {
     fun pickImages(maxImages: Int, onResult: (List<Uri>) -> Unit)
+}
+
+/** 凭据白名单（审计 P1-4）：容器内的导航只有这些自家域会拿到 userid/token——重建网关、
+ *  原版 H5 基址与业务域、配置/遗留轨迹域。白名单外的 URL（含 h5Activity/jumpPage 打开的
+ *  任意页面）照常导航但拿不到凭据，JWT 外泄链在追加环节关死。 */
+val CREDENTIAL_HOSTS = setOf(
+    "gateway.cloudbear.cloud", // 重建网关
+    "web-link.tttick.com",     // 原版 H5 基址
+    "link.tttick.com",         // 原版业务域
+    "configsys.51wnl-cq.com",  // 远程配置
+    "dmp.51wnl-cq.com",        // 1.5.x 遗留轨迹域
+)
+
+/** URL 的 host 是否在凭据白名单内（精确 host 或该域的子域）。解析失败的 URL 如实答 false。 */
+internal fun hostNeedsCredentials(url: String): Boolean = runCatching {
+    val host = java.net.URI(url).host?.lowercase() ?: return@runCatching false
+    CREDENTIAL_HOSTS.any { host == it || host.endsWith(".$it") }
+}.getOrDefault(false)
+
+/** 白名单内的 URL 追加公共参数串（userid/token/av/client），与原版 ext.m.c 的追加形态一致。 */
+internal fun appendCredentials(url: String, userId: Long, token: String?): String {
+    val sep = if (url.contains('?')) '&' else '?'
+    return "$url${sep}userid=$userId&token=${token.orEmpty()}&av=1.6.6&client=android"
 }

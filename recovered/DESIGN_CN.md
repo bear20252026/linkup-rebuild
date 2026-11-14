@@ -2277,6 +2277,22 @@ server 全绿（限流锁死正确密码 / 双读升级 / 6 位 / 重发保留 /
 对齐：位置测试种子补旗标、验证码测试断言 6 位与新语义）；`:app` 398 条全绿（短信对话框 6 位
 口径）。**待验 84 闭环**（本轮五项全落地；存量哈希迁移由双读自动完成，无需人工重置）。
 
+## 五点四十四、P1-4 WebView 凭据白名单：JWT 外泄链关死（2026-11-14）
+
+P1 清单最后一项。审计的外泄链：容器内任意 http(s) 导航都被 `rewriteUrl` 追加
+`userid/token/av/client`，而 H5 的 `h5Activity`/`jumpPage` 允许打开任意 URL——链式组合可把
+JWT 送到第三方服务器。**修法是收窄追加环节**，不是收窄导航：`rewriteUrl` 先问
+`hostNeedsCredentials(url)`（**凭据白名单**：重建网关 / 原版 H5 基址 web-link.tttick.com /
+业务域 link.tttick.com / 配置 configsys / 遗留轨迹 dmp——精确 host 或子域后缀匹配，解析失败
+如实 false），白名单外的 URL **照常导航但拿不到凭据**。追加形态抽成 `appendCredentials` 纯
+函数，`?`/`&` 分隔与原版 ext.m.c 一致。
+
+### 测试与口径
+
+`CredentialWhitelistTest` 3 条（JVM）：自家域追加形态（`?`/`&` 分隔）、子域与大小写命中、
+外域/后缀伪装/解析失败如实 false。导航本身不收窄——H5 容器仍可打开任意页面（产品语义），
+只是凭据不再跟着走。
+
 ## 六、架构决定（写死，避免重写时反复）
 
 1. **包名保持 `com.youloft.watcher`**。三方后台配置（微信/QQ/环信/百度/各推送）都绑包名，换包名等于全部重申请。
