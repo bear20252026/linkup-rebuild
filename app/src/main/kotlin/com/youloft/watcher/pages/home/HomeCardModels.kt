@@ -25,7 +25,7 @@ object HomeCards {
         val kind: Kind,
     )
 
-    enum class Kind { PHONE_STATE, LOCATION, CALL_RECORD, LOCK, OWN_DEVICE }
+    enum class Kind { PHONE_STATE, LOCATION, CALL_RECORD, APP_USE, LOCK, OWN_DEVICE }
 
     fun fromData(
         data: HomeData?,
@@ -65,6 +65,19 @@ object HomeCards {
                 line1 = callDirection(latest, texts) + durationSuffix(latest),
                 line2 = texts.callSummary(records.size),
                 kind = Kind.CALL_RECORD,
+            )
+        }
+        // 应用使用卡（应用使用域，DESIGN 五点四十）：今日总量是高亮值，行一是榜首应用，行二是
+        // 昨日对照。没有上报就缺席。
+        data.appUseCard?.takeIf { (it.usageStatistics.orEmpty().filterNotNull()).isNotEmpty() }?.let { card ->
+            val stats = card.usageStatistics.orEmpty().filterNotNull()
+            val top = stats.first()
+            cards += Card(
+                title = texts.appUse,
+                value = texts.appUseToday(card.useToday),
+                line1 = appWho(top, texts) + " · " + formatDuration(top.duration),
+                line2 = texts.appUseYesterday(card.usedYesterday),
+                kind = Kind.APP_USE,
             )
         }
         data.lockInfo?.let { lock ->
@@ -117,6 +130,12 @@ object HomeCards {
         record.contact?.takeIf { it.isNotBlank() }
             ?: record.phone?.takeIf { it.isNotBlank() }
             ?: texts.unknownNumber
+
+    /** 应用使用卡的榜首行：应用名退回包名，都没有如实答"未知应用"。 */
+    private fun appWho(row: com.youloft.linkup.api.dto.AppUsage, texts: Texts): String =
+        row.appName?.takeIf { it.isNotBlank() }
+            ?: row.packageName?.takeIf { it.isNotBlank() }
+            ?: texts.unknownApp
 
     /** 方向词：未接（来电未接通）/ 来电 / 去电——原版 bean 只有两个方向，未接是没接通的来电。 */
     private fun callDirection(record: com.youloft.linkup.api.dto.CallRecord, texts: Texts): String = when {
@@ -178,6 +197,10 @@ object HomeCards {
         val callMissed: String
         val callSummary: (Int) -> String
         val unknownNumber: String
+        val appUse: String
+        val appUseToday: (Int) -> String
+        val appUseYesterday: (Int) -> String
+        val unknownApp: String
         val lock: String
         val lockOff: String
         val lockRemaining: (String) -> String

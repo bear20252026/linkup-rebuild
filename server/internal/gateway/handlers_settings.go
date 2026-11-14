@@ -143,6 +143,11 @@ func (g *Gateway) index(c *gin.Context) {
 			}
 			payload["callRecordList"] = rows
 		}
+		// 应用使用卡（app_use/report 供数）："今天"是被守护端自己上报的本地日（台账里最新一天），
+		// 服务端不做时区换算；昨日按 86400 秒回退——本地日的近似口径，DESIGN 记录在案。
+		if card := g.appUseCardFor(peer); card != nil {
+			payload["appUseCard"] = card
+		}
 		lock := g.opts.Store.LockFor(me, peer)
 		payload["lockInfo"] = map[string]any{
 			"userId":      peer,

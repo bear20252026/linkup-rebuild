@@ -1812,6 +1812,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 85 | osmdroid + 高德道路瓦片（五点三十七）真机/模拟器验收：瓦片对齐与缩放级别手感（高德 web 瓦片历史上有 z 级偏移说法，以像素为准）、弱网/断网缓存表现、瓦片服务对包名 UA 的限流影响 | 需真机/模拟器 + 网络 |
 | 86 | 聊天语音消息（五点三十八）真机验收：各 ROM 录音权限流与音量、播放流媒体在弱网的表现、OpenIM 声音消息在重建栈（MinIO）的端到端收发 | 需真机 + 网络 + OpenIM 部署 |
 | 87 | 通话记录域（五点三十九）真机验收：各 ROM 的 CallLog 权限流与列兼容、ContentObserver 实时性（本轮登录/进主界面时同步，实时推送下一轮）、守护 Tab 卡真实数据行密度 | 需真机 + 两台设备 |
+| 88 | 应用使用域（五点四十）真机验收：各 ROM 的 UsageStatsManager 事件粒度（息屏/锁屏口径差异）、"使用情况访问权限"授权流、跨天/跨时区的日切换表现 | 需真机 + 两台设备 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -2106,6 +2107,51 @@ server：store 台账（去重/封顶/水位/重载）+ 路由层（retry 吸收
 **待验 87（新）**：真机验收通话记录域三件事——各 ROM 的 CallLog 权限流与列兼容（厂商定制
 calllog 列差异）、ContentObserver 实时性（本轮只在登录与进主界面时同步，实时推送是下一轮）、
 守护 Tab 卡在真实数据下的行密度。
+
+## 五点四十、应用使用域：总量口径上报 + 应用使用卡点亮（2026-11-13）
+
+监控数据面第二域，四件套与通话记录域完全同构：**客户端聚合 → `api/phone/app_use/report`
+（v1/v2 两代上报合并同一台账）→ store 台账 → `api/index` 的 `appUseCard` 卡片**。
+
+### 一、口径决定（写死）
+
+- **总量而非增量**：每次上报携带"今天的各应用总量至今"，服务端对 (包名, 本地日) 同键
+  **replace**——重报幂等，不需要水位；这是与通话记录（离散事件+水位）最大的口径差异。
+- **"今天"由被守护端的本地日给出**：客户端报 `day`（自己本地日的 epoch 秒起点），服务端原样
+  落台账；`api/index` 的"今日"就是台账里最新的一天、"昨日"回退 86400 秒——服务端不做时区
+  换算，守护端没有别的信息源（DESIGN 记录，两端的本地日不同时会有近似误差）。
+- 计数（打开次数）与时长（秒）都由 `UsageEvents` 的 RESUMED/PAUSED 配对得出；`lastUseTime`
+  夹进窗口（会话横跨窗口起点时按窗口起点计，bean 里不出现负时间戳）；碎片不足一秒丢弃。
+
+### 二、服务端
+
+`AppUseEntry{packageName, appName, duration, count, lastUseTime, day}` 台账 + 三条规则：
+**同键 replace**、**天数滚动**（per-account 只留最新 5 个本地日）、**行数封顶 400**；
+`AppUsesFor` 按天过滤按时长排序、`AppUseMinutes` 出卡片数字、`LatestAppUseDay` 出"今天"。
+`appUseReport` 单批上限 200、缺 day 拒绝。`api/index` 的 `appUseCard` 只在有台账时下发
+（无则缺键，卡收起）；榜单最多 8 行，`statisticsType=1` 是"今日口径"。
+
+### 三、客户端
+
+- **聚合器**（`AppUsageAggregator`，纯函数 JVM 钉住）：中性样本（`UsageEventSample`）进、
+  RESUMED/PAUSED 配对出 [AppUsage]——窗口两端截断、碎片 <1s 丢弃、lastUseTime 夹窗口。
+  `UsageStatsReader` 是唯一碰 UsageStatsManager 的薄胶（queryEvents + PackageManager 应用名），
+  权限是"使用情况访问权限" AppOp（`checkOpNoThrow(OPSTR_GET_USAGE_STATS)`），未授权静默跳过
+  （权限列表屏已有跳转行）；manifest 声明 `PACKAGE_USAGE_STATS`。
+- **上报器**（`AppUsageReporter`）：granted/dayStart/query/report 四个 seam，挂 onSignedIn 与
+  MainActivity token 路径。
+- **卡片**（HomeCards 第六张）：`Kind.APP_USE`——高亮值"今日 N 分"、行一榜首应用+时长、
+  行二"昨日 N 分"；无台账缺席。
+
+### 四、测试与调试实录（如实）
+
+`:app` 389 条全绿（+`AppUsageReporterTest` 7：配对时长/窗口截断/碎片丢弃/跨窗口夹取/静默/
+payload 原样；+`HomeCardsTest` 2）。**调试实录**：首轮聚合测试 chat 条目消失——探针实证是
+**测试数据自己的错**（chat 只用了 600ms，被"碎片不足一秒丢弃"规则正确过滤），不是实现 bug；
+顺带发现 `lastUseTime` 未夹窗口（横跨窗口起点的会话会落出负秒），实现修正 + 测试钉住。
+
+**待验 88（新）**：真机验收应用使用域三件事——各 ROM 的 UsageStatsManager 事件粒度（息屏/
+锁屏事件口径差异）、"使用情况访问权限"授权流、跨天与跨时区的日切换表现。
 
 ## 六、架构决定（写死，避免重写时反复）
 

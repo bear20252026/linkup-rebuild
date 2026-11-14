@@ -4,6 +4,11 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <!-- 应用使用域（DESIGN 五点四十）：UsageStatsManager 需要"使用情况访问权限"AppOp，
+         清单声明 + Settings 授权（权限列表屏已有跳转行），未授权静默跳过 -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
     <!-- 通话记录域（DESIGN 五点三十九）：被守护端读系统通话日志做 delta 上报；运行时权限，
          未授权静默跳过（请求入口在权限列表屏） -->
     <uses-permission android:name="android.permission.READ_CALL_LOG" />

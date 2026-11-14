@@ -53,6 +53,7 @@ class MainActivity : AppCompatActivity() {
                 com.youloft.watcher.data.AndroidPhoneFacts.read(this)
             }
             graph.callRecordReporter.reportOnce()
+            graph.appUsageReporter.reportOnce()
         }
     }
 

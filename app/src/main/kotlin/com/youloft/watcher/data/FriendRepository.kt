@@ -250,6 +250,24 @@ open class LinkUpApplication : Application() {
         )
     }
 
+    /** 应用使用域（DESIGN 五点四十）：总量口径重报幂等，"使用情况访问权限"是 Settings 的
+     * AppOp（权限列表屏跳转），未授权静默跳过；今天由被守护端的本地日给出。 */
+    open val appUsageReporter: AppUsageReporter by lazy {
+        val reader = UsageStatsReader(this)
+        AppUsageReporter(
+            scope = imScope,
+            granted = { reader.granted() },
+            dayStart = {
+                java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toEpochSecond()
+            },
+            queryNew = { dayStart -> runCatching { reader.read(dayStart) }.getOrDefault(emptyList()) },
+            report = { entries, day ->
+                runCatching { imApi.phoneAppUseReport(AppUsageReporter.buildPayload(entries, day)) }
+                    .getOrNull()?.isSuccess == true
+            },
+        )
+    }
+
     private val imScope: CoroutineScope by lazy { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
 
     /**
@@ -384,6 +402,8 @@ open class LinkUpApplication : Application() {
                 phoneStateReporter.reportOnce { AndroidPhoneFacts.read(this@LinkUpApplication) }
                 // 通话记录 delta 同刻上报（通话记录域，DESIGN 五点三十九）；没授权就静默跳过。
                 callRecordReporter.reportOnce()
+                // 应用使用域同刻：今天的总量口径重报幂等，服务端同键 replace。
+                appUsageReporter.reportOnce()
             }
 
             override fun onSignedOut() {

@@ -30,6 +30,10 @@ class HomeCardsTest {
         override val callMissed = "未接"
         override val callSummary: (Int) -> String = { "最近 $it 通" }
         override val unknownNumber = "未知号码"
+        override val appUse = "应用使用"
+        override val appUseToday: (Int) -> String = { "今日 $it 分" }
+        override val appUseYesterday: (Int) -> String = { "昨日 $it 分" }
+        override val unknownApp = "未知应用"
         override val lock = "锁机"
         override val lockOff = "未锁机"
         override val lockRemaining: (String) -> String = { "剩余 $it" }
@@ -186,6 +190,52 @@ class HomeCardsTest {
             HomeCards.fromData(HomeData(callRecordList = null), texts, ::remainingFormatter).none {
                 it.kind == HomeCards.Kind.CALL_RECORD
             },
+        )
+    }
+
+    @Test
+    fun appUseCardRendersTodayTheTopAppAndYesterday() {
+        val cards = HomeCards.fromData(
+            HomeData(
+                appUseCard = com.youloft.linkup.api.dto.AppUseCard(
+                    usageStatistics = listOf(
+                        com.youloft.linkup.api.dto.AppUsage(
+                            packageName = "com.game",
+                            appName = "游戏",
+                            duration = 3600,
+                            count = 4,
+                        ),
+                        com.youloft.linkup.api.dto.AppUsage(packageName = "com.chat", duration = 600),
+                    ),
+                    useToday = 70,
+                    usedYesterday = 45,
+                ),
+            ),
+            texts,
+            ::remainingFormatter,
+        )
+        val card = cards.first()
+        assertEquals(HomeCards.Kind.APP_USE, card.kind)
+        assertEquals("应用使用", card.title)
+        assertEquals("今日 70 分", card.value)
+        assertEquals("游戏 · 1小时0分", card.line1)
+        assertEquals("昨日 45 分", card.line2)
+    }
+
+    @Test
+    fun appUseCardIsAbsentWithoutStatistics() {
+        assertTrue(
+            "an empty statistics list hides the card",
+            HomeCards.fromData(
+                HomeData(appUseCard = com.youloft.linkup.api.dto.AppUseCard(usageStatistics = emptyList())),
+                texts,
+                ::remainingFormatter,
+            ).none { it.kind == HomeCards.Kind.APP_USE },
+        )
+        assertTrue(
+            "a missing card hides it too",
+            HomeCards.fromData(HomeData(appUseCard = null), texts, ::remainingFormatter)
+                .none { it.kind == HomeCards.Kind.APP_USE },
         )
     }
 

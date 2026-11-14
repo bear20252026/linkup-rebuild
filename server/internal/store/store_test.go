@@ -427,3 +427,75 @@ func TestCallRecordsSurviveReload(t *testing.T) {
 		t.Fatalf("the ledger did not survive the restart: %+v", all)
 	}
 }
+
+// TestAppUsesReplaceAndRoll pins the usage ledger's rules: a re-report of the same day's totals
+// **replaces** the row (each report carries totals so far — the idempotent trick), days roll off
+// oldest first, and the read sorts by duration within the asked days.
+func TestAppUsesReplaceAndRoll(t *testing.T) {
+	s := mustOpen(t, "")
+	day := int64(1_760_000_000_000 / 1000) // any epoch-seconds day start
+	s.AddAppUses(7, day, []AppUseEntry{
+		{PackageName: "com.a", AppName: "A", Duration: 600, Count: 3, LastUseTime: day + 100},
+		{PackageName: "com.b", Duration: 1200},
+	})
+
+	// The same day's totals so far replace, they do not accumulate.
+	s.AddAppUses(7, day, []AppUseEntry{
+		{PackageName: "com.a", AppName: "", Duration: 900, Count: 5, LastUseTime: day + 50},
+		{PackageName: "com.c", Duration: 60},
+	})
+	rows := s.AppUsesFor(7, []int64{day})
+	if len(rows) != 3 {
+		t.Fatalf("three rows after the re-report: %+v", rows)
+	}
+	// The read sorts by duration: com.b (1200) leads, and the replaced com.a row proves the rules.
+	a := rows[1]
+	if a.PackageName != "com.a" || a.Duration != 900 || a.Count != 5 {
+		t.Fatalf("totals replace, they do not accumulate: %+v", a)
+	}
+	if a.LastUseTime != day+100 {
+		t.Fatalf("lastUseTime takes the defensive max: %+v", a)
+	}
+	if a.AppName != "A" {
+		t.Fatalf("an empty display name keeps the stored one: %+v", a)
+	}
+	if s.AppUseMinutes(7, []int64{day}) != (900+1200+60)/60 {
+		t.Fatalf("minutes sum the replaced rows: %d", s.AppUseMinutes(7, []int64{day}))
+	}
+
+	// Days roll: writing five days keeps the newest AppUseWindow of them.
+	for i := 0; i < AppUseWindow+2; i++ {
+		s.AddAppUses(7, day-int64(i+1)*86400, []AppUseEntry{{PackageName: "com.old", Duration: 10}})
+	}
+	days := map[int64]bool{}
+	for _, e := range s.data.AppUses[7] {
+		days[e.Day] = true
+	}
+	if len(days) > AppUseWindow {
+		t.Fatalf("the window rolls old days off: %d days left", len(days))
+	}
+	if s.LatestAppUseDay(7) != day {
+		t.Fatalf("the newest day is still today: %d", s.LatestAppUseDay(7))
+	}
+	if got := s.AppUsesFor(7, []int64{day - 86400*99}); got != nil {
+		t.Fatalf("a rolled-off day answers nil: %+v", got)
+	}
+}
+
+// TestAppUsesSurviveReload pins the persistence of the usage ledger.
+func TestAppUsesSurviveReload(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "linkup.json")
+	first := mustOpen(t, path)
+	day := int64(1_760_000_000_000 / 1000)
+	first.AddAppUses(7, day, []AppUseEntry{{PackageName: "com.a", AppName: "A", Duration: 600, Count: 2}})
+	first.Close()
+
+	reopened := mustOpen(t, path)
+	rows := reopened.AppUsesFor(7, []int64{day})
+	if len(rows) != 1 || rows[0].Duration != 600 || rows[0].AppName != "A" {
+		t.Fatalf("the usage ledger did not survive the restart: %+v", rows)
+	}
+	if reopened.LatestAppUseDay(7) != day {
+		t.Fatalf("the day bookkeeping did not survive: %d", reopened.LatestAppUseDay(7))
+	}
+}

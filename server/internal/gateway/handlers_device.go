@@ -77,6 +77,69 @@ func (g *Gateway) callRecordReport(c *gin.Context) {
 // the cap keeps a misbehaving one from writing half a megabyte per request into the store file.
 const callRecordReportMaxBatch = 500
 
+// appUseReport is `api/phone/app_use/report` (and its v2 twin — the original carried two
+// generations of the same upload; this rebuild answers both onto one ledger, the v2 shape not
+// being recoverable either). The body is {day: <guarded phone's local day start, epoch seconds>,
+// stats: [{packageName, appName, duration, count, lastUseTime}]} — **totals so far**, so the
+// write replaces a matching (package, day) row and a re-report is idempotent. The day travels
+// from the guarded phone because the guardian's api/index has no other way to know which local
+// day the numbers belong to.
+func (g *Gateway) appUseReport(c *gin.Context) {
+	var payload struct {
+		Day   int64             `json:"day"`
+		Stats []store.AppUseEntry `json:"stats"`
+	}
+	if err := json.Unmarshal(rawBody(c), &payload); err != nil {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
+		return
+	}
+	if payload.Day <= 0 {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "参数异常"))
+		return
+	}
+	if len(payload.Stats) > appUseReportMaxBatch {
+		c.JSON(http.StatusOK, contract.Fail(contract.StatusParamErr, "单次上报条数超限"))
+		return
+	}
+	g.opts.Store.AddAppUses(g.claims(c).UserID, payload.Day, payload.Stats)
+	c.JSON(http.StatusOK, contract.OK(nil))
+}
+
+const appUseReportMaxBatch = 200
+
+// appUseCardFor assembles the 应用使用 card from the guarded peer's ledger: today is the peer's own
+// latest reported local day, yesterday falls back 86400 seconds; the statistics list is today's top
+// rows by duration. Nil when the peer has never reported (the card hides, the original's empty state).
+func (g *Gateway) appUseCardFor(peer int64) *dto.AppUseCard {
+	today := g.opts.Store.LatestAppUseDay(peer)
+	if today == 0 {
+		return nil
+	}
+	stats := g.opts.Store.AppUsesFor(peer, []int64{today})
+	if len(stats) == 0 {
+		return nil
+	}
+	if len(stats) > store.AppUseTopCards {
+		stats = stats[:store.AppUseTopCards]
+	}
+	rows := make([]*dto.AppUsage, 0, len(stats))
+	for _, e := range stats {
+		rows = append(rows, &dto.AppUsage{
+			AppName:        textPtr(e.AppName),
+			Count:          e.Count,
+			Duration:       e.Duration,
+			LastUseTime:    e.LastUseTime,
+			PackageName:    e.PackageName,
+			StatisticsType: 1, // 今日口径
+		})
+	}
+	return &dto.AppUseCard{
+		UsageStatistics: rows,
+		UseToday:        g.opts.Store.AppUseMinutes(peer, []int64{today}),
+		UsedYesterday:   g.opts.Store.AppUseMinutes(peer, []int64{today - 86400}),
+	}
+}
+
 // textPtr maps an optional string onto the client bean's nullable fields (absent → null, not "").
 func textPtr(s string) *string {
 	if s == "" {

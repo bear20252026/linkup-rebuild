@@ -120,7 +120,28 @@ type Data struct {
 	UsernameIdx map[string]int64         `json:"usernameIdx,omitempty"`
 	InviteCodes map[string]InviteCode    `json:"inviteCodes,omitempty"`
 	CallRecords map[int64][]CallRecordEntry `json:"callRecords,omitempty"`
+	AppUses     map[int64][]AppUseEntry    `json:"appUses,omitempty"`
 }
+
+// AppUseEntry is one app's usage totals for one day on the guarded phone (day = epoch seconds of the
+// local day start). Reports are **totals so far**, not increments: AddAppUses replaces the duration
+// and count for a matching (package, day) row, which makes a re-report idempotent — the same trick
+// the day watermark uses on the call ledger, inverted because usage accumulates instead of happening
+// once. Cap per account (AppUseCap) bounds the file.
+type AppUseEntry struct {
+	PackageName string `json:"packageName"`
+	AppName     string `json:"appName,omitempty"`
+	Duration    int64  `json:"duration"`
+	Count       int    `json:"count"`
+	LastUseTime int64  `json:"lastUseTime,omitempty"`
+	Day         int64  `json:"day"`
+}
+
+const (
+	AppUseCap      = 400
+	AppUseWindow   = 5 // the ledger keeps at most this many days per account
+	AppUseTopCards = 8 // the 应用使用 card lists at most this many rows
+)
 
 // CallRecordEntry is one reported phone call (guarded phone → guardian's 通话记录 card). Seconds
 // everywhere: time is the call's own stamp, duration is what the dialer recorded. Cap is per account
@@ -843,6 +864,130 @@ func (s *Store) CallRecordsFor(userID int64, limit int) []CallRecordEntry {
 
 func callRecordKey(e CallRecordEntry) string {
 	return strconv.FormatInt(e.Time, 10) + "|" + e.Phone + "|" + strconv.FormatBool(e.IsIncoming)
+}
+
+// AddAppUses writes one day's usage totals for an account. Rows key on (package, day); a matching
+// row has its duration/count **replaced** (each report carries the day's totals so far, so the write
+// is idempotent) and lastUseTime takes the max. Days roll: only the newest AppUseWindow days survive
+// per account, and the whole ledger caps at AppUseCap rows.
+func (s *Store) AddAppUses(userID int64, day int64, records []AppUseEntry) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(records) == 0 {
+		return
+	}
+	if s.data.AppUses == nil {
+		s.data.AppUses = map[int64][]AppUseEntry{}
+	}
+	ledger := s.data.AppUses[userID]
+	byKey := map[string]int{}
+	for i, e := range ledger {
+		byKey[e.PackageName+"|"+strconv.FormatInt(e.Day, 10)] = i
+	}
+	for _, r := range records {
+		if r.PackageName == "" {
+			continue
+		}
+		row := r
+		row.Day = day
+		if at, ok := byKey[row.PackageName+"|"+strconv.FormatInt(day, 10)]; ok {
+			// Totals so far replace the stored row (idempotent re-report); only lastUseTime and the
+			// display name take the defensive max/fallback.
+			if ledger[at].LastUseTime > row.LastUseTime {
+				row.LastUseTime = ledger[at].LastUseTime
+			}
+			if row.AppName == "" {
+				row.AppName = ledger[at].AppName
+			}
+			ledger[at] = row
+		} else {
+			byKey[row.PackageName+"|"+strconv.FormatInt(day, 10)] = len(ledger)
+			ledger = append(ledger, row)
+		}
+	}
+	// Days roll off oldest first, then a hard row cap keeps a pathological reporter bounded.
+	ledger = dropOldAppUseDays(ledger, AppUseWindow)
+	if len(ledger) > AppUseCap {
+		ledger = ledger[len(ledger)-AppUseCap:]
+	}
+	s.data.AppUses[userID] = ledger
+	s.markDirtyLocked()
+}
+
+// dropOldAppUseDays keeps only the newest `window` distinct days of an ordered ledger.
+func dropOldAppUseDays(ledger []AppUseEntry, window int) []AppUseEntry {
+	days := map[int64]bool{}
+	for _, e := range ledger {
+		days[e.Day] = true
+	}
+	if len(days) <= window {
+		return ledger
+	}
+	kept := make([]int64, 0, window)
+	for day := range days {
+		kept = append(kept, day)
+	}
+	sort.Slice(kept, func(i, j int) bool { return kept[i] < kept[j] })
+	keep := map[int64]bool{}
+	for _, day := range kept[len(kept)-window:] {
+		keep[day] = true
+	}
+	out := ledger[:0]
+	for _, e := range ledger {
+		if keep[e.Day] {
+			out = append(out, e)
+		}
+	}
+	return out
+}
+
+// AppUsesFor answers one account's ledger rows for the given days, newest day then biggest use
+// first; empty when nothing was reported.
+func (s *Store) AppUsesFor(userID int64, days []int64) []AppUseEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	want := map[int64]bool{}
+	for _, day := range days {
+		want[day] = true
+	}
+	var out []AppUseEntry
+	for _, e := range s.data.AppUses[userID] {
+		if want[e.Day] {
+			out = append(out, e)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Duration > out[j].Duration })
+	return out
+}
+
+// AppUseMinutes answers the whole ledger's duration summed into minutes for the given days — the
+// card's useToday/usedYesterday numbers.
+func (s *Store) AppUseMinutes(userID int64, days []int64) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var seconds int64
+	for _, e := range s.data.AppUses[userID] {
+		for _, day := range days {
+			if e.Day == day {
+				seconds += e.Duration
+			}
+		}
+	}
+	return int(seconds / 60)
+}
+
+// LatestAppUseDay answers the newest day the account reported usage for; 0 when none. The card's
+// "today" is this day — the guarded phone's local day, not the server's.
+func (s *Store) LatestAppUseDay(userID int64) int64 {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var latest int64
+	for _, e := range s.data.AppUses[userID] {
+		if e.Day > latest {
+			latest = e.Day
+		}
+	}
+	return latest
 }
 
 // SettingFor answers one settings slot ("im" today) for an account; empty when never written.

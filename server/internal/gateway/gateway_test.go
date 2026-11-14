@@ -1138,3 +1138,69 @@ func TestCallRecordReportRejectsAbuse(t *testing.T) {
 		t.Fatalf("an anonymous report must not land: %+v", answered)
 	}
 }
+
+// TestAppUseDomainLightsTheGuardCard covers the usage domain at the route layer: both report
+// generations land on one ledger (a day's totals **replace**, they do not accumulate), the day
+// validation and the anonymous check refuse abuse, and api/index lights the card only when the
+// guard relation exists and the peer has reported.
+func TestAppUseDomainLightsTheGuardCard(t *testing.T) {
+	h := newTest(t)
+	token, me := h.login(t, "13800000011")
+	peerToken, peer := h.login(t, "13800000012")
+	h.im.friendUserID = fmt.Sprint(peer.ID)
+	if err := h.store.PutExtra(store.Extra{OwnerID: me.ID, FriendID: peer.ID, Relation: 2}); err != nil {
+		t.Fatal(err)
+	}
+
+	day := time.Now().Unix() / 86400 * 86400
+	stats := []map[string]any{
+		{"packageName": "com.game", "appName": "游戏", "duration": 3600, "count": 4, "lastUseTime": day + 500},
+		{"packageName": "com.chat", "appName": "聊天", "duration": 600, "count": 12},
+	}
+	// v1 与 v2 两代上报落在同一台账：同一天同包是 replace,不是累加。
+	for _, path := range []string{"/api/phone/app_use/report", "/api/phone/app_use/v2/report"} {
+		if answered := h.request(t, http.MethodPost, path, "", map[string]any{
+			"day": day, "stats": stats,
+		}, peerToken); answered.Status != 200 {
+			t.Fatalf("%s: %+v", path, answered)
+		}
+	}
+
+	index := h.request(t, http.MethodGet, "/api/index", "", nil, token)
+	card := decode[struct {
+		AppUseCard *struct {
+			UsageStatistics []struct {
+				AppName        *string `json:"appName"`
+				Duration       int64   `json:"duration"`
+				Count          int     `json:"count"`
+				StatisticsType int     `json:"statisticsType"`
+			} `json:"usageStatistics"`
+			UseToday      int `json:"useToday"`
+			UsedYesterday int `json:"usedYesterday"`
+		} `json:"appUseCard"`
+	}](t, index.Data)
+	if card.AppUseCard == nil {
+		t.Fatalf("the peer has reported, the card must light: %s", index.Data)
+	}
+	if len(card.AppUseCard.UsageStatistics) != 2 {
+		t.Fatalf("two apps, replace not accumulate: %+v", card.AppUseCard.UsageStatistics)
+	}
+	if top := card.AppUseCard.UsageStatistics[0]; top.Duration != 3600 || top.Count != 4 || top.StatisticsType != 1 {
+		t.Fatalf("totals so far, biggest first: %+v", top)
+	}
+	if card.AppUseCard.UseToday != 70 {
+		t.Fatalf("useToday sums the replaced rows into minutes: %d", card.AppUseCard.UseToday)
+	}
+
+	// 拒绝面：缺 day 与匿名上报都不落地。
+	if answered := h.request(t, http.MethodPost, "/api/phone/app_use/report", "", map[string]any{
+		"stats": stats,
+	}, peerToken); answered.Status == 200 {
+		t.Fatalf("a report without its day is refused: %+v", answered)
+	}
+	if answered := h.request(t, http.MethodPost, "/api/phone/app_use/report", "", map[string]any{
+		"day": day, "stats": stats,
+	}, ""); answered.Status == 200 {
+		t.Fatalf("an anonymous report must not land: %+v", answered)
+	}
+}

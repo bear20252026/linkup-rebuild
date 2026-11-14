@@ -166,6 +166,9 @@ func New(opts Options) (*gin.Engine, error) {
 		api.POST("/phone/state/report", g.phoneStateReport)
 		// 通话记录域：被守护端批量上报（delta），守护端的 通话记录卡 从 api/index 读台账。
 		api.POST("/phone/call_record/report", g.callRecordReport)
+		// 应用使用域（v1/v2 两代上报合并同一台账，原版形状不可恢复见 handler 注释）。
+		api.POST("/phone/app_use/report", g.appUseReport)
+		api.POST("/phone/app_use/v2/report", g.appUseReport)
 		api.GET("/widget/location", g.widgetLocation)
 		api.GET("/widget/track", g.widgetTrack)
 
