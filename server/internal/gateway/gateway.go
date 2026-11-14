@@ -174,6 +174,11 @@ func New(opts Options) (*gin.Engine, error) {
 		api.POST("/sensitive/report", g.sensReport)
 		api.GET("/sensitive/user", g.sensUser)
 		api.GET("/sensitive/user/days", g.sensUserDays)
+		// 四象限待办域（DESIGN 五点四十二）：本人台账的三路由（get_list 的 listType 参数语义
+		// 不可恢复，本重建忽略它、一次回答全部四组）。
+		api.GET("/four_quadrant_list/get_list", g.todoGetList)
+		api.POST("/four_quadrant_list/edit", g.todoEdit)
+		api.POST("/four_quadrant_list/del", g.todoDel)
 		api.GET("/widget/location", g.widgetLocation)
 		api.GET("/widget/track", g.widgetTrack)
 

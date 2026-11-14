@@ -1804,7 +1804,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 77 | ~~av/client 回填~~ 闭环（上报携带 + 两屏回填，五点三十五）；仍开：TOS 封面库（账号丢失，恒空） | 封面库属资产找回 |
 | 78 | ~~守护 Tab 功能卡~~ 四卡渲染落地（friendState/friendLocation/lockInfo/phoneInfoCard）；仍开：通话记录/应用使用两卡等报表路由供数 | 报表域独立卡 |
 | 79 | 我的 Tab 二级屏（权限列表/通知/地图/隐私/数据安全/应用密码/联系/关于） | 入口可见不跳 |
-| 80 | 待办 Tab（TodoFragment） | 入口保留不跳 |
+| 80 | 待办 Tab（TodoFragment）→ 四象限待办屏（五点四十二，#44 闭环）：三路由 + 屏重建 | 本轮闭环；真机项并入待验 90 |
 | 81 | 真机验收五点三十五的新面：无障碍截屏授权流+帧、悬浮窗盖板、滚轮停靠、水印成图、H5 线上页 13 action 实调 | 本机无设备 |
 | 82 | H5 bridge 的执行取舍回填：permissionTip 族载荷键、joinQQGroup 深链、selectPictures 上传语义 | 需线上 H5 配合或原版服务端源码 |
 | 83 | 第三方登录恢复的前置条件：厂商 OAuth code 服务端换取（微信 code2Session / QQ 侧同型）。开关（`ENABLE_THIRD_PARTY_LOGIN` / `-enable-third-login`）在两侧接通前必须保持关闭——开了没校验就是 AUDIT P0-1 的接管通道 | 需微信/QQ 开放平台凭据 |
@@ -1814,6 +1814,7 @@ stayNumToday（原版 TrackWidget 就没有里程/对方定位字段，不编造
 | 87 | 通话记录域（五点三十九）真机验收：各 ROM 的 CallLog 权限流与列兼容、ContentObserver 实时性（本轮登录/进主界面时同步，实时推送下一轮）、守护 Tab 卡真实数据行密度 | 需真机 + 两台设备 |
 | 88 | 应用使用域（五点四十）真机验收：各 ROM 的 UsageStatsManager 事件粒度（息屏/锁屏口径差异）、"使用情况访问权限"授权流、跨天/跨时区的日切换表现 | 需真机 + 两台设备 |
 | 89 | 敏感行为域（五点四十一）真机验收：各 ROM 安装/卸载广播的可达性（MIUI 等对 PACKAGE_REMOVED 的广播顺序差异）、receiver 冷启时延、台账在真实安装节奏下的量级 | 需真机 + 两台设备 |
+| 90 | 四象限待办屏（五点四十二）真机验收：三路由端到端、四象限切换手感、待办提醒通道（TodoRsp.notifyType，原版语义不可恢复） | 需真机 + 两台设备 |
 
 ## 五点三十五、八张收尾卡：H5 bridge / 截屏采集 / 水印 / 滚轮 / 悬浮窗 / 功能卡 / 批写 / 版本行（#36a/#36b，2026-11-07）
 
@@ -2200,6 +2201,36 @@ type 缺失拒绝/server_timer 落 404）全绿。客户端：:app 391 条全绿
 
 **待验 89（新）**：真机验收敏感行为域三件事——各 ROM 安装/卸载广播的可达性（MIUI 等对
 PACKAGE_REMOVED 的广播顺序差异）、receiver 冷启时延、台账在真实安装节奏下的量级。
+
+## 五点四十二、四象限待办域：三路由 + 待办屏（待验 80 闭环，2026-11-14）
+
+功能盘点修正：`four_quadrant_list` 不是应用使用的四象限，是**艾森豪威尔四象限待办清单**
+（get_list 答 `TodoRsp` 四组、`edit`/`del` 维护，bean/todo/TodoModel 携带创建者资料）——待验 80
+"待办 Tab 入口保留不跳"的那张卡。四件套同构前三域：
+
+### 一、服务端
+
+`TodoEntry{id, listType(1..4), content, isFinish, createdAt}` 台账，**id 进程全局**（NextTodoID，
+payload 引用无歧义）+ per-account 封顶 200。三条路由（JWT 仅自己）：`get_list` 一次回答全部四组
+（原版 listType 参数语义不可恢复，本重建忽略它——DESIGN 记录）；`edit` 单条 body（id=0/未知 →
+新增分配 id、已知 id → 原位更新 content/listType/isFinish；content trim、象限 1..4 校验、空内容
+拒绝）；`del`（未知 id 答参数异常而非静默 OK——屏需要知道行已经没了）。响应组装回填创建者
+avatar/nickname/sex（bean 字段的原始语义）。
+
+### 二、客户端
+
+`TodoViewModel`（get_list 一次答四组、写成功重拉全量——屏是台账的最新投影，无乐观插行）+
+`TodoActivity`（程序化 UI，RegisterActivity 同款）：四组列表（组标题带计数、条目点击切换完成
+态、行内"删"）、底部输入行 + 四象限 chip 单选（选中高亮）+ 添加；空内容/未选象限本地拒绝。
+MoreFragment 待办卡点击接通（**待验 80 闭环**）。
+
+### 三、测试与待验
+
+server：台账（插入 trim/更新原位/跨账号不可见/象限校验/封顶拒绝/删除幂等）+ 路由（分组/主人
+资料回显/本地拒绝/匿名拒绝）全绿。客户端：:app 394 条全绿（+`TodoViewModelTest` 5：分组装载/
+新增流转/原位翻转/删除投影/空内容本地拒绝——fake api 用真实台账顶在 Proxy 后面，三路由语义
+一起转）。**待验 90（新）**：真机验收——三路由端到端、四象限切换手感、待办提醒通道
+（TodoRsp.notifyType，原版语义不可恢复）。
 
 ## 六、架构决定（写死，避免重写时反复）
 

@@ -149,6 +149,15 @@
     <string name="home_card_call_missed">未接</string>
     <string name="home_card_call_summary">最近 %d 通</string>
     <string name="home_card_unknown_number">未知号码</string>
+    <string name="todo_title">四象限待办</string>
+    <string name="todo_input_hint">想做什么…</string>
+    <string name="todo_add">添加</string>
+    <string name="todo_delete">删</string>
+    <string name="todo_empty">各象限都空空的，先加一条吧</string>
+    <string name="todo_q1">重要紧急</string>
+    <string name="todo_q2">重要不紧急</string>
+    <string name="todo_q3">紧急不重要</string>
+    <string name="todo_q4">不紧急不重要</string>
     <string name="chat_voice_recording">松开发送</string>
     <string name="chat_voice_denied">需要麦克风权限才能发语音</string>
     <string name="chat_voice_too_short">说话时间太短</string>

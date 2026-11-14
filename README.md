@@ -54,6 +54,11 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**四象限待办域已接入（#44，2026-11-14）**：`four_quadrant_list` 是艾森豪威尔四象限**待办清单**
+（非应用使用）——三路由（get_list 四组全量 / edit 新增·原位更新 / del）+ 待办屏重建（四组列表、
+条目点击完成、象限 chip 单选添加），MoreFragment 待办卡接通——**待验 80 闭环**。台账 per-account
+封顶 200，id 进程全局。真机项见 DESIGN 待验 90。
+
 **敏感行为域已接入（#43，2026-11-14）**：监控数据面第三域（收尾）——安装/卸载/更新系统广播
 采集（免权限 receiver）→ `api/sensitive/report` → store 台账（去重/封顶 200/日区过滤）→
 `api/sensitive/user`(+days，关系校验) 与 `api/index` 的 sensitiveCard——**守护 Tab 敏感行为卡

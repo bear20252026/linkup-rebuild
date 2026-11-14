@@ -561,3 +561,62 @@ func TestSensRecordsSurviveReload(t *testing.T) {
 		t.Fatalf("the ledger did not survive the restart: %+v", all)
 	}
 }
+
+// TestTodoLedgerPinsInsertUpdateDeleteAndCap: ids are process-global, updates are in place for the
+// owner, the four quadrants validate, and the cap refuses new inserts.
+func TestTodoLedgerPinsInsertUpdateDeleteAndCap(t *testing.T) {
+	s := mustOpen(t, "")
+	first, err := s.PutTodo(7, TodoEntry{ListType: 1, Content: " 交作业 "})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first.ID == 0 || first.Content != "交作业" || first.CreatedAt <= 0 {
+		t.Fatalf("the insert trims and stamps: %+v", first)
+	}
+	second, err := s.PutTodo(7, TodoEntry{ListType: 4, Content: "玩"})
+	if err != nil || second.ID == first.ID {
+		t.Fatalf("ids are process-global and increasing: %+v vs %+v", second, first)
+	}
+
+	// An update in place: same id, new content and quadrant.
+	updated, err := s.PutTodo(7, TodoEntry{ID: first.ID, ListType: 2, Content: "交作业（数学）", IsFinish: true})
+	if err != nil || updated.Content != "交作业（数学）" || updated.ListType != 2 || !updated.IsFinish {
+		t.Fatalf("the update: %+v %v", updated, err)
+	}
+	if len(s.TodosFor(7)) != 2 {
+		t.Fatalf("an update must not add a row: %d", len(s.TodosFor(7)))
+	}
+
+	// The refusals: another owner's id is invisible, an unknown id errors, quadrant 0 and empty
+	// content are refused.
+	if _, err := s.PutTodo(8, TodoEntry{ID: first.ID, ListType: 1, Content: "x"}); err == nil {
+		t.Fatalf("another owner's todo is not updatable")
+	}
+	if _, err := s.PutTodo(7, TodoEntry{ID: 9999, ListType: 1, Content: "x"}); err == nil {
+		t.Fatalf("an unknown id errors instead of inserting")
+	}
+	if _, err := s.PutTodo(7, TodoEntry{ListType: 0, Content: "x"}); err == nil {
+		t.Fatalf("quadrant 0 is outside the four quadrants")
+	}
+	if _, err := s.PutTodo(7, TodoEntry{ListType: 1, Content: "   "}); err == nil {
+		t.Fatalf("an empty content is refused")
+	}
+
+	// The cap refuses new inserts (updates to existing rows still work at the cap): two rows are
+	// already in, so exactly TodoCap-2 more fit before the refusal.
+	for i := 0; i < TodoCap-2; i++ {
+		if _, err := s.PutTodo(7, TodoEntry{ListType: 3, Content: "t"}); err != nil {
+			t.Fatalf("the cap filled early at %d", i)
+		}
+	}
+	if _, err := s.PutTodo(7, TodoEntry{ListType: 3, Content: "溢出"}); err == nil {
+		t.Fatalf("the cap must refuse new inserts")
+	}
+
+	if !s.DeleteTodo(7, first.ID) {
+		t.Fatalf("the owner deletes their row")
+	}
+	if s.DeleteTodo(7, first.ID) {
+		t.Fatalf("a second delete answers false")
+	}
+}
