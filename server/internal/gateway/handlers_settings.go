@@ -109,27 +109,29 @@ func (g *Gateway) privacyUpdate(c *gin.Context) {
 func (g *Gateway) index(c *gin.Context) {
 	me := g.claims(c).UserID
 	peers := g.guardPeers(c, me)
-		payload := map[string]any{
-			"phoneUseCard": nil,
-			"appUseCard":   nil,
-			"serverTime":   time.Now().Unix(),
-		}
+	payload := map[string]any{
+		"phoneUseCard": nil,
+		"appUseCard":   nil,
+		"serverTime":   time.Now().Unix(),
+	}
 	for _, peer := range peers {
 		if state := g.friendStateRow(peer); state != nil {
 			payload["friendState"] = state
 		}
-		if fix, ok := g.opts.Store.LatestFix(peer); ok {
-			payload["friendLocation"] = &dto.FriendLocation{
-				Address:     fix.Address,
-				ArrivalTime: fix.TimePeriod,
-				Lat:         fix.Lat,
-				Lng:         fix.Lng,
-				Speed:       float32(fix.Speed),
+		if g.sensAllows(peer, me, sensLoc) {
+			if fix, ok := g.opts.Store.LatestFix(peer); ok {
+				payload["friendLocation"] = &dto.FriendLocation{
+					Address:     fix.Address,
+					ArrivalTime: fix.TimePeriod,
+					Lat:         fix.Lat,
+					Lng:         fix.Lng,
+					Speed:       float32(fix.Speed),
+				}
 			}
 		}
-		// 通话记录卡：被守护端的台账（call_record/report 供数）。只在有记录时下发——没有的
-		// 时候缺键，客户端的卡照原版语义收起。
-		if calls := g.opts.Store.CallRecordsFor(peer, indexCallRecordLimit); len(calls) > 0 {
+		// 通话记录卡：被守护端的台账（call_record/report 供数）。只在有记录且对方未关通话共享
+		// （SensCall）时下发——没有的时候缺键，客户端的卡照原版语义收起。
+		if calls := g.opts.Store.CallRecordsFor(peer, indexCallRecordLimit); len(calls) > 0 && g.sensAllows(peer, me, sensCall) {
 			rows := make([]any, 0, len(calls))
 			for _, call := range calls {
 				rows = append(rows, &dto.CallRecord{
@@ -144,13 +146,13 @@ func (g *Gateway) index(c *gin.Context) {
 		}
 		// 应用使用卡（app_use/report 供数）："今天"是被守护端自己上报的本地日（台账里最新一天），
 		// 服务端不做时区换算；昨日按 86400 秒回退——本地日的近似口径，DESIGN 记录在案。
-		if card := g.appUseCardFor(peer); card != nil {
+		if card := g.appUseCardFor(peer); card != nil && g.sensAllows(peer, me, sensAll) {
 			payload["appUseCard"] = card
 		}
 		// 敏感行为卡（sensitive/report 供数）：最新几条，只在有台账时下发（无则缺键，卡收起）。
-		if sens := g.opts.Store.SensRecordsFor(peer, "", indexSensLimit, g.opts.DayZone); len(sens) > 0 {
-			rows := make([]any, 0, len(sens))
-			for _, e := range sens {
+		if sensRows := g.opts.Store.SensRecordsFor(peer, "", indexSensLimit, g.opts.DayZone); len(sensRows) > 0 && g.sensAllows(peer, me, sensAll) {
+			rows := make([]any, 0, len(sensRows))
+			for _, e := range sensRows {
 				rows = append(rows, &dto.SensRecord{
 					Type:      e.Type,
 					EventTime: e.EventTime,
@@ -163,10 +165,10 @@ func (g *Gateway) index(c *gin.Context) {
 		}
 		lock := g.opts.Store.LockFor(me, peer)
 		payload["lockInfo"] = map[string]any{
-			"userId":      peer,
-			"lockTime":    lock.LockTime,
+			"userId":       peer,
+			"lockTime":     lock.LockTime,
 			"lockDuration": lock.LockDuration,
-			"lockTitle":   lock.LockTitle,
+			"lockTitle":    lock.LockTitle,
 		}
 		break // the original's cards show the current guard target only
 	}
@@ -189,8 +191,8 @@ const indexSensLimit = 5
 
 func (g *Gateway) versionCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, contract.OK(map[string]any{
-		"version":  "1.6.6",
+		"version":    "1.6.6",
 		"needUpdate": false,
-		"url":      "",
+		"url":        "",
 	}))
 }

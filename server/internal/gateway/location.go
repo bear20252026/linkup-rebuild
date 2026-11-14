@@ -104,6 +104,12 @@ func (g *Gateway) locationTarget(c *gin.Context, param string) (int64, bool) {
 		return target, true
 	}
 	if hasRelation(g.opts.Store, me, target) {
+		// 隐私旗标的服务端强制(审计 P1-2):被守护端关掉位置共享(SensLoc=false)后,守护端的
+		// 轨迹/天读数即刻拒绝——不再依赖客户端自觉。
+		if !g.sensAllows(target, me, sensLoc) {
+			c.JSON(http.StatusOK, contract.Fail(contract.StatusForbidden, "对方已关闭位置共享"))
+			return 0, false
+		}
 		return target, true
 	}
 	g.log.Warn("track read refused", "viewer", me, "target", target)

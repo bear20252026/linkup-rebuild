@@ -21,6 +21,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,7 +73,21 @@ type Gateway struct {
 	opts Options
 	log  *slog.Logger
 	pem  string
+
+	// 登录限速(审计 P1-1):按用户名计失败次数,连错 5 次锁 15 分钟——内存态,重启即清。
+	loginMu    sync.Mutex
+	loginFails map[string]*loginFail
 }
+
+type loginFail struct {
+	count       int
+	lockedUntil time.Time
+}
+
+const (
+	loginMaxFails     = 5
+	loginLockDuration = 15 * time.Minute
+)
 
 const bodyLimit = 1 << 20
 
@@ -118,7 +133,7 @@ func New(opts Options) (*gin.Engine, error) {
 	if err != nil {
 		return nil, err
 	}
-	g := &Gateway{opts: opts, log: opts.Logger, pem: pemText}
+	g := &Gateway{opts: opts, log: opts.Logger, pem: pemText, loginFails: map[string]*loginFail{}}
 
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()

@@ -86,7 +86,7 @@ const callRecordReportMaxBatch = 500
 // day the numbers belong to.
 func (g *Gateway) appUseReport(c *gin.Context) {
 	var payload struct {
-		Day   int64             `json:"day"`
+		Day   int64               `json:"day"`
 		Stats []store.AppUseEntry `json:"stats"`
 	}
 	if err := json.Unmarshal(rawBody(c), &payload); err != nil {
@@ -140,6 +140,34 @@ func (g *Gateway) appUseCardFor(peer int64) *dto.AppUseCard {
 	}
 }
 
+// sensKind is which privacy flag a guarded-data read must honor (audit P1-2): the flags live on
+// the owner's Extra row toward the viewer, and an absent row has no口径 to consult — allowed (the
+// relation row itself already gates the read).
+type sensKind int
+
+const (
+	sensLoc sensKind = iota
+	sensCall
+	sensAll
+)
+
+// sensAllows answers whether owner shared `kind` with viewer. Explicit false denies; an absent row
+// allows, because hasRelation already gates the read and confirm defaults the flags to open.
+func (g *Gateway) sensAllows(owner, viewer int64, kind sensKind) bool {
+	e := g.opts.Store.ExtraFor(owner, viewer)
+	if e.Since == 0 {
+		return true
+	}
+	switch kind {
+	case sensLoc:
+		return e.SensLoc
+	case sensCall:
+		return e.SensCall
+	default:
+		return e.SensAll
+	}
+}
+
 // textPtr maps an optional string onto the client bean's nullable fields (absent → null, not "").
 func textPtr(s string) *string {
 	if s == "" {
@@ -187,6 +215,9 @@ func (g *Gateway) guardPeers(c *gin.Context, me int64) []int64 {
 // firstPeerFix is the widget's "对方现在在哪"：第一个有定位的守护对象。
 func (g *Gateway) firstPeerFix(c *gin.Context, me int64) *dto.FriendLocation {
 	for _, peer := range g.guardPeers(c, me) {
+		if !g.sensAllows(peer, g.claims(c).UserID, sensLoc) {
+			continue // 位置共享已关:widget 的"对方现在在哪"留空,不越权读
+		}
 		if fix, ok := g.opts.Store.LatestFix(peer); ok {
 			return &dto.FriendLocation{
 				Address:     fix.Address,
@@ -291,4 +322,3 @@ func (g *Gateway) screenshotDone(c *gin.Context) {
 	g.opts.Store.RecordScreenshot(me, friendID, pic)
 	c.JSON(http.StatusOK, contract.OK(true))
 }
-

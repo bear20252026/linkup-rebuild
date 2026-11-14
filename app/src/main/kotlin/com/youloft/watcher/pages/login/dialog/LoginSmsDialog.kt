@@ -26,7 +26,7 @@ import com.youloft.watcher.pages.login.LoginSmsViewModel
  * carrier SDK could not hand over a masked number.
  *
  * Three recovered rules are the reason this is a screen-shaped class rather than two EditTexts:
- *  - the lengths are **exactly 11 and 4** (`maxLength` in the layout, `== 11` / `== 4` in the watchers),
+ *  - the lengths are **exactly 11 and 6** (`maxLength` in the layout, `== 11` / `== CODE_LENGTH` in the watchers;码长随服务端 6 位,审计 P1-3),
  *    and the code field auto-submits the moment both are met — the 立即登录 button is a convenience,
  *    not the only door;
  *  - while the countdown runs the **phone field is locked** (disabled, greyed, delete icon hidden) and
@@ -228,9 +228,9 @@ class LoginSmsDialog @JvmOverloads constructor(
     }
 
     companion object {
-        /** `f64827i` / `f64826h` — layout `maxLength` and watcher length in one place. */
+        /** `f64827i` / `f64826h` — layout `maxLength` and watcher length in one place. 服务端码长 6 位（P1-3：空间 10^6 × 尝试不重置 × 60s 冷却），客户端的自动提交口径随行。 */
         const val PHONE_LENGTH = 11
-        const val CODE_LENGTH = 4
+        const val CODE_LENGTH = 6
 
         /** The recovered `postDelayed(..., 100L)` before the IME is asked for. */
         const val SHOW_IME_DELAY_MILLIS = 100L

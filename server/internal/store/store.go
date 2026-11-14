@@ -9,11 +9,13 @@
 package store
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"linkup.local/server/internal/location"
+	"log"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -22,6 +24,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // User is a LinkUp account. The OpenIM userID is the decimal id, so no mapping table is needed.
@@ -34,21 +38,21 @@ type User struct {
 	ID           int64  `json:"id"`
 	Phone        string `json:"phone"`
 	Username     string `json:"username,omitempty"`
-	PasswordHash string `json:"-"`
+	PasswordHash string `json:"passwordHash,omitempty"`
 	UnionID      string `json:"unionId"`
-	Platform   int    `json:"platform"`
-	Nickname   string `json:"nickname"`
-	Avatar     string `json:"avatar"`
-	Sex        int    `json:"sex"`
-	Stage      int    `json:"stage"`
-	Token      string `json:"-"`
-	IsRegister bool   `json:"isRegister"`
-	VIPSubType int    `json:"vipSubType"`
-	VIPExpire  int64  `json:"vipExpireTime"`
-	SharedVip  int    `json:"sharedVipSubType"`
-	MainUserID int64  `json:"mainUser"`
-	GetuiCid   string `json:"getuiCid"`
-	PushToken  string `json:"pushToken"`
+	Platform     int    `json:"platform"`
+	Nickname     string `json:"nickname"`
+	Avatar       string `json:"avatar"`
+	Sex          int    `json:"sex"`
+	Stage        int    `json:"stage"`
+	Token        string `json:"-"`
+	IsRegister   bool   `json:"isRegister"`
+	VIPSubType   int    `json:"vipSubType"`
+	VIPExpire    int64  `json:"vipExpireTime"`
+	SharedVip    int    `json:"sharedVipSubType"`
+	MainUserID   int64  `json:"mainUser"`
+	GetuiCid     string `json:"getuiCid"`
+	PushToken    string `json:"pushToken"`
 }
 
 // IsVip mirrors the client's own rule: own subscription first, then any shared grant.
@@ -104,26 +108,32 @@ type Code struct {
 // the original allowed is not observable from the APK.
 const maxCodeAttempts = 5
 
+// codeIssueCooldown is the re-issue spacing while a code is still valid. Six digits at five wrong
+// guesses per code window means a brute force walks ~200k minutes — the cooldown makes the walk
+// slower still (audit P1-3).
+// ErrCodeCooldown is the re-issue spacing violation; the handler surfaces its message verbatim.
+var ErrCodeCooldown = fmt.Errorf("发送过于频繁，请稍后再试")
+
 // Data is the on-disk shape.
 type Data struct {
-	NextID    int64              `json:"nextID"`
-	NextFix   int64              `json:"nextFix"`
-	Users     []User             `json:"users"`
-	Extras    map[string]Extra   `json:"extras"`
-	Applies   map[string]Apply   `json:"applies"`
-	Codes     map[string]Code    `json:"codes"`
-	Locations []fix                    `json:"locations"`
-	Locks     map[string]LockState     `json:"locks,omitempty"`
-	Devices   map[int64]DeviceState    `json:"devices,omitempty"`
-	Settings  map[int64]map[string]string `json:"settings,omitempty"`
-	Screens   map[string]ScreenshotState `json:"screenshots,omitempty"`
-	UsernameIdx map[string]int64         `json:"usernameIdx,omitempty"`
-	InviteCodes map[string]InviteCode    `json:"inviteCodes,omitempty"`
+	NextID      int64                       `json:"nextID"`
+	NextFix     int64                       `json:"nextFix"`
+	Users       []User                      `json:"users"`
+	Extras      map[string]Extra            `json:"extras"`
+	Applies     map[string]Apply            `json:"applies"`
+	Codes       map[string]Code             `json:"codes"`
+	Locations   []fix                       `json:"locations"`
+	Locks       map[string]LockState        `json:"locks,omitempty"`
+	Devices     map[int64]DeviceState       `json:"devices,omitempty"`
+	Settings    map[int64]map[string]string `json:"settings,omitempty"`
+	Screens     map[string]ScreenshotState  `json:"screenshots,omitempty"`
+	UsernameIdx map[string]int64            `json:"usernameIdx,omitempty"`
+	InviteCodes map[string]InviteCode       `json:"inviteCodes,omitempty"`
 	CallRecords map[int64][]CallRecordEntry `json:"callRecords,omitempty"`
-	AppUses     map[int64][]AppUseEntry    `json:"appUses,omitempty"`
-	SensRecords map[int64][]SensEntry      `json:"sensRecords,omitempty"`
-	Todos       map[int64][]TodoEntry      `json:"todos,omitempty"`
-	NextTodoID  int64                      `json:"nextTodoId,omitempty"`
+	AppUses     map[int64][]AppUseEntry     `json:"appUses,omitempty"`
+	SensRecords map[int64][]SensEntry       `json:"sensRecords,omitempty"`
+	Todos       map[int64][]TodoEntry       `json:"todos,omitempty"`
+	NextTodoID  int64                       `json:"nextTodoId,omitempty"`
 }
 
 // TodoEntry is one 四象限待办 (the recovered four-quadrant todo list, bean/todo/TodoModel):
@@ -203,11 +213,11 @@ type InviteCode struct {
 // The registration rejections RegisterWithUsername can produce; the handler maps each to its own
 // user-facing message instead of one opaque 500.
 var (
-	ErrUsernameTaken    = fmt.Errorf("username already exists")
-	ErrInviteUnknown    = fmt.Errorf("invite code unknown")
-	ErrInviteExpired    = fmt.Errorf("invite code expired")
-	ErrInviteExhausted  = fmt.Errorf("invite code exhausted")
-	ErrInviteNotSeeded  = fmt.Errorf("no invite codes configured")
+	ErrUsernameTaken   = fmt.Errorf("username already exists")
+	ErrInviteUnknown   = fmt.Errorf("invite code unknown")
+	ErrInviteExpired   = fmt.Errorf("invite code expired")
+	ErrInviteExhausted = fmt.Errorf("invite code exhausted")
+	ErrInviteNotSeeded = fmt.Errorf("no invite codes configured")
 )
 
 // ScreenshotState is the last capture one account pulled off one guarded friend (api/screenshot/done).
@@ -246,11 +256,11 @@ type DeviceState struct {
 // travels over the IM channel (the original's `lockMachine` CMD); the store is the ledger the
 // lock_list reads back.
 type LockState struct {
-	LockTime    int64  `json:"lockTime"`
-	LockDuration int64 `json:"lockDuration"`
-	LockTitle   string `json:"lockTitle"`
-	LockBackPic string `json:"lockBackPic"`
-	Question    string `json:"question"`
+	LockTime     int64  `json:"lockTime"`
+	LockDuration int64  `json:"lockDuration"`
+	LockTitle    string `json:"lockTitle"`
+	LockBackPic  string `json:"lockBackPic"`
+	Question     string `json:"question"`
 }
 
 // Store guards Data and persists it in batches. Mutations mark the file dirty and schedule one
@@ -262,6 +272,11 @@ type Store struct {
 	path string
 	mu   sync.Mutex
 	data Data
+
+	// issueAt 记录每手机最近一次发码时刻,只在内存(重启即清——冷却只保护有效码窗口)。
+	issueAt map[string]time.Time
+	// codeCooldown 是重发间隔(仅对仍有效的码生效),Open 给默认 1 分钟,测试可收紧。
+	codeCooldown time.Duration
 
 	// flushDelay is how long a dirty file may wait. The timer's first deadline is kept: a steady
 	// stream of writes must not postpone the flush forever (bounded staleness, not a trailing edge).
@@ -284,7 +299,7 @@ var ErrNotFound = errors.New("linkup/store: not found")
 // Open loads (or creates) the file. An empty path keeps everything in memory, which is what the
 // tests do.
 func Open(path string) (*Store, error) {
-	s := &Store{path: path, flushDelay: defaultFlushDelay, data: Data{NextID: firstUserID, NextFix: 1, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
+	s := &Store{path: path, flushDelay: defaultFlushDelay, codeCooldown: time.Minute, data: Data{NextID: firstUserID, NextFix: 1, Extras: map[string]Extra{}, Applies: map[string]Apply{}, Codes: map[string]Code{}}}
 	if path == "" {
 		return s, nil
 	}
@@ -743,13 +758,31 @@ func (s *Store) IssueCode(phone string, ttl time.Duration) (Code, error) {
 		ttl = 5 * time.Minute
 	}
 	now := time.Now()
+	// 发送冷却只保护仍然有效的码:已过期的码换新不发抖。重发**不重置**尝试计数——
+	// "发码→猜 5 次→再发码"的循环不能再获得新额度(审计 P1-3)。
+	if existing, ok := s.data.Codes[phone]; ok && now.Before(existing.ExpiresAt) {
+		if s.issueAt == nil {
+			s.issueAt = map[string]time.Time{}
+		}
+		// codeCooldown 为 0 = 不设冷却(测试用);生产 Open 恒给 1 分钟。
+		if last, ok := s.issueAt[phone]; ok && s.codeCooldown > 0 && now.Before(last.Add(s.codeCooldown)) {
+			return Code{}, ErrCodeCooldown
+		}
+	}
 	c := Code{
 		Phone:     phone,
-		Value:     fmt.Sprintf("%04d", rand.Intn(10000)),
+		Value:     fmt.Sprintf("%06d", rand.Intn(1000000)),
 		IssuedAt:  now,
 		ExpiresAt: now.Add(ttl),
 	}
+	if existing, ok := s.data.Codes[phone]; ok && now.Before(existing.ExpiresAt) {
+		c.Attempts = existing.Attempts
+	}
 	s.data.Codes[phone] = c
+	if s.issueAt == nil {
+		s.issueAt = map[string]time.Time{}
+	}
+	s.issueAt[phone] = now
 	s.markDirtyLocked()
 	return c, nil
 }
@@ -1031,7 +1064,7 @@ func sensKey(e SensEntry) string {
 // SensRecordsFor answers the newest  events of one account whose event time falls on the
 // given yyyyMMdd day ("" = all days), newest first. The day bucketing uses the store's own zone
 // because the events carry the guarded phone's epoch seconds — the approximate cross-device day
-//口径 is written down in DESIGN 五点四十一.
+// 口径 is written down in DESIGN 五点四十一.
 func (s *Store) SensRecordsFor(userID int64, day string, limit int, zone *time.Location) []SensEntry {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -1108,6 +1141,53 @@ func (s *Store) AppUseMinutes(userID int64, days []int64) int {
 		}
 	}
 	return int(seconds / 60)
+}
+
+// HashPassword hashes a login password with bcrypt (per-user salt is inherent). The legacy
+// fallback answers the old unsalted-SHA256 hex — only reachable when bcrypt itself fails, which
+// keeps login alive instead of crashing the round.
+func HashPassword(password string) string {
+	if hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost); err == nil {
+		return string(hash)
+	}
+	return legacyPasswordHash(password)
+}
+
+// VerifyPassword checks a password against the stored hash in both spellings: bcrypt (the current
+// format) and the legacy unsalted SHA-256 (audit P1-1) — a legacy match answers needsUpgrade so the
+// login path re-stores bcrypt on the spot. An empty stored hash matches nothing.
+func VerifyPassword(u User, password string) (ok bool, needsUpgrade bool) {
+	if strings.HasPrefix(u.PasswordHash, "$2") {
+		return bcrypt.CompareHashAndPassword([]byte(u.PasswordHash), []byte(password)) == nil, false
+	}
+	if u.PasswordHash == "" {
+		return false, false
+	}
+	if legacyPasswordHash(password) == u.PasswordHash {
+		return true, true
+	}
+	return false, false
+}
+
+// UpgradePassword re-stores one account's password hash in bcrypt. Returns whether the row existed.
+func (s *Store) UpgradePassword(userID int64, password string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.data.Users {
+		if s.data.Users[i].ID == userID {
+			s.data.Users[i].PasswordHash = HashPassword(password)
+			s.markDirtyLocked()
+			return true
+		}
+	}
+	return false
+}
+
+// legacyPasswordHash is the pre-bcrypt spelling ("linkup:"+password, unsalted SHA-256). Kept for
+// the dual-read migration only; new writes never produce it.
+func legacyPasswordHash(password string) string {
+	h := sha256.Sum256([]byte("linkup:" + password))
+	return hex.EncodeToString(h[:])
 }
 
 // TodosFor answers one account's todos, oldest first (the screen groups them, order inside a
