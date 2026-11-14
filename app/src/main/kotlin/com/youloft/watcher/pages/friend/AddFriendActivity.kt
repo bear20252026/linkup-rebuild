@@ -346,9 +346,9 @@ class AddFriendActivity : AppCompatActivity() {
         )
     }
 
-    private fun onQrCode(bitmap: Bitmap) {
+    private fun onQrCode(bitmap: Bitmap?) {
         binding.ivCode.setImageBitmap(bitmap)
-        platform.uploadQrImage(bitmap.pngBytes(), QR_FILE_NAME)
+        bitmap?.let { platform.uploadQrImage(it.pngBytes(), QR_FILE_NAME) }
     }
 
     private fun renderTips() {

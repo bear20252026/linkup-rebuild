@@ -350,7 +350,9 @@ func (s *Store) save() error {
 		return err
 	}
 	tmp := s.path + ".tmp"
-	if err := os.WriteFile(tmp, raw, 0o644); err != nil {
+	// 0600(审计 P2-3):文件里有手机号/完整轨迹/验证码,同机其他用户不可读。
+	// Windows 的权限位不生效是已知事实(README 记录),生产在 Linux 上跑。
+	if err := os.WriteFile(tmp, raw, 0o600); err != nil {
 		return err
 	}
 	return os.Rename(tmp, s.path)
@@ -856,14 +858,44 @@ func ParseID(text string) int64 {
 
 // AddFix stores one reported position and returns it with the server-assigned id, which is what
 // `api/location/report` answers with.
+// LocationCap bounds one account's track rows (audit P2-1: an unbounded append turned every read
+// into an O(n) sweep and let a misbehaving device grow the file without limit). The newest rows
+// survive; 十五天日期条 与轨迹页的读数远在这条线以内。全局的 NextFix 序号不受裁剪影响。
+const LocationCap = 20000
+
 func (s *Store) AddFix(userID int64, p location.Point) (location.Point, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	p.ID = s.data.NextFix
 	s.data.NextFix++
 	s.data.Locations = append(s.data.Locations, fix{UserID: userID, Point: p})
+	s.trimLocations(userID)
 	s.markDirtyLocked()
 	return p, nil
+}
+
+// trimLocations keeps only the newest LocationCap rows of one account, dropping the oldest.
+func (s *Store) trimLocations(userID int64) {
+	var userRows []int
+	for i, row := range s.data.Locations {
+		if row.UserID == userID {
+			userRows = append(userRows, i)
+		}
+	}
+	if len(userRows) <= LocationCap {
+		return
+	}
+	drop := map[int]bool{}
+	for _, i := range userRows[:len(userRows)-LocationCap] {
+		drop[i] = true
+	}
+	kept := s.data.Locations[:0]
+	for i, row := range s.data.Locations {
+		if !drop[i] {
+			kept = append(kept, row)
+		}
+	}
+	s.data.Locations = kept
 }
 
 // Fixes returns one account's whole history in time order.
@@ -1261,6 +1293,123 @@ func (s *Store) DeleteTodo(userID, id int64) bool {
 		}
 	}
 	return false
+}
+
+// AddFeedback appends one 意见反馈 (append-only ledger, capped). The reply channel is not rebuilt,
+// so this is the record half of the domain.
+func (s *Store) AddFeedback(userID int64, content string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return
+	}
+	if s.data.Feedbacks == nil {
+		s.data.Feedbacks = map[int64][]FeedbackEntry{}
+	}
+	ledger := s.data.Feedbacks[userID]
+	if len(ledger) >= FeedbackCap {
+		ledger = ledger[len(ledger)-FeedbackCap+1:]
+	}
+	s.data.Feedbacks[userID] = append(ledger, FeedbackEntry{Content: content[:min(len(content), 500)], CreatedAt: time.Now().Unix()})
+	s.markDirtyLocked()
+}
+
+// PutAnniversary inserts (id 0/absent) or updates one 纪念日 owned by the account, mirroring
+// PutTodo's rules (trim, per-account ids from NextAnniversaryID, cap refuses new inserts).
+func (s *Store) PutAnniversary(userID int64, entry AnniversaryEntry) (AnniversaryEntry, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	title := strings.TrimSpace(entry.Title)
+	if title == "" {
+		return AnniversaryEntry{}, fmt.Errorf("anniversary title is empty")
+	}
+	if len(title) > 60 {
+		title = title[:60]
+	}
+	if entry.Time <= 0 {
+		return AnniversaryEntry{}, fmt.Errorf("anniversary time is missing")
+	}
+	if s.data.Anniversaries == nil {
+		s.data.Anniversaries = map[int64][]AnniversaryEntry{}
+	}
+	ledger := s.data.Anniversaries[userID]
+	if entry.ID > 0 {
+		for i, e := range ledger {
+			if e.ID == entry.ID {
+				e.Title, e.Time = title, entry.Time
+				s.data.Anniversaries[userID][i] = e
+				s.markDirtyLocked()
+				copied := e
+				return copied, nil
+			}
+		}
+		return AnniversaryEntry{}, fmt.Errorf("anniversary %d not found for user %d", entry.ID, userID)
+	}
+	if len(ledger) >= AnniversaryCap {
+		return AnniversaryEntry{}, fmt.Errorf("anniversary list is full (%d)", AnniversaryCap)
+	}
+	if s.data.NextAnniversaryID == 0 {
+		s.data.NextAnniversaryID = 1
+	}
+	entry.ID = s.data.NextAnniversaryID
+	s.data.NextAnniversaryID++
+	entry.Title = title
+	entry.CreatedAt = time.Now().Unix()
+	s.data.Anniversaries[userID] = append(ledger, entry)
+	s.markDirtyLocked()
+	return entry, nil
+}
+
+// LatestAnniversary answers the account's newest 纪念日; empty when none — the choose route's
+// honest answer for a pair that never created one.
+func (s *Store) LatestAnniversary(userID int64) AnniversaryEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	var latest AnniversaryEntry
+	for _, e := range s.data.Anniversaries[userID] {
+		if e.Time > latest.Time || latest.ID == 0 {
+			latest = e
+		}
+	}
+	return latest
+}
+
+// AddAddressTag inserts one 收藏地址标签; the name defaults to the address when absent.
+func (s *Store) AddAddressTag(userID int64, entry AddressTagEntry) (AddressTagEntry, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if entry.Name == "" && entry.Address == "" {
+		return AddressTagEntry{}, fmt.Errorf("address tag has neither name nor address")
+	}
+	if entry.Name == "" {
+		entry.Name = entry.Address
+	}
+	if s.data.AddressTags == nil {
+		s.data.AddressTags = map[int64][]AddressTagEntry{}
+	}
+	ledger := s.data.AddressTags[userID]
+	if len(ledger) >= AddressTagCap {
+		return AddressTagEntry{}, fmt.Errorf("address tag list is full (%d)", AddressTagCap)
+	}
+	if s.data.NextTagID == 0 {
+		s.data.NextTagID = 1
+	}
+	entry.ID = s.data.NextTagID
+	s.data.NextTagID++
+	entry.CreatedAt = time.Now().Unix()
+	s.data.AddressTags[userID] = append(ledger, entry)
+	s.markDirtyLocked()
+	return entry, nil
+}
+
+// AddressTagsFor answers one account's tags, oldest first; empty when none.
+func (s *Store) AddressTagsFor(userID int64) []AddressTagEntry {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([]AddressTagEntry, 0, len(s.data.AddressTags[userID]))
+	out = append(out, s.data.AddressTags[userID]...)
+	return out
 }
 
 // LatestAppUseDay answers the newest day the account reported usage for; 0 when none. The card's

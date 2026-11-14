@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"linkup.local/server/internal/location"
 )
 
 func mustOpen(t *testing.T, path string) *Store {
@@ -639,5 +641,29 @@ func TestTodoLedgerPinsInsertUpdateDeleteAndCap(t *testing.T) {
 	}
 	if s.DeleteTodo(7, first.ID) {
 		t.Fatalf("a second delete answers false")
+	}
+}
+
+// TestAddFixCapsPerAccount pins the audit P2-1 fix: the location ledger is bounded per account
+// (the newest rows survive, the oldest drop), and the cap is per USER — another account's rows
+// are untouched.
+func TestAddFixCapsPerAccount(t *testing.T) {
+	s := mustOpen(t, "")
+	for i := 0; i < LocationCap+50; i++ {
+		if _, err := s.AddFix(7, location.Point{TimePeriod: int64(1_700_000_000 + i)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s.AddFix(8, location.Point{TimePeriod: 1_700_000_000})
+
+	rows := s.Fixes(7)
+	if len(rows) != LocationCap {
+		t.Fatalf("cap: %d rows", len(rows))
+	}
+	if rows[0].TimePeriod != 1_700_000_000+50 {
+		t.Fatalf("the oldest dropped, newest kept in order: %+v", rows[0])
+	}
+	if len(s.Fixes(8)) != 1 {
+		t.Fatalf("the cap must be per account: %+v", s.Fixes(8))
 	}
 }

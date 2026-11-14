@@ -19,7 +19,15 @@ android {
     buildTypes {
         debug { applicationIdSuffix = ".debug" }
         release {
-            isMinifyEnabled = false
+            // R8 混淆（审计 P2：release 未混淆与原版不一致）。规则覆盖已知反射面：
+            // Retrofit/Gson/OpenIM 模型/WebView JS 接口/osmdroid——**运行时行为仍需真机回归**
+            // （待验 91），出正式包前以真机回归为准。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 

@@ -54,6 +54,12 @@ bash server/scripts/smoke.sh
 
 ## 恢复状态
 
+**P2 清理包已落地（#48，2026-11-14）**：store 文件 0600（同机不可读）、轨迹台账 per-account
+封顶 20000（删最旧）、MMKV cryptKey 加密（随机键落私有 filesDir，键数据分离）、**R8 混淆开启**
+（规则覆盖 Retrofit/Gson/OpenIM/JS 接口/反射面；顺带修 NullSafeMutableLiveData 与
+baseline.prof 重复条目两处存量 release 阻断，assembleRelease 验证通过）。运行时真机回归见
+DESIGN 待验 91。
+
 **P1-4 WebView 凭据白名单已落地（#47，2026-11-14）**：审计 P1 清单最后一项闭环——容器内
 导航只在自家域（重建网关/H5 基址/业务/配置/遗留轨迹五域，子域后缀匹配）追加 userid/token，
 白名单外照常导航但拿不到凭据，JWT 外泄链在追加环节关死。见 DESIGN 五点四十四。
