@@ -103,6 +103,38 @@ type Code struct {
 	Attempts  int       `json:"attempts"`
 }
 
+// FeedbackEntry is one user-submitted 意见反馈 (append-only ledger; the reply channel is not
+// rebuilt, so check/checkPop answer honest zeros — DESIGN 五点四十五).
+type FeedbackEntry struct {
+	Content   string `json:"content"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+const FeedbackCap = 20
+
+// AnniversaryEntry is one 纪念日 row (bean/Anniversary: id/title/anniversaryTime 秒). Per-account
+// ids come from NextAnniversaryID; capped.
+type AnniversaryEntry struct {
+	ID        int64  `json:"id"`
+	Title     string `json:"title"`
+	Time      int64  `json:"time"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+const AnniversaryCap = 50
+
+// AddressTagEntry is one 收藏地址标签 (bean tag_list). Capped.
+type AddressTagEntry struct {
+	ID        int64   `json:"id"`
+	Name      string  `json:"name,omitempty"`
+	Lat       float64 `json:"lat,omitempty"`
+	Lng       float64 `json:"lng,omitempty"`
+	Address   string  `json:"address,omitempty"`
+	CreatedAt int64   `json:"createdAt"`
+}
+
+const AddressTagCap = 50
+
 // maxCodeAttempts bounds how often one code may be guessed before it is burned. The number is an
 // operational choice — the client only reports "验证码错误" and re-enables the button, so how many tries
 // the original allowed is not observable from the APK.
@@ -116,24 +148,29 @@ var ErrCodeCooldown = fmt.Errorf("发送过于频繁，请稍后再试")
 
 // Data is the on-disk shape.
 type Data struct {
-	NextID      int64                       `json:"nextID"`
-	NextFix     int64                       `json:"nextFix"`
-	Users       []User                      `json:"users"`
-	Extras      map[string]Extra            `json:"extras"`
-	Applies     map[string]Apply            `json:"applies"`
-	Codes       map[string]Code             `json:"codes"`
-	Locations   []fix                       `json:"locations"`
-	Locks       map[string]LockState        `json:"locks,omitempty"`
-	Devices     map[int64]DeviceState       `json:"devices,omitempty"`
-	Settings    map[int64]map[string]string `json:"settings,omitempty"`
-	Screens     map[string]ScreenshotState  `json:"screenshots,omitempty"`
-	UsernameIdx map[string]int64            `json:"usernameIdx,omitempty"`
-	InviteCodes map[string]InviteCode       `json:"inviteCodes,omitempty"`
-	CallRecords map[int64][]CallRecordEntry `json:"callRecords,omitempty"`
-	AppUses     map[int64][]AppUseEntry     `json:"appUses,omitempty"`
-	SensRecords map[int64][]SensEntry       `json:"sensRecords,omitempty"`
-	Todos       map[int64][]TodoEntry       `json:"todos,omitempty"`
-	NextTodoID  int64                       `json:"nextTodoId,omitempty"`
+	NextID            int64                        `json:"nextID"`
+	NextFix           int64                        `json:"nextFix"`
+	Users             []User                       `json:"users"`
+	Extras            map[string]Extra             `json:"extras"`
+	Applies           map[string]Apply             `json:"applies"`
+	Codes             map[string]Code              `json:"codes"`
+	Locations         []fix                        `json:"locations"`
+	Locks             map[string]LockState         `json:"locks,omitempty"`
+	Devices           map[int64]DeviceState        `json:"devices,omitempty"`
+	Settings          map[int64]map[string]string  `json:"settings,omitempty"`
+	Screens           map[string]ScreenshotState   `json:"screenshots,omitempty"`
+	UsernameIdx       map[string]int64             `json:"usernameIdx,omitempty"`
+	InviteCodes       map[string]InviteCode        `json:"inviteCodes,omitempty"`
+	CallRecords       map[int64][]CallRecordEntry  `json:"callRecords,omitempty"`
+	AppUses           map[int64][]AppUseEntry      `json:"appUses,omitempty"`
+	SensRecords       map[int64][]SensEntry        `json:"sensRecords,omitempty"`
+	Todos             map[int64][]TodoEntry        `json:"todos,omitempty"`
+	NextTodoID        int64                        `json:"nextTodoId,omitempty"`
+	Feedbacks         map[int64][]FeedbackEntry    `json:"feedbacks,omitempty"`
+	Anniversaries     map[int64][]AnniversaryEntry `json:"anniversaries,omitempty"`
+	NextAnniversaryID int64                        `json:"nextAnniversaryId,omitempty"`
+	AddressTags       map[int64][]AddressTagEntry  `json:"addressTags,omitempty"`
+	NextTagID         int64                        `json:"nextTagId,omitempty"`
 }
 
 // TodoEntry is one 四象限待办 (the recovered four-quadrant todo list, bean/todo/TodoModel):
