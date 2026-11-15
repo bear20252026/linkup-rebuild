@@ -185,3 +185,55 @@ P3 十余项:无证书锁定、query 串带 `deviceId(=ANDROID_ID)`/`distinctId`
 2. **尽快**:bcrypt + 登录限速 + 重启密码失效 bug;短信码 6 位 + 限频;sens 旗标服务端强制(P1-2)。
 3. **随后**:store 0600 + Locations 上限/TTL + Codes/Screens 清理;WebView 域名白名单;MMKV 加密;release 开混淆;screenshot/done 加好友校验。
 4. **收尾**:README/DESIGN 同步;`tools/jadx` 真出库;IP 从代码注释摘除;`.gitignore` 防御性规则补齐。
+
+---
+
+# 第二轮全面审计（基线 70f135b → HEAD 164ea80，#38–#49 十一笔）
+
+**审计日期**：2026-11-15 · **范围**：`git diff 70f135b..HEAD`（88 文件 / +6599/−234：OSM 地图、语音消息、监控三域、待办域、P1 安全包、P2 清理、小域四件）· **实测**：`go vet` 零输出；server/:app(404)/:im(8)/:map(30)/:net 全绿
+
+## 一、回归结论：旧修复全部在，无一被破坏 ✅
+
+P0×4（confirmedPair 双门 / PeerGuard 三接线 / 第三方登录开关两态）、P1×4（bcrypt 双读+迁移 / 登录限速 5错锁15分 / 重发保留 Attempts+60s 冷却 / WebView 白名单五域）、P2 已修项（store 0600 / Locations 20000 / MMKV cryptKey / R8 / 七类台账封顶）逐项 file:line 验证通过；#41–#49 新 handler 无一复制旧不安全模式（全部仅自己 JWT，无自报 friendId 写 Extra）。
+
+## 二、增量发现：P0 × 4、P1 × 3、P2 × 8、P3 × 15+（全部在 #38–#49 的新增面）
+
+### P0（四项）
+
+| # | 发现 | 位置 |
+|---|---|---|
+| R2-P0-1 | **MMKV cryptKey 每次启动换键**：Base64(16B) 实长 24 字符，断言 `length == 22` 永假 → 每次重启重新生成 → 每次重启掉登录 + MMKV 数据重置（token/好友缓存/隐私同意/上报水位全归零） | `KeyValueStore.kt:94,97` |
+| R2-P0-2 | **R8 规则缺 XML 自定义 View keep**：fastkit Shaped* 家族（45 布局 180+ 实例）与 view.* 走 LayoutInflater 反射，R8 混淆类名后 release 全部 inflate 崩（启动/登录/主界面） | `proguard-rules.pro` |
+| R2-P0-3 | **ApiResponse 未 keep**：信封在 `com.youloft.linkup.net` 包（规则只 keep 了 api.dto/openim/im）→ 字段混淆后 Gson 按 JSON 键赋值落空 → release 全部网络"失败" | `proguard-rules.pro:19-21` |
+| R2-P0-4 | **TodoActivity / FeedbackActivity 未注册 manifest** → 入口点击 ActivityNotFoundException 崩（RegisterActivity 同款事故在 #44/#49 重演） | `AndroidManifest.xml`、`MoreFragment.kt:41`、`SubScreens.kt` |
+
+### P1（三项）
+
+| # | 发现 | 位置 |
+|---|---|---|
+| R2-P1-1 | **READ_CALL_LOG 无任何运行时请求入口**（权限列表屏无该行，全仓无 requestPermissions）→ 通话记录域 UI 上永久死亡（#41 注释"请求入口在权限列表屏"与现实不符） | `SubScreens.kt:93-114` |
+| R2-P1-2 | **麦克风权限授予竞态**：授权弹框期间手指已松开 → 回调启动录音后无人 UP → MediaRecorder 持续采集 + 下次按住覆盖旧实例（双录音泄漏，首用语音必现） | `ChatMessagesFragment.kt:102-121,142-152` |
+| R2-P1-3 | **服务端 `sensitive/user` 缺 sensAllows(SensAll) 门**——#46 三域覆盖漏了第四个读面（index 卡有门，专用读路由没有）；关闭共享后守护端仍可分页读敏感台账；测试空档与代码空档重合 | `handlers_sens.go:56-68` |
+
+### P2（八项摘要）
+
+R2-P2-1 updateRemark 无 confirmedPair 门仍可盖章铸行（P0-2 同门漏网，当前利用需带外 IM 状态）· R2-P2-2 anniversary/choose 读任意 userId（title 自由文本敏感度高于资料枚举，无关系门无拍板）· R2-P2-3 PACKAGE_REMOVED 未滤 EXTRA_REPLACING（应用升级记成"卸载+更新"假双行）· R2-P2-4 VoiceRecorder.start 失败不 release（麦克风句柄泄漏）· R2-P2-5 PeerGuard pageSize=200 截断（>200 好友命令 fail-closed 误拒）+ 未命中每命令全量拉取不回写无节流 · R2-P2-6 TodoActivity 程序化 UI 无状态保存 · R2-P2-7 cryptKey 多进程首启竞态 + Retrofit suspend 规则缺 Continuation/Response · R2-P2-8 >72B 密码 bcrypt 静默降级 legacy 且永困弱格式
+
+### P3（15+ 摘要）
+
+UTF-8 字节截断切烂汉字（todo 200B/anniversary 60B/feedback 500B 按字节切）· callRecord Time 不校验（乱序/垃圾行挤占配额）· appUse 负数 Duration/未来 Day（自伤面）· 关系删除不清理七类台账（重新配对历史恢复可读）· 验证码 math/rand（安全语义）· feedback/check 与 checkPop 字段名互串（hasNew/feedbackPop/isPop 错位——Gson 缺字段回退恰好诚实零，行为对形状错）· 空台账答 null 与 [] 口径不齐 · 验证码明文入日志（存量）· bcrypt CPU 用户名轮换放大（无 IP 维度）· VoicePlayer completion 不 release/prepared 竞态 · PeerGuard 主线程 Gson · im 模块/openim 过度 keep · 账号不存在/密码错误可区分应答（枚举）· issueAt/Codes 无清扫（慢渗型）· TodoActivity add 先清输入
+
+## 三、做得好的（增量面，12 项）
+
+TrackMap 生命周期契约修正（OSM 装机首日必炸被主动勘正）· PeerGuard fail-closed + trusted 编译期必填 · CallRecordReporter 水位语义（delta 幂等可重放）· AppUsageAggregator 纯函数化全 JVM 钉住 · 登录不闪退链 · RegisterActivity 查重 debounce 双竞态防护 · hostNeedsCredentials 解析失败如实 false · 短信 6 位三处同步 · SensitiveEventReceiver finally finish + 采样门前置 · R8 开启时诚实标注待验 91（本轮 P0×3 正是它的预告兑现）· ImMappings 语音/图片互斥分家 · VoicePlayer"单条在响"状态收敛
+
+## 四、验证
+
+`go vet` 零输出；server 五包全绿；`:app 404` / `:im 8` / `:map 30` / `:net` 全绿。R8 release 包 **assembleRelease 通过但未做运行时回归**——R2-P0-2/3 即其预告兑现，待验 91 仍挂。
+
+## 五、修复优先级
+
+1. **立即（P0×4，全部小改）**：MMKV 断言 24 或 NO_PADDING；proguard 补 fastkit/view.* + net 包 keep；manifest 注册两 Activity
+2. **随手（P1×3）**：sensitive/user 补 sensAllows 一行；权限列表屏加 READ_CALL_LOG 请求行；录音竞态（权限回调时手指不在则不启动 + startRecording 防重入）
+3. **随后**：updateRemark 补门、anniversary/choose 拍板、EXTRA_REPLACING 过滤、VoiceRecorder release、PeerGuard 翻页/回写、Retrofit suspend 规则补齐
+4. **待验 91 是当前最高优先的真机项**（R8 三面 P0 的回归即它的内容）
